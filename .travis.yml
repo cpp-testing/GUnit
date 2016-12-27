@@ -1,0 +1,54 @@
+#
+# Copyright (c) 2016-2017 Kris Jusiak (kris at jusiak dot net)
+#
+# Distributed under the Boost Software License, Version 1.0.
+# (See accompanying file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+#
+sudo: false
+
+matrix:
+  fast_finish: true
+
+  include:
+  - os: linux
+    env: CXX=clang++-3.6
+    addons:
+      apt:
+        packages: ["clang-3.6", "libstdc++-5-dev", "valgrind"]
+        sources: ["ubuntu-toolchain-r-test", "llvm-toolchain-precise-3.6"]
+  - os: linux
+    env: CXX=clang++-3.7
+    addons:
+      apt:
+        packages: ["clang-3.7", "libstdc++-5-dev", "valgrind"]
+        sources: ["ubuntu-toolchain-r-test", "llvm-toolchain-precise-3.7"]
+  - os: linux
+    env: CXX=clang++-3.8
+    addons:
+      apt:
+        packages: ["clang-3.8", "libstdc++-5-dev", "valgrind"]
+        sources: ["ubuntu-toolchain-r-test", "llvm-toolchain-precise-3.8"]
+  - os: linux
+    env: CXX=g++-5
+    addons:
+      apt:
+        packages: ["g++-5", "libstdc++-5-dev", "valgrind"]
+        sources: ["ubuntu-toolchain-r-test"]
+  - os: linux
+    env: CXX=g++-6
+    addons:
+      apt:
+        packages: ["g++-6", "libstdc++-6-dev", "valgrind"]
+        sources: ["ubuntu-toolchain-r-test"]
+  - os: osx
+    osx_image: xcode8
+    env: CXX=clang++
+
+install:
+  - if [ "$TRAVIS_OS_NAME" == "osx" ]; then (brew install valgrind); fi
+
+script:
+  - mkdir build_debug && cd build_debug && cmake -DCMAKE_BUILD_TYPE=debug .. && make -j2 && ctest --output-on-failure && cd ..
+  - mkdir build_debug_memcheck && cd build_debug_memcheck && cmake -DCMAKE_BUILD_TYPE=debug -DENABLE_MEMCHECK=ON .. && make -j2 && ctest --output-on-failure && cd ..
+  - mkdir build_release && cd build_release && cmake -DCMAKE_BUILD_TYPE=release .. && make -j2 && ctest --output-on-failure && cd ..
+  - mkdir build_release_memcheck && cd build_release_memcheck && cmake -DCMAKE_BUILD_TYPE=release -DENABLE_MEMCHECK=ON .. && make -j2 && ctest --output-on-failure && cd ..
