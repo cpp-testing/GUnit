@@ -59,9 +59,6 @@ matrix:
     osx_image: xcode8
     env: CXX=clang++
 
-before_install:
-  - git submodule update --init
-
 install:
   - if [ "$TRAVIS_OS_NAME" == "osx" ] && [ "${BS}" == "cmake" ]; then (brew uninstall cmake; brew install cmake); fi
   - if [ "${LIBCXX}" != "" ]; then (svn --quiet co http://llvm.org/svn/llvm-project/libcxx/trunk libcxx
@@ -71,5 +68,5 @@ install:
     && export LD_LIBRARY_PATH="${TRAVIS_BUILD_DIR}/libcxx/lib:$LD_LIBRARY_PATH"; fi
 
 script:
-  - if [ "${CXX}" != "" ]; then (travis_wait mkdir build && cmake .. && make -j2 && ctest --output-on-failure); fi
+  - if [ "${CXX}" != "" ]; then (travis_wait mkdir build && cd build && cmake .. && make -j2 && ctest --output-on-failure); fi
 
