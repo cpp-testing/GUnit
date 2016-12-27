@@ -1,0 +1,75 @@
+#
+# Copyright (c) 2016 Krzysztof Jusiak (krzysztof at jusiak dot net)
+#
+# Distributed under the Boost Software License, Version 1.0.
+# (See accompanying file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+#
+sudo: false
+
+matrix:
+  fast_finish: true
+
+  include:
+  - os: linux
+    env: CXX=clang++-3.5
+    addons:
+      apt:
+        packages: ["clang-3.5", "libstdc++-5-dev", "valgrind"]
+        sources: ["ubuntu-toolchain-r-test", "llvm-toolchain-precise-3.5"]
+  - os: linux
+    env: CXX=clang++-3.6
+    addons:
+      apt:
+        packages: ["clang-3.6", "libstdc++-5-dev", "valgrind"]
+        sources: ["ubuntu-toolchain-r-test", "llvm-toolchain-precise-3.6"]
+  - os: linux
+    env: CXX=clang++-3.7
+    addons:
+      apt:
+        packages: ["clang-3.7", "libstdc++-5-dev", "valgrind"]
+        sources: ["ubuntu-toolchain-r-test", "llvm-toolchain-precise-3.7"]
+  - os: linux
+    env: CXX=clang++-3.8
+    addons:
+      apt:
+        packages: ["clang-3.8", "libstdc++-5-dev", "valgrind", "gdb"]
+        sources: ["ubuntu-toolchain-r-test", "llvm-toolchain-precise-3.8"]
+  - os: linux
+    env: LIBCXX=ON CXX=clang++-3.8
+    addons:
+      apt:
+        packages: ["clang-3.8", "libstdc++-5-dev", "valgrind", "gdb"]
+        sources: ["ubuntu-toolchain-r-test", "llvm-toolchain-precise-3.8"]
+  - os: linux
+    env: CXX=g++-5
+    addons:
+      apt:
+        packages: ["g++-5", "libstdc++-5-dev", "valgrind"]
+        sources: ["ubuntu-toolchain-r-test"]
+  - os: linux
+    env: CXX=g++-6
+    addons:
+      apt:
+        packages: ["g++-6", "libstdc++-6-dev"]
+        sources: ["ubuntu-toolchain-r-test"]
+  - os: osx
+    osx_image: xcode7
+    env: CXX=clang++
+  - os: osx
+    osx_image: xcode8
+    env: CXX=clang++
+
+before_install:
+  - git submodule update --init
+
+install:
+  - if [ "$TRAVIS_OS_NAME" == "osx" ] && [ "${BS}" == "cmake" ]; then (brew uninstall cmake; brew install cmake); fi
+  - if [ "${LIBCXX}" != "" ]; then (svn --quiet co http://llvm.org/svn/llvm-project/libcxx/trunk libcxx
+    && cd libcxx/lib && ./buildit && ln -f -s libc++.so.1.0 libc++.so.1)
+    && export CXXFLAGS="-stdlib=libc++ -I${TRAVIS_BUILD_DIR}/libcxx/include"
+    && export LDFLAGS="-L${TRAVIS_BUILD_DIR}/libcxx/lib -lc++"
+    && export LD_LIBRARY_PATH="${TRAVIS_BUILD_DIR}/libcxx/lib:$LD_LIBRARY_PATH"; fi
+
+script:
+  - if [ "${CXX}" != "" ]; then (travis_wait mkdir build && cmake .. && make -j2 && ctest --output-on-failure); fi
+
