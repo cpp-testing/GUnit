@@ -5,8 +5,8 @@
 // (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 //
-#include <stdexcept>
 #include "gmock.vptr.h"
+#include <stdexcept>
 #include "gtest/gtest.h"
 
 struct interface {
@@ -124,10 +124,22 @@ TEST(GMockVptr, ShouldBeConvertible) {
   using namespace testing;
   mock<interface> m;
 
-  { interface* i = m; (void)i; }
-  { const interface* i = m; (void)i;}
-  { interface& i = m; (void)i; }
-  { const interface& i = m; (void)i; }
+  {
+    interface* i = m;
+    (void)i;
+  }
+  {
+    const interface* i = m;
+    (void)i;
+  }
+  {
+    interface& i = m;
+    (void)i;
+  }
+  {
+    const interface& i = m;
+    (void)i;
+  }
 }
 
 TEST(GMockVptr, ShouldMockSimpleInterface) {

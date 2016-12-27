@@ -50,9 +50,6 @@
 #define __GMOCK_VPTR_IIF_1(t, ...) t
 #define __GMOCK_VPTR_IF(c) __GMOCK_VPTR_IIF(c)
 
-#if !defined(EXPECT_CALL)
-#error "GMock.vptr requires 'gmock/gmock.h' to be included before 'gmock.ptr.h'"
-#else
 #undef EXPECT_CALL
 #define __GMOCK_VPTR_EXPECT_CALL_0(obj, call) GMOCK_EXPECT_CALL_IMPL_(obj, call)
 #define __GMOCK_VPTR_EXPECT_CALL_1(obj, call)                                              \
@@ -60,11 +57,7 @@
        &std::decay_t<decltype(obj)>::type::__GMOCK_VPTR_NAME call __GMOCK_VPTR_CALL call)) \
       .InternalExpectedAt(__FILE__, __LINE__, #obj, #call)
 #define EXPECT_CALL(obj, call) __GMOCK_VPTR_CAT(__GMOCK_VPTR_EXPECT_CALL_, __GMOCK_VPTR_IBP(call))(obj, call)
-#endif
 
-#if !defined(ON_CALL)
-#error "GMock.vptr requires 'gmock/gmock.h' to be included before 'gmock.ptr.h'"
-#else
 #undef ON_CALL
 #define __GMOCK_VPTR_ON_CALL_0(obj, call) GMOCK_ON_CALL_IMPL_(obj, call)
 #define __GMOCK_VPTR_ON_CALL_1(obj, call)                                                  \
@@ -72,7 +65,6 @@
        &std::decay_t<decltype(obj)>::type::__GMOCK_VPTR_NAME call __GMOCK_VPTR_CALL call)) \
       .InternalDefaultActionSetAt(__FILE__, __LINE__, #obj, #call)
 #define ON_CALL(obj, call) __GMOCK_VPTR_CAT(__GMOCK_VPTR_ON_CALL_, __GMOCK_VPTR_IBP(call))(obj, call)
-#endif
 
 #if !defined(VPTR_SIZE)
 #define VPTR_SIZE 32

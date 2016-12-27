@@ -9,7 +9,7 @@ cmake_minimum_required(VERSION 2.8)
 project(gmock.vptr CXX)
 
 add_custom_target(style)
-add_custom_command(TARGET style COMMAND find ${CMAKE_CURRENT_LIST_DIR}/include ${CMAKE_CURRENT_LIST_DIR}/test -iname "*.h" -or -iname "*.cpp" | xargs clang-format -i)
+add_custom_command(TARGET style COMMAND find ${CMAKE_CURRENT_LIST_DIR}/benchmark  ${CMAKE_CURRENT_LIST_DIR}/include ${CMAKE_CURRENT_LIST_DIR}/test -iname "*.h" -or -iname "*.cpp" | xargs clang-format -i)
 
 find_program(MEMORYCHECK_COMMAND valgrind)
 if(MEMORYCHECK_COMMAND-NOTFOUND)
@@ -44,3 +44,7 @@ function(test test)
 endfunction()
 
 test(test/gmock.vptr)
+
+include_directories(benchmark)
+test(benchmark/gmock.vptr/test)
+test(benchmark/gmock/test)
