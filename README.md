@@ -13,7 +13,7 @@
 
 * Simple case
 
-Before | With GMock.Vptr
+| Before | With GMock.Vptr
 
 * Compile time
 
