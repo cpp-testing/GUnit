@@ -35,12 +35,6 @@ matrix:
         packages: ["clang-3.8", "libstdc++-5-dev", "valgrind", "gdb"]
         sources: ["ubuntu-toolchain-r-test", "llvm-toolchain-precise-3.8"]
   - os: linux
-    env: LIBCXX=ON CXX=clang++-3.8
-    addons:
-      apt:
-        packages: ["clang-3.8", "libstdc++-5-dev", "valgrind", "gdb"]
-        sources: ["ubuntu-toolchain-r-test", "llvm-toolchain-precise-3.8"]
-  - os: linux
     env: CXX=g++-5
     addons:
       apt:
@@ -61,11 +55,6 @@ matrix:
 
 install:
   - if [ "$TRAVIS_OS_NAME" == "osx" ] && [ "${BS}" == "cmake" ]; then (brew uninstall cmake; brew install cmake); fi
-  - if [ "${LIBCXX}" != "" ]; then (svn --quiet co http://llvm.org/svn/llvm-project/libcxx/trunk libcxx
-    && cd libcxx/lib && ./buildit && ln -f -s libc++.so.1.0 libc++.so.1)
-    && export CXXFLAGS="-stdlib=libc++ -I${TRAVIS_BUILD_DIR}/libcxx/include"
-    && export LDFLAGS="-L${TRAVIS_BUILD_DIR}/libcxx/lib -lc++"
-    && export LD_LIBRARY_PATH="${TRAVIS_BUILD_DIR}/libcxx/lib:$LD_LIBRARY_PATH"; fi
 
 script:
   - if [ "${CXX}" != "" ]; then (travis_wait mkdir build && cd build && cmake .. && make -j2 && ctest --output-on-failure); fi
