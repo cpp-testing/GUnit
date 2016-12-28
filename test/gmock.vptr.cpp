@@ -290,14 +290,14 @@ TEST(GMockVptr, ShouldHandleExceptions) {
 
 TEST(GMockVptr, ShouldHandleInterfaceWithDtorNotBeingAtTheBeginning) {
   using namespace testing;
-  StrictMock<GMock<interface_dtor>> m;
+  StrictGMock<interface_dtor> m;
   EXPECT_CALL(m, (get)(0)).Times(1);
   static_cast<interface_dtor&>(*m).get(0);
 }
 
 TEST(GMockVptr, ShouldHandleON_CALL) {
   using namespace testing;
-  NiceMock<GMock<interface>> m;
+  NiceGMock<interface> m;
   ON_CALL(m, (get)(_)).WillByDefault(Return(42));
   EXPECT_EQ(42, static_cast<interface&>(*m).get(0));
 }
