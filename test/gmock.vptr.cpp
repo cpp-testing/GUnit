@@ -45,7 +45,11 @@ struct interface2 : interface {
   virtual int f1(double) = 0;
 };
 
-struct arg {};
+struct arg {
+  int data = {};
+
+  bool operator==(const arg& rhs) const { return data == rhs.data; }
+};
 
 struct interface4 : interface {
   virtual void f2(arg) = 0;
@@ -166,6 +170,18 @@ TEST(GMockVptr, ShouldMockExtendedInterface) {
   i->foo(42);
   i->bar(1, "str");
   EXPECT_EQ(42, i->f1(2.0));
+}
+
+TEST(GMockVptr, ShouldMockExtendedInterfaceWithArg) {
+  using namespace testing;
+  GMock<interface4> m;
+
+  EXPECT_CALL(m, (get)(0)).WillOnce(Return(42));
+  EXPECT_CALL(m, (f2)(arg{42})).Times(1);
+
+  interface4& i = m;
+  EXPECT_EQ(42, i.get(0));
+  i.f2(arg{42});
 }
 
 TEST(GMockVptr, ShouldHandleMultipleCalls) {

@@ -44,6 +44,7 @@ function(test test)
 endfunction()
 
 test(test/gmock.vptr)
+test(example/example)
 
 include_directories(benchmark)
 test(benchmark/gmock.vptr/test)
