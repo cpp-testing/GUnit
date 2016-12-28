@@ -90,14 +90,22 @@ TEST(GMockVptr, ShouldWorkWithMacroDefinedMocks) {
   e.update();
 }
 
+TEST(GMockVptr, ShouldFailDueToUninterestingGetCall) {
+  using namespace testing;
+  StrictGMock<interface> mock;
+  EXPECT_CALL(mock, (get)()).WillOnce(Return(true)); // Comment to get an UNINTERESTING CALL
+  interface& i = mock;
+  i.get();
+}
+
 TEST(GMockVptr, ShouldNotCompileWhenMethodParametersDontMatch) {
   using namespace testing;
   GMock<interface> mock;
-  //EXPECT_CALL(mock, (get)(42)).WillOnce(Return(42)); // COMPILE ERROR
+  //EXPECT_CALL(mock, (get)(_, _)).WillOnce(Return(true)); // COMPILE ERROR
 }
 
 TEST(GMockVptr, ShouldNotCompileWhenGMockNotUsedWithBrackets) {
   using namespace testing;
   GMock<interface> mock;
-  //EXPECT_CALL(mock, get()).WillOnce(Return(42)); // COMPILE ERROR
+  //EXPECT_CALL(mock, get()).WillOnce(Return(false)); // COMPILE ERROR
 }
