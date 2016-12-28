@@ -122,7 +122,7 @@ TEST(GMockVptr, ShouldReturnFunctionOffset) {
 
 TEST(GMockVptr, ShouldBeConvertible) {
   using namespace testing;
-  mock<interface> m;
+  GMock<interface> m;
 
   {
     interface* i = m;
@@ -144,7 +144,7 @@ TEST(GMockVptr, ShouldBeConvertible) {
 
 TEST(GMockVptr, ShouldMockSimpleInterface) {
   using namespace testing;
-  mock<interface> m;
+  GMock<interface> m;
 
   EXPECT_CALL(m, (foo)(42)).Times(1);
   EXPECT_CALL(m, (foo)(12)).Times(0);
@@ -156,7 +156,7 @@ TEST(GMockVptr, ShouldMockSimpleInterface) {
 
 TEST(GMockVptr, ShouldMockExtendedInterface) {
   using namespace testing;
-  mock<interface2> m;
+  GMock<interface2> m;
   interface2* i = m;
 
   EXPECT_CALL(m, (foo)(42)).Times(1);
@@ -170,7 +170,7 @@ TEST(GMockVptr, ShouldMockExtendedInterface) {
 
 TEST(GMockVptr, ShouldHandleMultipleCalls) {
   using namespace testing;
-  mock<interface> m;
+  GMock<interface> m;
   interface& i = m;
 
   EXPECT_CALL(m, (get)(42)).Times(1);
@@ -194,7 +194,7 @@ TEST(GMockVptr, ShouldHandleMultipleCalls) {
 
 TEST(GMockVptr, ShouldMockVariadicFactory) {
   using namespace testing;
-  mock<ifactory<int, short, int>> m;
+  GMock<ifactory<int, short, int>> m;
   ifactory<int, short, int>* i = m;
 
   EXPECT_CALL(m, (create)(_, 3)).WillOnce(Return(42));
@@ -203,7 +203,7 @@ TEST(GMockVptr, ShouldMockVariadicFactory) {
 
 TEST(GMockVptr, ShouldMockVariadicFactories) {
   using namespace testing;
-  mock<ifactory<std::string, float>> m;
+  GMock<ifactory<std::string, float>> m;
   ifactory<std::string, float>* i = m;
 
   std::string str = "str";
@@ -213,7 +213,7 @@ TEST(GMockVptr, ShouldMockVariadicFactories) {
 
 TEST(GMockVptr, ShouldMockUsingUniquePtr) {
   using namespace testing;
-  auto m = std::make_unique<mock<interface>>();
+  auto m = std::make_unique<GMock<interface>>();
 
   EXPECT_CALL(*m, (foo)(42)).Times(1);
   EXPECT_CALL(*m, (foo)(12)).Times(0);
@@ -225,7 +225,7 @@ TEST(GMockVptr, ShouldMockUsingUniquePtr) {
 
 TEST(GMockVptr, ShouldMockUsingSharedPtr) {
   using namespace testing;
-  auto m = std::make_shared<mock<interface>>();
+  auto m = std::make_shared<GMock<interface>>();
 
   EXPECT_CALL(*m, (foo)(42)).Times(1);
   EXPECT_CALL(*m, (foo)(12)).Times(0);
@@ -237,7 +237,7 @@ TEST(GMockVptr, ShouldMockUsingSharedPtr) {
 
 TEST(GMockVptr, ShouldMockUsingConstInterface) {
   using namespace testing;
-  mock<interface> m;
+  GMock<interface> m;
 
   EXPECT_CALL(m, (bar)(_, "str"));
 
@@ -247,7 +247,7 @@ TEST(GMockVptr, ShouldMockUsingConstInterface) {
 
 TEST(GMockVptr, ShouldMockUsingConstPointer) {
   using namespace testing;
-  mock<interface> m;
+  GMock<interface> m;
 
   EXPECT_CALL(m, (bar)(_, "str"));
 
@@ -257,7 +257,7 @@ TEST(GMockVptr, ShouldMockUsingConstPointer) {
 
 TEST(GMockVptr, ShouldMockEmptyMethods) {
   using namespace testing;
-  mock<interface3> m;
+  GMock<interface3> m;
 
   EXPECT_CALL(m, (empty)()).Times(1);
 
@@ -267,7 +267,7 @@ TEST(GMockVptr, ShouldMockEmptyMethods) {
 TEST(GMockVptr, ShouldWorkTogetherWithGMock) {
   using namespace testing;
   gmock_interface gm;
-  mock<interface> m;
+  GMock<interface> m;
 
   EXPECT_CALL(m, (get)(42)).WillOnce(Return(87));
   EXPECT_CALL(gm, f(87)).Times(1);
@@ -279,7 +279,7 @@ TEST(GMockVptr, ShouldWorkTogetherWithGMock) {
 
 TEST(GMockVptr, ShouldHandleExceptions) {
   using namespace testing;
-  mock<interface> m;
+  GMock<interface> m;
   EXPECT_CALL(m, (foo)(42)).Times(1);
 
   throw_example e{m};
@@ -290,20 +290,20 @@ TEST(GMockVptr, ShouldHandleExceptions) {
 
 TEST(GMockVptr, ShouldHandleInterfaceWithDtorNotBeingAtTheBeginning) {
   using namespace testing;
-  StrictMock<mock<interface_dtor>> m;
+  StrictGMock<GMock<interface_dtor>> m;
   EXPECT_CALL(m, (get)(0)).Times(1);
   static_cast<interface_dtor&>(*m).get(0);
 }
 
 TEST(GMockVptr, ShouldHandleON_CALL) {
   using namespace testing;
-  NiceMock<mock<interface>> m;
+  NiceGMock<GMock<interface>> m;
   ON_CALL(m, (get)(_)).WillByDefault(Return(42));
   EXPECT_EQ(42, static_cast<interface&>(*m).get(0));
 }
 
 TEST(GMockVptr, ShouldHandleMissingExpectations) {
   using namespace testing;
-  NiceMock<mock<interface_dtor>> m;
+  NiceGMock<GMock<interface_dtor>> m;
   static_cast<interface_dtor&>(*m).get(0);
 }
