@@ -14,10 +14,6 @@
 #include <unordered_map>
 #include <stdexcept>
 
-#if !defined( VPTR_SIZE )
-#define VPTR_SIZE 16
-#endif
-
 namespace testing
 {
 namespace detail
@@ -75,18 +71,123 @@ inline auto vptr_offset( T f )
         virtual int f13() { return 13; }
         virtual int f14() { return 14; }
         virtual int f15() { return 15; }
+        virtual int f16() { return 16; }
+        virtual int f17() { return 17; }
+        virtual int f18() { return 18; }
+        virtual int f19() { return 19; }
+        virtual int f20() { return 20; }
+        virtual int f21() { return 21; }
+        virtual int f22() { return 22; }
+        virtual int f23() { return 23; }
+        virtual int f24() { return 24; }
+        virtual int f25() { return 25; }
+        virtual int f26() { return 26; }
+        virtual int f27() { return 27; }
+        virtual int f28() { return 28; }
+        virtual int f29() { return 29; }
+        virtual int f30() { return 30; }
+        virtual int f31() { return 31; }
+        virtual int f32() { return 32; }
+        virtual int f33() { return 33; }
+        virtual int f34() { return 34; }
+        virtual int f35() { return 35; }
+        virtual int f36() { return 36; }
+        virtual int f37() { return 37; }
+        virtual int f38() { return 38; }
+        virtual int f39() { return 39; }
+        virtual int f40() { return 40; }
+        virtual int f41() { return 41; }
+        virtual int f42() { return 42; }
+        virtual int f43() { return 43; }
+        virtual int f44() { return 44; }
+        virtual int f45() { return 45; }
+        virtual int f46() { return 46; }
+        virtual int f47() { return 47; }
+        virtual int f48() { return 48; }
+        virtual int f49() { return 49; }
+        virtual int f50() { return 50; }
+        virtual int f51() { return 51; }
+        virtual int f52() { return 52; }
+        virtual int f53() { return 53; }
+        virtual int f54() { return 54; }
+        virtual int f55() { return 55; }
+        virtual int f56() { return 56; }
+        virtual int f57() { return 57; }
+        virtual int f58() { return 58; }
+        virtual int f59() { return 59; }
+        virtual int f60() { return 60; }
+        virtual int f61() { return 61; }
+        virtual int f62() { return 62; }
+        virtual int f63() { return 63; }
+        virtual int f64() { return 64; }
+        virtual int f65() { return 65; }
+        virtual int f66() { return 66; }
+        virtual int f67() { return 67; }
+        virtual int f68() { return 68; }
+        virtual int f69() { return 69; }
+        virtual int f70() { return 70; }
+        virtual int f71() { return 71; }
+        virtual int f72() { return 72; }
+        virtual int f73() { return 73; }
+        virtual int f74() { return 74; }
+        virtual int f75() { return 75; }
+        virtual int f76() { return 76; }
+        virtual int f77() { return 77; }
+        virtual int f78() { return 78; }
+        virtual int f79() { return 79; }
+        virtual int f80() { return 80; }
+        virtual int f81() { return 81; }
+        virtual int f82() { return 82; }
+        virtual int f83() { return 83; }
+        virtual int f84() { return 84; }
+        virtual int f85() { return 85; }
+        virtual int f86() { return 86; }
+        virtual int f87() { return 87; }
+        virtual int f88() { return 88; }
+        virtual int f89() { return 89; }
+        virtual int f90() { return 90; }
+        virtual int f91() { return 91; }
+        virtual int f92() { return 92; }
+        virtual int f93() { return 93; }
+        virtual int f94() { return 94; }
+        virtual int f95() { return 95; }
+        virtual int f96() { return 96; }
+        virtual int f97() { return 97; }
+        virtual int f98() { return 98; }
+        virtual int f99() { return 99; }
+        virtual int f100() { return 100; }
+        virtual int f101() { return 101; }
+        virtual int f102() { return 102; }
+        virtual int f103() { return 103; }
+        virtual int f104() { return 104; }
+        virtual int f105() { return 105; }
+        virtual int f106() { return 106; }
+        virtual int f107() { return 107; }
+        virtual int f108() { return 108; }
+        virtual int f109() { return 109; }
+        virtual int f110() { return 110; }
+        virtual int f111() { return 111; }
+        virtual int f112() { return 112; }
+        virtual int f113() { return 113; }
+        virtual int f114() { return 114; }
+        virtual int f115() { return 115; }
+        virtual int f116() { return 116; }
+        virtual int f117() { return 117; }
+        virtual int f118() { return 118; }
+        virtual int f119() { return 119; }
+        virtual int f120() { return 120; }
+        virtual int f121() { return 121; }
+        virtual int f122() { return 122; }
+        virtual int f123() { return 123; }
+        virtual int f124() { return 124; }
+        virtual int f125() { return 125; }
+        virtual int f126() { return 126; }
+        virtual int f127() { return 127; }
+        virtual int f128() { return 128; }
         virtual ~vptr() = default;
     } _;
     int ( vptr::*ptr )() = (int ( vptr::* )())f;
-    const auto   offset  = ( _.*ptr )();
-
-    if ( offset > VPTR_SIZE )
-    {
-        throw std::runtime_error( "Too many virtual functions (VPTR_SIZE)! Consider using a Single "
-                                  "Responsibility Principle" );
-    }
-
-    return offset;
+    return ( _.*ptr )();
 }
 
 } // detail
@@ -99,22 +200,41 @@ class GMock
 
     unsigned char _[ sizeof( T ) ] = { 0 };
     void*         old_vptr         = nullptr;
-    void ( *vptr[ VPTR_SIZE ] )()  = { detail::union_cast<void ( * )()>( &GMock::unknown ),
-        detail::union_cast<void ( * )()>( &GMock::unknown ),
-        detail::union_cast<void ( * )()>( &GMock::unknown ),
-        detail::union_cast<void ( * )()>( &GMock::unknown ),
-        detail::union_cast<void ( * )()>( &GMock::unknown ),
-        detail::union_cast<void ( * )()>( &GMock::unknown ),
-        detail::union_cast<void ( * )()>( &GMock::unknown ),
-        detail::union_cast<void ( * )()>( &GMock::unknown ),
-        detail::union_cast<void ( * )()>( &GMock::unknown ),
-        detail::union_cast<void ( * )()>( &GMock::unknown ),
-        detail::union_cast<void ( * )()>( &GMock::unknown ),
-        detail::union_cast<void ( * )()>( &GMock::unknown ),
-        detail::union_cast<void ( * )()>( &GMock::unknown ),
-        detail::union_cast<void ( * )()>( &GMock::unknown ),
-        detail::union_cast<void ( * )()>( &GMock::unknown ),
-        detail::union_cast<void ( * )()>( &GMock::unknown ) };
+    void ( *vptr[ 128 ] )()        = { not_implemented(), not_implemented(), not_implemented(),
+        not_implemented(), not_implemented(), not_implemented(), not_implemented(),
+        not_implemented(), not_implemented(), not_implemented(), not_implemented(),
+        not_implemented(), not_implemented(), not_implemented(), not_implemented(),
+        not_implemented(), not_implemented(), not_implemented(), not_implemented(),
+        not_implemented(), not_implemented(), not_implemented(), not_implemented(),
+        not_implemented(), not_implemented(), not_implemented(), not_implemented(),
+        not_implemented(), not_implemented(), not_implemented(), not_implemented(),
+        not_implemented(), not_implemented(), not_implemented(), not_implemented(),
+        not_implemented(), not_implemented(), not_implemented(), not_implemented(),
+        not_implemented(), not_implemented(), not_implemented(), not_implemented(),
+        not_implemented(), not_implemented(), not_implemented(), not_implemented(),
+        not_implemented(), not_implemented(), not_implemented(), not_implemented(),
+        not_implemented(), not_implemented(), not_implemented(), not_implemented(),
+        not_implemented(), not_implemented(), not_implemented(), not_implemented(),
+        not_implemented(), not_implemented(), not_implemented(), not_implemented(),
+        not_implemented(), not_implemented(), not_implemented(), not_implemented(),
+        not_implemented(), not_implemented(), not_implemented(), not_implemented(),
+        not_implemented(), not_implemented(), not_implemented(), not_implemented(),
+        not_implemented(), not_implemented(), not_implemented(), not_implemented(),
+        not_implemented(), not_implemented(), not_implemented(), not_implemented(),
+        not_implemented(), not_implemented(), not_implemented(), not_implemented(),
+        not_implemented(), not_implemented(), not_implemented(), not_implemented(),
+        not_implemented(), not_implemented(), not_implemented(), not_implemented(),
+        not_implemented(), not_implemented(), not_implemented(), not_implemented(),
+        not_implemented(), not_implemented(), not_implemented(), not_implemented(),
+        not_implemented(), not_implemented(), not_implemented(), not_implemented(),
+        not_implemented(), not_implemented(), not_implemented(), not_implemented(),
+        not_implemented(), not_implemented(), not_implemented(), not_implemented(),
+        not_implemented(), not_implemented(), not_implemented(), not_implemented(),
+        not_implemented(), not_implemented(), not_implemented(), not_implemented(),
+        not_implemented(), not_implemented(), not_implemented(), not_implemented(),
+        not_implemented() };
+
+    auto not_implemented() { return detail::union_cast<void ( * )()>( &GMock::unknown ); }
 
     void* unknown()
     {
