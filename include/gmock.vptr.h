@@ -307,6 +307,12 @@ private:
     std::unordered_map<std::string, std::unique_ptr<internal::UntypedFunctionMockerBase>> fs;
 };
 
+template<class T>
+using StrictGMock = StrictMock<GMock<T>>;
+
+template<class T>
+using NiceGMock = NiceMock<GMock<T>>;
+
 } // testing
 
 #define __GMOCK_VPTR_COMMA() ,
