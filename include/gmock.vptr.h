@@ -183,7 +183,6 @@ inline auto vptr_offset( T f )
         virtual int f125() { return 125; }
         virtual int f126() { return 126; }
         virtual int f127() { return 127; }
-        virtual int f128() { return 128; }
         virtual ~vptr() = default;
     } _;
     int ( vptr::*ptr )() = (int ( vptr::* )())f;
