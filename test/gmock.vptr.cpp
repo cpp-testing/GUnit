@@ -129,11 +129,11 @@ TEST(GMockVptr, ShouldBeConvertible) {
   GMock<interface> m;
 
   {
-    interface* i = m;
+    interface* i = &m;
     (void)i;
   }
   {
-    const interface* i = m;
+    const interface* i = &m;
     (void)i;
   }
   {
@@ -161,7 +161,7 @@ TEST(GMockVptr, ShouldMockSimpleInterface) {
 TEST(GMockVptr, ShouldMockExtendedInterface) {
   using namespace testing;
   GMock<interface2> m;
-  interface2* i = m;
+  interface2* i = &m;
 
   EXPECT_CALL(m, (foo)(42)).Times(1);
   EXPECT_CALL(m, (bar)(_, "str"));
@@ -211,7 +211,7 @@ TEST(GMockVptr, ShouldHandleMultipleCalls) {
 TEST(GMockVptr, ShouldMockVariadicFactory) {
   using namespace testing;
   GMock<ifactory<int, short, int>> m;
-  ifactory<int, short, int>* i = m;
+  ifactory<int, short, int>* i = &m;
 
   EXPECT_CALL(m, (create)(_, 3)).WillOnce(Return(42));
   EXPECT_EQ(42, i->create(1, 3));
@@ -220,7 +220,7 @@ TEST(GMockVptr, ShouldMockVariadicFactory) {
 TEST(GMockVptr, ShouldMockVariadicFactories) {
   using namespace testing;
   GMock<ifactory<std::string, float>> m;
-  ifactory<std::string, float>* i = m;
+  ifactory<std::string, float>* i = &m;
 
   std::string str = "str";
   EXPECT_CALL(m, (create)(8.0)).WillOnce(Return(str));
@@ -267,7 +267,7 @@ TEST(GMockVptr, ShouldMockUsingConstPointer) {
 
   EXPECT_CALL(m, (bar)(_, "str"));
 
-  cpexample e{m};
+  cpexample e{&m};
   e.update();
 }
 
@@ -277,7 +277,7 @@ TEST(GMockVptr, ShouldMockEmptyMethods) {
 
   EXPECT_CALL(m, (empty)()).Times(1);
 
-  static_cast<const interface3*>(m)->empty();
+  static_cast<const interface3*>(&m)->empty();
 }
 
 TEST(GMockVptr, ShouldWorkTogetherWithGMock) {
@@ -288,7 +288,7 @@ TEST(GMockVptr, ShouldWorkTogetherWithGMock) {
   EXPECT_CALL(m, (get)(42)).WillOnce(Return(87));
   EXPECT_CALL(gm, f(87)).Times(1);
 
-  auto e = gmock_example{gm, m};
+  auto e = gmock_example{gm, &m};
 
   e.test();
 }
@@ -308,18 +308,18 @@ TEST(GMockVptr, ShouldHandleInterfaceWithDtorNotBeingAtTheBeginning) {
   using namespace testing;
   StrictGMock<interface_dtor> m;
   EXPECT_CALL(m, (get)(0)).Times(1);
-  static_cast<interface_dtor&>(*m).get(0);
+  static_cast<interface_dtor&>(m).get(0);
 }
 
 TEST(GMockVptr, ShouldHandleON_CALL) {
   using namespace testing;
   NiceGMock<interface> m;
   ON_CALL(m, (get)(_)).WillByDefault(Return(42));
-  EXPECT_EQ(42, static_cast<interface&>(*m).get(0));
+  EXPECT_EQ(42, static_cast<interface&>(m).get(0));
 }
 
 TEST(GMockVptr, ShouldHandleMissingExpectations) {
   using namespace testing;
   NiceMock<GMock<interface_dtor>> m;
-  static_cast<interface_dtor&>(*m).get(0);
+  static_cast<interface_dtor&>(m).get(0);
 }

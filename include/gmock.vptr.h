@@ -268,7 +268,7 @@ class GMock {
     return gmock_call_impl<TName, R, TArgs...>(detail::vptr_offset(f), args...);
   }
 
-  operator T*() { return reinterpret_cast<T*>(this); }
+  T* operator&() { return reinterpret_cast<T*>(this); }
   operator T&() { return reinterpret_cast<T&>(*this); }
 
  private:
