@@ -269,6 +269,7 @@ class GMock {
   }
 
   T* operator&() { return reinterpret_cast<T*>(this); }
+  operator T*() { return reinterpret_cast<T*>(this); }
   operator T&() { return reinterpret_cast<T&>(*this); }
 
  private:
@@ -282,6 +283,16 @@ template <class T>
 using NiceGMock = NiceMock<GMock<T>>;
 
 }  // testing
+
+namespace std {
+
+//template<class T, class TDeleter>
+//auto move(unique_ptr<::testing::GMock<T>, TDeleter>& object) {
+  //auto* i = object.get();
+  //return unique_ptr<T>(*i);
+//}
+
+}
 
 #define __GMOCK_VPTR_COMMA() ,
 #define __GMOCK_VPTR_IGNORE(...)

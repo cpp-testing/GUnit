@@ -98,6 +98,16 @@ class cpexample {
   const interface* i = nullptr;
 };
 
+class upexample {
+ public:
+  explicit upexample(std::unique_ptr<interface> i) : i(std::move(i)) {}
+
+  void update() { i->bar(1, "str"); }
+
+ private:
+  std::unique_ptr<interface> i;
+};
+
 class throw_example {
  public:
   throw_example(interface& i) : i(i) {}
@@ -236,6 +246,17 @@ TEST(GMockVptr, ShouldMockUsingUniquePtr) {
   EXPECT_CALL(*m, (bar)(_, "str"));
 
   example e{0, *m};
+  e.update();
+}
+
+TEST(GMockVptr, ShouldMockUsingAndPassingUniquePtr) {
+  using namespace testing;
+  auto m = std::make_unique<GMock<interface>>();
+  auto* i = m.get();
+
+  EXPECT_CALL(*i, (bar)(_, "str"));
+
+  upexample e{std::move(m)};
   e.update();
 }
 
