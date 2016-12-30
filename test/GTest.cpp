@@ -7,12 +7,53 @@
 //
 #include "GTest.h"
 
+TEST(GTest, ShouldCompareTypeId) {
+  using namespace testing::detail;
+  EXPECT_TRUE(type_id<int>() == type_id<int>());
+  EXPECT_TRUE(type_id<const int>() == type_id<int>());
+  EXPECT_TRUE(type_id<volatile int>() == type_id<int>());
+  EXPECT_TRUE(type_id<const int&>() == type_id<const int&>());
+  EXPECT_FALSE(type_id<const int&>() == type_id<int&>());
+  EXPECT_FALSE(type_id<volatile int* const>() == type_id<int>());
+  EXPECT_FALSE(type_id<int&>() == type_id<int>());
+  EXPECT_FALSE(type_id<char>() == type_id<int>());
+}
+
 TEST(GTest, ShouldReturnTrueWhenTupleContainsType) {
-  static_assert(!testing::detail::contains<int, std::tuple<>>::value, "");
-  static_assert(!testing::detail::contains<int&, std::tuple<>>::value, "");
-  static_assert(!testing::detail::contains<int, std::tuple<float, double>>::value, "");
-  static_assert(testing::detail::contains<int, std::tuple<int, double>>::value, "");
-  static_assert(testing::detail::contains<int, std::tuple<int, double, int>>::value, "");
+  using namespace testing::detail;
+  static_assert(!contains<int, std::tuple<>>::value, "");
+  static_assert(!contains<int&, std::tuple<>>::value, "");
+  static_assert(!contains<int, std::tuple<float, double>>::value, "");
+  static_assert(contains<int, std::tuple<int, double>>::value, "");
+  static_assert(contains<int, std::tuple<int, double, int>>::value, "");
+}
+
+TEST(GTest, ShouldReturnCtorSize) {
+  using namespace testing::detail;
+
+  /*  {*/
+  // struct c { c() {} };
+  // static_assert(0 == ctor_size<c>::value, "");
+  //}
+
+  //{
+  // struct c { c(int&) {} };
+  // static_assert(1 == ctor_size<c>::value, "");
+  /*}*/
+
+  {
+    struct c {
+      c(int&, int*) {}
+    };
+    static_assert(2 == ctor_size<c>::value, "");
+  }
+
+  {
+    struct c {
+      c(int, int&, int) {}
+    };
+    static_assert(3 == ctor_size<c>::value, "");
+  }
 }
 
 struct interface {
@@ -76,96 +117,20 @@ class example_data_ref {
   int data2 = {};
 };
 
-// using Test = testing::GTest<example>;
+using Test = testing::GTest<example>;
 
-// TEST_F(Test, ShoudlMake) {
-// using namespace testing;
-// EXPECT_CALL(mock<interface>(), (foo)(42)).Times(1);
-// EXPECT_CALL(mock<interface>(), (bar)(_, "str"));
-
-// sut->update();
-//}
-
-// TEST_F(Test, ShouldOverrideSutAndMocks) {
-// using namespace testing;
-// std::tie(sut, mocks) = make<example>([>2, 1<]);
-
-// EXPECT_CALL(mock<interface>(), (foo)(42)).Times(1);
-// EXPECT_CALL(mock<interface>(), (bar)(_, "str"));
-
-// sut->update();
-//}
-
-// using UninitializedTest = testing::GTest<example, testing::uninitialized>;
-
-// TEST_F(UninitializedTest, ShoudlNotCreateSUTAndMocks) {
-// using namespace testing;
-
-// EXPECT_TRUE(nullptr == sut.get());
-// EXPECT_TRUE(mocks.empty());
-
-// std::tie(sut, mocks) = make<example>();
-
-// ASSERT_TRUE(nullptr != sut.get());
-// EXPECT_EQ(1u, mocks.size());
-
-// EXPECT_CALL(mock<interface>(), (foo)(42)).Times(1);
-// EXPECT_CALL(mock<interface>(), (bar)(_, "str"));
-
-// sut->update();
-//}
-
-// struct CtorTest : testing::GTest<example> {
-// CtorTest() : { initialize(77)  }
-//};
-
-// TEST_F(CtorTest, ShoudlPassValueIntoExampleCtor) {
-// using namespace testing;
-
-// ASSERT_TRUE(nullptr != sut.get());
-// EXPECT_EQ(1u, mocks.size());
-// EXPECT_EQ(77, sut->get_data());
-
-// EXPECT_CALL(mock<interface>(), (foo)(42)).Times(1);
-// EXPECT_CALL(mock<interface>(), (bar)(_, "str"));
-
-// sut->update();
-//}
-
-// struct CtorMultipleTest : testing::GTest<example_data> {
-// CtorMultipleTest() { initialize(77, 22); }
-//};
-
-// TEST_F(CtorMultipleTest, ShoudlPassMultipleValuesIntoExampleCtor) {
-// using namespace testing;
-
-// ASSERT_TRUE(nullptr != sut.get());
-// EXPECT_EQ(1u, mocks.size());
-// EXPECT_EQ(77, sut->get_data1());
-// EXPECT_EQ(22, sut->get_data2());
-
-// EXPECT_CALL(mock<interface>(), (foo)(42)).Times(1);
-// EXPECT_CALL(mock<interface>(), (bar)(_, "str"));
-
-// sut->update();
-//}
-
-struct CtorMultiplePlusRefTest : testing::GTest<example_data_ref, testing::uninitialized> {
-  CtorMultiplePlusRefTest() { make_<example_data_ref>(77, i, 22); }
-  int i = 42;
-};
-
-TEST_F(CtorMultiplePlusRefTest, ShoudlPassMultipleValuesIntoExampleCtor) {
+TEST_F(Test, ShouldMakeExample) {
   using namespace testing;
+  EXPECT_CALL(mock<interface>(), (foo)(42)).Times(1);
+  EXPECT_CALL(mock<interface>(), (bar)(_, "str"));
 
-  std::tie(sut, mocks) = make<example_data_ref>(77, 22);
+  sut->update();
+}
 
-  ASSERT_TRUE(nullptr != sut.get());
-  EXPECT_EQ(1u, mocks.size());
-  EXPECT_EQ(77, sut->get_data1());
-  EXPECT_EQ(22, sut->get_data2());
-  EXPECT_EQ(i, sut->get_ref());
-  // EXPECT_EQ(&i, &sut->get_ref());
+TEST_F(Test, ShouldOverrideSutAndMocks) {
+  using namespace testing;
+  std::tie(sut, mocks) = Make<example>(123);
+  EXPECT_EQ(123, sut->get_data());
 
   EXPECT_CALL(mock<interface>(), (foo)(42)).Times(1);
   EXPECT_CALL(mock<interface>(), (bar)(_, "str"));
@@ -173,5 +138,74 @@ TEST_F(CtorMultiplePlusRefTest, ShoudlPassMultipleValuesIntoExampleCtor) {
   sut->update();
 }
 
-// interface unique_ptr, shraed_ptr
-// int, blah&, int
+using UninitializedTest = testing::GTest<example>;
+
+TEST_F(UninitializedTest, ShoudlNotCreateSUTAndMocks) {
+  using namespace testing;
+
+  std::tie(sut, mocks) = Make<example>();
+
+  ASSERT_TRUE(nullptr != sut.get());
+  EXPECT_EQ(1u, mocks.size());
+
+  EXPECT_CALL(mock<interface>(), (foo)(42)).Times(1);
+  EXPECT_CALL(mock<interface>(), (bar)(_, "str"));
+
+  sut->update();
+}
+
+struct CtorTest : testing::GTest<example> {
+  CtorTest() { std::tie(sut, mocks) = testing::Make<example>(77); }
+};
+
+TEST_F(CtorTest, ShoudlPassValueIntoExampleCtor) {
+  using namespace testing;
+
+  ASSERT_TRUE(nullptr != sut.get());
+  EXPECT_EQ(1u, mocks.size());
+  EXPECT_EQ(77, sut->get_data());
+
+  EXPECT_CALL(mock<interface>(), (foo)(42)).Times(1);
+  EXPECT_CALL(mock<interface>(), (bar)(_, "str"));
+
+  sut->update();
+}
+
+struct CtorMultipleTest : testing::GTest<example_data> {
+  CtorMultipleTest() { std::tie(sut, mocks) = testing::Make<example_data>(77, 22); }
+};
+
+TEST_F(CtorMultipleTest, ShoudlPassMultipleValuesIntoExampleCtor) {
+  using namespace testing;
+
+  ASSERT_TRUE(nullptr != sut.get());
+  EXPECT_EQ(1u, mocks.size());
+  EXPECT_EQ(77, sut->get_data1());
+  EXPECT_EQ(22, sut->get_data2());
+
+  EXPECT_CALL(mock<interface>(), (foo)(42)).Times(1);
+  EXPECT_CALL(mock<interface>(), (bar)(_, "str"));
+
+  sut->update();
+}
+
+struct CtorMultiplePlusRefTest : testing::GTest<example_data_ref> {
+  CtorMultiplePlusRefTest() { std::tie(sut, mocks) = testing::Make<example_data_ref>(77, i, 22); }
+  int i = 42;
+};
+
+TEST_F(CtorMultiplePlusRefTest, ShoudlPassMultipleValuesIntoExampleCtor) {
+  using namespace testing;
+
+  ASSERT_TRUE(nullptr != sut.get());
+  EXPECT_EQ(1u, mocks.size());
+  EXPECT_EQ(77, sut->get_data1());
+  EXPECT_EQ(22, sut->get_data2());
+  EXPECT_EQ(i, sut->get_ref());
+  EXPECT_EQ(&i, &sut->get_ref());
+
+  EXPECT_CALL(mock<interface>(), (foo)(42)).Times(1);
+  EXPECT_CALL(mock<interface>(), (bar)(_, "str"));
+
+  sut->update();
+}

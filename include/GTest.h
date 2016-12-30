@@ -23,6 +23,9 @@
 namespace testing {
 inline namespace v1 {
 namespace detail {
+
+struct none {};
+
 template <class T>
 struct type {
   static void id() {}
@@ -30,7 +33,7 @@ struct type {
 
 template <class T>
 auto type_id() {
-  return reinterpret_cast<std::size_t>(&type<T>::id);
+  return reinterpret_cast<std::size_t>(&type<std::remove_cv_t<T>>::id);
 }
 
 template <class, class>
@@ -42,74 +45,81 @@ struct contains<T, std::tuple<TArgs...>>
                                                  std::integer_sequence<bool, std::is_same<T, TArgs>::value..., false>>::value> {
 };
 
-struct none {};
+template <class, class>
+struct is_copy_ctor__ : std::false_type {};
+
+template <class T>
+struct is_copy_ctor__<T, T> : std::true_type {};
+
+#if defined(__GCC__) || defined(__MSVC__)  // __pph__
+template <class T>
+struct is_copy_ctor__<T, const T> : std::true_type {};
+#endif  // __pph__
 
 template <class TParent, class TArgs = none>
 struct any_type {
-  template <class T, GTEST_REQUIRES(std::is_polymorphic<std::decay_t<T>>::value)>
-  operator T() {
-    ++arg_nums[type_id<T>()];
-    auto mock = std::make_shared<GMock<std::decay_t<T>>>();
-    mocks[type_id<std::decay_t<T>>()] = mock;
-    return *mock;
-  }
-
-  template <class T, GTEST_REQUIRES(std::is_polymorphic<std::decay_t<T>>::value)>
-  operator T&() const {
-    ++arg_nums[type_id<T&>()];
-    auto mock = std::make_shared<GMock<std::decay_t<T>>>();
-    mocks[type_id<std::decay_t<T>>()] = mock;
-    return *mock;
-  }
-
-  template <class T, GTEST_REQUIRES(std::is_polymorphic<std::decay_t<T>>::value)>
-  operator const T&() const {
-    ++arg_nums[type_id<const T&>()];
-    auto mock = std::make_shared<GMock<std::decay_t<T>>>();
-    mocks[type_id<std::decay_t<T>>()] = mock;
-    return *mock;
-  }
-
   template <class T, std::size_t N>
-  T get(std::true_type, std::integral_constant<std::size_t, N>, std::integral_constant<std::size_t, N>) {
-    // static_assert(std::is_same<T, void>::value, "dypa");
+  T get(std::size_t&, std::true_type, std::integral_constant<std::size_t, N>, std::integral_constant<std::size_t, N>) {
     static std::decay_t<T> type;  // default
     return type;
   }
 
   template <class T, std::size_t Max, std::size_t N>
-  T get(std::true_type v, std::integral_constant<std::size_t, Max> max, std::integral_constant<std::size_t, N>) {
-    if (N == arg_nums[type_id<T>()]) {
+  T get(std::size_t& elem, std::true_type v, std::integral_constant<std::size_t, Max> max,
+        std::integral_constant<std::size_t, N>) {
+    if (type_id<T>() == type_id<std::tuple_element_t<N, TArgs>>()) ++elem;
+    if (elem - 1 == arg_nums[type_id<T>()]) {
       ++arg_nums[type_id<T>()];
-      std::cout << "GET: " << N << " " << std::get<N>(args) << std::endl;
       return std::get<N>(args);
     }
-    return get<T>(v, max, std::integral_constant<std::size_t, N + 1>{});
+    return get<T>(elem, v, max, std::integral_constant<std::size_t, N + 1>{});
   }
 
   template <class T>
-  T get(std::false_type, ...) {
-    ++arg_nums[type_id<T>()];
-    return {};
+  T get(std::size_t&, std::false_type, ...) {
+    static std::decay_t<T> type;  // default
+    return type;
   }
 
-  template <class T, GTEST_REQUIRES(!std::is_polymorphic<std::decay_t<T>>::value)>
+  template <class T, GTEST_REQUIRES(!is_copy_ctor__<TParent, T>::value && std::is_polymorphic<std::decay_t<T>>::value)>
   operator T() {
-    std::cout << __PRETTY_FUNCTION__ << std::endl;
-    return get<T>(std::integral_constant<bool, contains<T, TArgs>::value>{}, std::tuple_size<TArgs>{},
+    auto mock = std::make_shared<GMock<std::decay_t<T>>>();
+    mocks[type_id<std::decay_t<T>>()] = mock;
+    return *mock;
+  }
+
+  template <class T, GTEST_REQUIRES(!is_copy_ctor__<TParent, T>::value && std::is_polymorphic<std::decay_t<T>>::value)>
+  operator T&() const {
+    auto mock = std::make_shared<GMock<std::decay_t<T>>>();
+    mocks[type_id<std::decay_t<T>>()] = mock;
+    return *mock;
+  }
+
+  template <class T, GTEST_REQUIRES(!is_copy_ctor__<TParent, T>::value && std::is_polymorphic<std::decay_t<T>>::value)>
+  operator const T&() const {
+    auto mock = std::make_shared<GMock<std::decay_t<T>>>();
+    mocks[type_id<std::decay_t<T>>()] = mock;
+    return *mock;
+  }
+
+  template <class T, GTEST_REQUIRES(!is_copy_ctor__<TParent, T>::value && !std::is_polymorphic<std::decay_t<T>>::value)>
+  operator T() {
+    std::size_t elem = {};
+    return get<T>(elem, std::integral_constant<bool, contains<T, TArgs>::value>{}, std::tuple_size<TArgs>{},
                   std::integral_constant<std::size_t, 0>{});
   }
 
-  template <class T, GTEST_REQUIRES(!std::is_polymorphic<std::decay_t<T>>::value)>
+  template <class T, GTEST_REQUIRES(!is_copy_ctor__<TParent, T>::value && !std::is_polymorphic<std::decay_t<T>>::value)>
   operator T&() const {
-    std::cout << __PRETTY_FUNCTION__ << std::endl;
-    return const_cast<any_type*>(this)->get<T&>(std::integral_constant<bool, contains<T&, TArgs>::value>{},
+    std::size_t elem = {};
+    return const_cast<any_type*>(this)->get<T&>(elem, std::integral_constant<bool, contains<T&, TArgs>::value>{},
                                                 std::tuple_size<TArgs>{}, std::integral_constant<std::size_t, 0>{});
   }
 
-  template <class T, GTEST_REQUIRES(!std::is_polymorphic<std::decay_t<T>>::value)>
+  template <class T, GTEST_REQUIRES(!is_copy_ctor__<TParent, T>::value && !std::is_polymorphic<std::decay_t<T>>::value)>
   operator const T&() const {
-    return get<const T&>(std::integral_constant<bool, contains<const T&, TArgs>::value>{}, std::tuple_size<TArgs>{},
+    std::size_t elem = {};
+    return get<const T&>(elem, std::integral_constant<bool, contains<const T&, TArgs>::value>{}, std::tuple_size<TArgs>{},
                          std::integral_constant<std::size_t, 0>{});
   }
 
@@ -128,67 +138,45 @@ template <class T>
 struct ctor_size<T, std::index_sequence<>> : std::integral_constant<std::size_t, 0> {};
 
 template <class T, std::size_t... Ns>
-struct ctor_size<T, std::index_sequence<Ns...>>
-    : std::conditional_t<std::is_constructible<T, any_type_t<Ns, T>...>::value,
-                         std::integral_constant<std::size_t, sizeof...(Ns)>,
-                         ctor_size<T, std::make_index_sequence<sizeof...(Ns) - 1>>> {};
+struct ctor_size<T, std::index_sequence<Ns...>> : std::conditional_t<std::is_constructible<T, any_type_t<Ns, T>...>::value,
+                                                                     std::integral_constant<std::size_t, sizeof...(Ns)>,
+                                                                     ctor_size<T, std::make_index_sequence<sizeof...(Ns)-1>>> {
+};
 
 template <class T, class... TArgs, std::size_t... Ns>
-auto create(std::unordered_map<std::size_t, std::shared_ptr<void>>& mocks, std::tuple<TArgs...>& args,
-            std::index_sequence<Ns...>) {
+auto MakeImpl(std::unordered_map<std::size_t, std::shared_ptr<void>>& mocks, std::tuple<TArgs...>& args,
+              std::index_sequence<Ns...>) {
   std::unordered_map<std::size_t, std::size_t> arg_nums;
   return std::make_unique<T>(any_type_t<Ns, T, std::tuple<TArgs...>>{mocks, args, arg_nums}...);
 }
 
 template <class T, class... TArgs>
-auto make(std::tuple<TArgs...>& args) {
+auto Make(std::tuple<TArgs...>& args) {
   std::unordered_map<std::size_t, std::shared_ptr<void>> mocks;
-  return std::make_pair(create<T>(mocks, args, std::make_index_sequence<ctor_size<T>::value>{}), mocks);
+  return std::make_pair(MakeImpl<T>(mocks, args, std::make_index_sequence<ctor_size<T>::value>{}), mocks);
+}
+
+}  // detail
+
+template <class T, class... TArgs>
+auto Make(TArgs&&... args) {
+  std::tuple<TArgs...> tuple{std::forward<TArgs>(args)...};
+  return detail::Make<T>(tuple);
 }
 
 template <class T>
-class GTestImpl : public Test {
+class GTest : public Test {
  public:
-  template <class U, class... TArgs>
-  void make_(TArgs&&... args) {
-    static_assert(std::is_same<T, U>::value, "");
-    std::tuple<TArgs...> tuple{std::forward<TArgs>(args)...};
-    std::tie(sut, mocks) = make<T>(tuple);
-  }
+  GTest() { std::tie(sut, mocks) = Make<T>(); }
 
   template <class TMock>
   GMock<TMock>& mock() {
-    return *static_cast<GMock<TMock>*>(mocks[type_id<TMock>()].get());
+    return *static_cast<GMock<TMock>*>(mocks[detail::type_id<TMock>()].get());
   }
 
  protected:
   std::unique_ptr<T> sut;
   std::unordered_map<std::size_t, std::shared_ptr<void>> mocks;
-};
-
-}  // detail
-
-template <class T, class... TArgs>
-auto make(TArgs&&... args) {
-  using swallow = int[];
-  (void)swallow{0, (std::cout << args << std::endl, 0)...};
-  std::tuple<TArgs...> tuple{std::forward<TArgs>(args)...};
-  std::cout << "DUA: " << std::get<1>(tuple) << std::endl;
-  return detail::make<T>(tuple);
-}
-
-using uninitialized = std::false_type;
-
-template <class T, class TInitialized = std::true_type>
-class GTest : public detail::GTestImpl<T> {
- public:
-  GTest() { std::tie(detail::GTestImpl<T>::sut, detail::GTestImpl<T>::mocks) = make<T>(); }
-};
-
-template <class T>
-class GTest<T, uninitialized> : public detail::GTestImpl<T> {
- public:
-  GTest() = default;
 };
 
 }  // v1
