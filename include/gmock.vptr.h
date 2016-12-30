@@ -8,13 +8,139 @@
 #pragma once
 
 #include <gmock/gmock.h>
+#include <gtest/gtest.h>  //TODO split into 2 files
+//#include <libunwind.h>
 #include <memory>
 #include <string>
+#include <tuple>
 #include <type_traits>
 #include <unordered_map>
 
+#include <cxxabi.h>
+#include <execinfo.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+#define __REQUIRES(...) typename std::enable_if<__VA_ARGS__, int>::type
+
+/** Print a demangled stack backtrace of the caller function to FILE* out. */
+static inline void print_stacktrace(FILE* out = stderr, unsigned int max_frames = 63) {
+  fprintf(out, "stack trace:\n");
+
+  // storage array for stack trace address data
+  void* addrlist = new void*[max_frames + 1];
+
+  // retrieve current stack addresses
+  int addrlen = backtrace((void**)addrlist, sizeof(addrlist) / sizeof(void*));
+
+  if (addrlen == 0) {
+    fprintf(out, "  <empty, possibly corrupt>\n");
+    return;
+  }
+
+  // resolve addresses into strings containing "filename(function+address)",
+  // this array must be free()-ed
+  char** symbollist = backtrace_symbols((void* const*)addrlist, addrlen);
+
+  // allocate string which will be filled with the demangled function name
+  size_t funcnamesize = 256;
+  char* funcname = (char*)malloc(funcnamesize);
+
+  // iterate over the returned symbol lines. skip the first, it is the
+  // address of this function.
+  for (int i = 1; i < addrlen; i++) {
+    char *begin_name = 0, *begin_offset = 0, *end_offset = 0;
+
+    // find parentheses and +address offset surrounding the mangled name:
+    // ./module(function+0x15c) [0x8048a6d]
+    for (char* p = symbollist[i]; *p; ++p) {
+      if (*p == '(')
+        begin_name = p;
+      else if (*p == '+')
+        begin_offset = p;
+      else if (*p == ')' && begin_offset) {
+        end_offset = p;
+        break;
+      }
+    }
+
+    if (begin_name && begin_offset && end_offset && begin_name < begin_offset) {
+      *begin_name++ = '\0';
+      *begin_offset++ = '\0';
+      *end_offset = '\0';
+
+      // mangled name is now in [begin_name, begin_offset) and caller
+      // offset in [begin_offset, end_offset). now apply
+      // __cxa_demangle():
+
+      int status;
+      char* ret = abi::__cxa_demangle(begin_name, funcname, &funcnamesize, &status);
+      if (status == 0) {
+        funcname = ret;  // use possibly realloc()-ed string
+        fprintf(out, "  %s : %s+%s\n", symbollist[i], funcname, begin_offset);
+      } else {
+        // demangling failed. Output function name as a C function with
+        // no arguments.
+        fprintf(out, "  %s : %s()+%s\n", symbollist[i], begin_name, begin_offset);
+      }
+    } else {
+      // couldn't parse the line? print the whole line.
+      fprintf(out, "  %s\n", symbollist[i]);
+    }
+  }
+
+  free(funcname);
+  free(symbollist);
+}
+
 namespace testing {
+inline namespace v1 {
+template <class>
+class GMock;
+
 namespace detail {
+
+template <typename T>
+struct type {
+  static void id() {}
+};
+
+template <typename T>
+std::size_t type_id() {
+  return reinterpret_cast<std::size_t>(&type<T>::id);
+}
+
+template <class T, class... TArgs>
+decltype(void(T{std::declval<TArgs>()...}), std::true_type{}) test_is_braces_constructible(int);
+template <class, class...>
+std::false_type test_is_braces_constructible(...);
+template <class T, class... TArgs>
+using is_braces_constructible = decltype(test_is_braces_constructible<T, TArgs...>(0));
+template <class T, class... TArgs>
+using is_braces_constructible_t = typename is_braces_constructible<T, TArgs...>::type;
+
+template <class TParent>
+struct any_type {
+  template <class T, __REQUIRES(std::is_polymorphic<std::decay_t<T>>::value) = 0>
+  operator T&() {
+    auto mock = std::make_shared<GMock<std::decay_t<T>>>();
+    mocks[type_id<std::decay_t<T>>()] = mock;
+    return *mock;
+  }
+
+  template <class T, __REQUIRES(!std::is_polymorphic<T>::value) = 0>
+  operator T() {
+    return {};
+  }
+
+  std::unordered_map<std::size_t, std::shared_ptr<void>>& mocks;
+};
+
+template <class T>
+auto make_impl() {
+  std::unordered_map<std::size_t, std::shared_ptr<void>> mocks;
+  return std::make_pair(std::make_unique<T>(any_type<T>{mocks}, any_type<T>{mocks}), mocks);
+}
 
 template <class T>
 struct identity {
@@ -282,16 +408,44 @@ using StrictGMock = StrictMock<GMock<T>>;
 template <class T>
 using NiceGMock = NiceMock<GMock<T>>;
 
+template <class T, class... TArgs>
+auto make(TArgs&&... args) {
+  return detail::make_impl<T>(/*std::make_tuple(std::forward<TArgs>(args)...)*/);
+}
+
+struct uninitialized {};
+
+template <class T>
+struct GTest : public Test {
+  std::unique_ptr<T> sut;
+  std::unordered_map<std::size_t, std::shared_ptr<void>> mocks;
+
+  GTest() { std::tie(sut, mocks) = make<T>(); }
+
+  explicit GTest(uninitialized) {}
+
+  // template <class... TArgs>
+  // explicit GTest(TArgs...) {
+  // std::tie(sut, mocks) = make<T>(args...);
+  //}
+
+  template <class TMock>
+  GMock<TMock>& mock() {
+    return *static_cast<GMock<TMock>*>(mocks[detail::type_id<TMock>()].get());
+  }
+};
+
+}  // v1
 }  // testing
 
 namespace std {
 
-//template<class T, class TDeleter>
-//auto move(unique_ptr<::testing::GMock<T>, TDeleter>& object) {
-  //auto* i = object.get();
-  //return unique_ptr<T>(*i);
-//}
-
+template <class T, class TDeleter>
+auto move(unique_ptr<::testing::GMock<T>, TDeleter>& object) {
+  auto* i = object.get();
+  return unique_ptr<T>(*i);
+}
+// static_pointer_cast for shraed_ptr
 }
 
 #define __GMOCK_VPTR_COMMA() ,

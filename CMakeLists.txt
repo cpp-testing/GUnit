@@ -24,10 +24,11 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wextra")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic-errors")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -rdynamic")
 
 enable_testing()
 
-add_subdirectory(libs/googletest)
+add_subdirectory(libs/googletest/gmock)
 
 include_directories(include)
 include_directories(${gtest_SOURCE_DIR}/include)

@@ -258,6 +258,7 @@ TEST(GMockVptr, ShouldMockUsingAndPassingUniquePtr) {
 
   upexample e{std::move(m)};
   e.update();
+  // uninterested dtor call
 }
 
 TEST(GMockVptr, ShouldMockUsingSharedPtr) {
@@ -343,4 +344,29 @@ TEST(GMockVptr, ShouldHandleMissingExpectations) {
   using namespace testing;
   NiceMock<GMock<interface_dtor>> m;
   static_cast<interface_dtor&>(m).get(0);
+}
+
+// auto[sut, mocks] = make<T>();
+// using MyTest = testing::GTest<example>;
+struct MyTest : testing::GTest<example> {
+  // MyTest() : testing::GTest<example>(uninitialized{}) {}
+  // MyTest() : testing::GTest<example>(2, 3) {}
+};
+
+TEST_F(MyTest, ShoudlMake) {
+  using namespace testing;
+  EXPECT_CALL(mock<interface>(), (foo)(42)).Times(1);
+  EXPECT_CALL(mock<interface>(), (bar)(_, "str"));
+
+  sut->update();
+}
+
+TEST_F(MyTest, ShoudlMakeCustom) {
+  using namespace testing;
+  std::tie(sut, mocks) = make<example>(/*2, 1*/);
+}
+
+TEST_F(MyTest, ShoudlMakeCpp17) {
+  // auto [sut, mocks] = make<example>();
+  //...
 }
