@@ -5,7 +5,7 @@
 // (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 //
-#include "gmock.vptr.h"
+#include "GMock.h"
 #include <stdexcept>
 #include "gtest/gtest.h"
 
@@ -127,14 +127,14 @@ class throw_example {
   bool trigger = false;
 };
 
-TEST(GMockVptr, ShouldReturnFunctionOffset) {
+TEST(GMock, ShouldReturnFunctionOffset) {
   using namespace testing;
   EXPECT_EQ(2, detail::vptr_offset(&interface::get));
   EXPECT_EQ(3, detail::vptr_offset(&interface::foo));
   EXPECT_EQ(4, detail::vptr_offset(&interface::bar));
 }
 
-TEST(GMockVptr, ShouldBeConvertible) {
+TEST(GMock, ShouldBeConvertible) {
   using namespace testing;
   GMock<interface> m;
 
@@ -156,7 +156,7 @@ TEST(GMockVptr, ShouldBeConvertible) {
   }
 }
 
-TEST(GMockVptr, ShouldMockSimpleInterface) {
+TEST(GMock, ShouldMockSimpleInterface) {
   using namespace testing;
   GMock<interface> m;
 
@@ -168,7 +168,7 @@ TEST(GMockVptr, ShouldMockSimpleInterface) {
   e.update();
 }
 
-TEST(GMockVptr, ShouldMockExtendedInterface) {
+TEST(GMock, ShouldMockExtendedInterface) {
   using namespace testing;
   GMock<interface2> m;
   interface2* i = &m;
@@ -182,7 +182,7 @@ TEST(GMockVptr, ShouldMockExtendedInterface) {
   EXPECT_EQ(42, i->f1(2.0));
 }
 
-TEST(GMockVptr, ShouldMockExtendedInterfaceWithArg) {
+TEST(GMock, ShouldMockExtendedInterfaceWithArg) {
   using namespace testing;
   GMock<interface4> m;
 
@@ -194,7 +194,7 @@ TEST(GMockVptr, ShouldMockExtendedInterfaceWithArg) {
   i.f2(arg{42});
 }
 
-TEST(GMockVptr, ShouldHandleMultipleCalls) {
+TEST(GMock, ShouldHandleMultipleCalls) {
   using namespace testing;
   GMock<interface> m;
   interface& i = m;
@@ -218,7 +218,7 @@ TEST(GMockVptr, ShouldHandleMultipleCalls) {
   i.foo(42);
 }
 
-TEST(GMockVptr, ShouldMockVariadicFactory) {
+TEST(GMock, ShouldMockVariadicFactory) {
   using namespace testing;
   GMock<ifactory<int, short, int>> m;
   ifactory<int, short, int>* i = &m;
@@ -227,7 +227,7 @@ TEST(GMockVptr, ShouldMockVariadicFactory) {
   EXPECT_EQ(42, i->create(1, 3));
 }
 
-TEST(GMockVptr, ShouldMockVariadicFactories) {
+TEST(GMock, ShouldMockVariadicFactories) {
   using namespace testing;
   GMock<ifactory<std::string, float>> m;
   ifactory<std::string, float>* i = &m;
@@ -237,7 +237,7 @@ TEST(GMockVptr, ShouldMockVariadicFactories) {
   EXPECT_STREQ("str", i->create(8.0).c_str());
 }
 
-TEST(GMockVptr, ShouldMockUsingUniquePtr) {
+TEST(GMock, ShouldMockUsingUniquePtr) {
   using namespace testing;
   auto m = std::make_unique<GMock<interface>>();
 
@@ -249,7 +249,7 @@ TEST(GMockVptr, ShouldMockUsingUniquePtr) {
   e.update();
 }
 
-TEST(GMockVptr, ShouldMockUsingAndPassingUniquePtr) {
+TEST(GMock, ShouldMockUsingAndPassingUniquePtr) {
   using namespace testing;
   auto m = std::make_unique<GMock<interface>>();
   auto* i = m.get();
@@ -261,7 +261,7 @@ TEST(GMockVptr, ShouldMockUsingAndPassingUniquePtr) {
   // uninterested dtor call
 }
 
-TEST(GMockVptr, ShouldMockUsingSharedPtr) {
+TEST(GMock, ShouldMockUsingSharedPtr) {
   using namespace testing;
   auto m = std::make_shared<GMock<interface>>();
 
@@ -273,7 +273,7 @@ TEST(GMockVptr, ShouldMockUsingSharedPtr) {
   e.update();
 }
 
-TEST(GMockVptr, ShouldMockUsingConstInterface) {
+TEST(GMock, ShouldMockUsingConstInterface) {
   using namespace testing;
   GMock<interface> m;
 
@@ -283,7 +283,7 @@ TEST(GMockVptr, ShouldMockUsingConstInterface) {
   e.update();
 }
 
-TEST(GMockVptr, ShouldMockUsingConstPointer) {
+TEST(GMock, ShouldMockUsingConstPointer) {
   using namespace testing;
   GMock<interface> m;
 
@@ -293,7 +293,7 @@ TEST(GMockVptr, ShouldMockUsingConstPointer) {
   e.update();
 }
 
-TEST(GMockVptr, ShouldMockEmptyMethods) {
+TEST(GMock, ShouldMockEmptyMethods) {
   using namespace testing;
   GMock<interface3> m;
 
@@ -302,7 +302,7 @@ TEST(GMockVptr, ShouldMockEmptyMethods) {
   static_cast<const interface3*>(&m)->empty();
 }
 
-TEST(GMockVptr, ShouldWorkTogetherWithGMock) {
+TEST(GMock, ShouldWorkTogetherWithGMock) {
   using namespace testing;
   gmock_interface gm;
   GMock<interface> m;
@@ -315,7 +315,7 @@ TEST(GMockVptr, ShouldWorkTogetherWithGMock) {
   e.test();
 }
 
-TEST(GMockVptr, ShouldHandleExceptions) {
+TEST(GMock, ShouldHandleExceptions) {
   using namespace testing;
   GMock<interface> m;
   EXPECT_CALL(m, (foo)(42)).Times(1);
@@ -326,47 +326,22 @@ TEST(GMockVptr, ShouldHandleExceptions) {
   EXPECT_THROW(e.update(), std::runtime_error);
 }
 
-TEST(GMockVptr, ShouldHandleInterfaceWithDtorNotBeingAtTheBeginning) {
+TEST(GMock, ShouldHandleInterfaceWithDtorNotBeingAtTheBeginning) {
   using namespace testing;
   StrictGMock<interface_dtor> m;
   EXPECT_CALL(m, (get)(0)).Times(1);
   static_cast<interface_dtor&>(m).get(0);
 }
 
-TEST(GMockVptr, ShouldHandleON_CALL) {
+TEST(GMock, ShouldHandleON_CALL) {
   using namespace testing;
   NiceGMock<interface> m;
   ON_CALL(m, (get)(_)).WillByDefault(Return(42));
   EXPECT_EQ(42, static_cast<interface&>(m).get(0));
 }
 
-TEST(GMockVptr, ShouldHandleMissingExpectations) {
+TEST(GMock, ShouldHandleMissingExpectations) {
   using namespace testing;
   NiceMock<GMock<interface_dtor>> m;
   static_cast<interface_dtor&>(m).get(0);
-}
-
-// auto[sut, mocks] = make<T>();
-// using MyTest = testing::GTest<example>;
-struct MyTest : testing::GTest<example> {
-  // MyTest() : testing::GTest<example>(uninitialized{}) {}
-  // MyTest() : testing::GTest<example>(2, 3) {}
-};
-
-TEST_F(MyTest, ShoudlMake) {
-  using namespace testing;
-  EXPECT_CALL(mock<interface>(), (foo)(42)).Times(1);
-  EXPECT_CALL(mock<interface>(), (bar)(_, "str"));
-
-  sut->update();
-}
-
-TEST_F(MyTest, ShoudlMakeCustom) {
-  using namespace testing;
-  std::tie(sut, mocks) = make<example>(/*2, 1*/);
-}
-
-TEST_F(MyTest, ShoudlMakeCpp17) {
-  // auto [sut, mocks] = make<example>();
-  //...
 }

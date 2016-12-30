@@ -5,27 +5,25 @@
 // (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 //
-#include "gmock.vptr.h"
+#include "GMock.h"
 #include <stdexcept>
 #include "gtest/gtest.h"
 
 class interface {
-public:
+ public:
   virtual bool get() const = 0;
   virtual ~interface() = default;
 };
 
 class extended_interface : public interface {
-public:
+ public:
   virtual void foo(bool) = 0;
   virtual void bar(bool) = 0;
 };
 
 class example {
-public:
-  example(const interface& i, extended_interface& ei)
-    : i(i), ei(ei)
-  { }
+ public:
+  example(const interface& i, extended_interface& ei) : i(i), ei(ei) {}
 
   void update() {
     const auto value = i.get();
@@ -36,12 +34,14 @@ public:
     }
   }
 
-private:
+ private:
   const interface& i;
   extended_interface& ei;
 };
 
-TEST(GMockVptr, ShouldMockSimpleInterface) {
+////////////////////////////////////////////////////////////////////////////////
+
+TEST(GMock, ShouldMockSimpleInterface) {
   using namespace testing;
   GMock<interface> mock;
   EXPECT_CALL(mock, (get)()).WillOnce(Return(true));
@@ -50,7 +50,7 @@ TEST(GMockVptr, ShouldMockSimpleInterface) {
   EXPECT_TRUE(i.get());
 }
 
-TEST(GMockVptr, ShouldMockExtendedInterface) {
+TEST(GMock, ShouldMockExtendedInterface) {
   using namespace testing;
   GMock<interface> imock;
   GMock<extended_interface> emock;
@@ -62,7 +62,7 @@ TEST(GMockVptr, ShouldMockExtendedInterface) {
   e.update();
 }
 
-TEST(GMockVptr, ShouldMockExtendedInterfaceDifferentMockTypes) {
+TEST(GMock, ShouldMockExtendedInterfaceDifferentMockTypes) {
   using namespace testing;
   NiceGMock<interface> imock;
   StrictGMock<extended_interface> emock;
@@ -74,7 +74,7 @@ TEST(GMockVptr, ShouldMockExtendedInterfaceDifferentMockTypes) {
   e.update();
 }
 
-TEST(GMockVptr, ShouldWorkWithMacroDefinedMocks) {
+TEST(GMock, ShouldWorkWithMacroDefinedMocks) {
   using namespace testing;
   NiceGMock<interface> imock;
   struct mock_extended_interface : extended_interface {
@@ -90,22 +90,22 @@ TEST(GMockVptr, ShouldWorkWithMacroDefinedMocks) {
   e.update();
 }
 
-TEST(GMockVptr, ShouldFailDueToUninterestingGetCall) {
+TEST(GMock, ShouldFailDueToUninterestingGetCall) {
   using namespace testing;
   StrictGMock<interface> mock;
-  EXPECT_CALL(mock, (get)()).WillOnce(Return(true)); // Comment to get an UNINTERESTING CALL
+  EXPECT_CALL(mock, (get)()).WillOnce(Return(true));  // Comment to get an UNINTERESTING CALL
   interface& i = mock;
   i.get();
 }
 
-TEST(GMockVptr, ShouldNotCompileWhenMethodParametersDontMatch) {
+TEST(GMock, ShouldNotCompileWhenMethodParametersDontMatch) {
   using namespace testing;
   GMock<interface> mock;
-  //EXPECT_CALL(mock, (get)(_, _)).WillOnce(Return(true)); // COMPILE ERROR
+  // EXPECT_CALL(mock, (get)(_, _)).WillOnce(Return(true)); // COMPILE ERROR
 }
 
-TEST(GMockVptr, ShouldNotCompileWhenGMockNotUsedWithBrackets) {
+TEST(GMock, ShouldNotCompileWhenGMockNotUsedWithBrackets) {
   using namespace testing;
   GMock<interface> mock;
-  //EXPECT_CALL(mock, get()).WillOnce(Return(false)); // COMPILE ERROR
+  // EXPECT_CALL(mock, get()).WillOnce(Return(false)); // COMPILE ERROR
 }

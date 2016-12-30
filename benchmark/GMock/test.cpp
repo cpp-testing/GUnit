@@ -5,8 +5,8 @@
 // (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 //
+#include "GMock.h"
 #include "example.h"
-#include "gmock.vptr.h"
 
 TEST(benchmark, test1) {
   using namespace testing;
