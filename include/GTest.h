@@ -24,6 +24,29 @@ namespace testing {
 inline namespace v1 {
 namespace detail {
 
+template <class T>
+struct deref {
+  using type = std::remove_cv_t<std::remove_reference_t<std::remove_pointer_t<T>>>;
+};
+
+template <class T, class TDeleter>
+struct deref<std::unique_ptr<T, TDeleter>> {
+  using type = std::remove_cv_t<std::remove_reference_t<std::remove_pointer_t<T>>>;
+};
+
+template <class T>
+struct deref<std::shared_ptr<T>> {
+  using type = std::remove_cv_t<std::remove_reference_t<std::remove_pointer_t<T>>>;
+};
+
+template <class T>
+struct deref<std::weak_ptr<T>> {
+  using type = std::remove_cv_t<std::remove_reference_t<std::remove_pointer_t<T>>>;
+};
+
+template <class T>
+using deref_t = typename deref<T>::type;
+
 struct none {};
 
 template <class T>
@@ -45,16 +68,20 @@ struct contains<T, std::tuple<TArgs...>>
                                                  std::integer_sequence<bool, std::is_same<T, TArgs>::value..., false>>::value> {
 };
 
-template <class, class>
-struct is_copy_ctor__ : std::false_type {};
+template <class T, class U>
+using is_copy_ctor = std::is_same<deref_t<T>, deref_t<U>>;
+
+template <class>
+struct wrapper;
 
 template <class T>
-struct is_copy_ctor__<T, T> : std::true_type {};
+struct wrapper<GMock<T>> {
+  operator std::shared_ptr<T>() { return std::static_pointer_cast<T>(mock); }
+  operator T*() { return reinterpret_cast<T*>(mock.get()); }
+  operator T&() { return *mock; }
 
-#if defined(__GCC__) || defined(__MSVC__)  // __pph__
-template <class T>
-struct is_copy_ctor__<T, const T> : std::true_type {};
-#endif  // __pph__
+  std::shared_ptr<GMock<T>> mock;
+};
 
 template <class TParent, class TArgs = none>
 struct any_type {
@@ -81,46 +108,49 @@ struct any_type {
     return type;
   }
 
-  template <class T, GTEST_REQUIRES(!is_copy_ctor__<TParent, T>::value && std::is_polymorphic<std::decay_t<T>>::value)>
+  template <class T, GTEST_REQUIRES(!is_copy_ctor<TParent, T>::value && std::is_polymorphic<deref_t<T>>::value)>
   operator T() {
-    auto mock = std::make_shared<GMock<std::decay_t<T>>>();
-    mocks[type_id<std::decay_t<T>>()] = mock;
-    return *mock;
+    using mock_t = GMock<deref_t<T>>;
+    auto mock = std::make_shared<mock_t>();
+    mocks[type_id<deref_t<T>>()] = mock;
+    return wrapper<mock_t>{mock};
   }
 
-  template <class T, GTEST_REQUIRES(!is_copy_ctor__<TParent, T>::value && std::is_polymorphic<std::decay_t<T>>::value)>
+  template <class T, GTEST_REQUIRES(!is_copy_ctor<TParent, T>::value && std::is_polymorphic<deref_t<T>>::value)>
   operator T&() const {
-    auto mock = std::make_shared<GMock<std::decay_t<T>>>();
-    mocks[type_id<std::decay_t<T>>()] = mock;
-    return *mock;
+    using mock_t = GMock<deref_t<T>>;
+    auto mock = std::make_shared<GMock<deref_t<T>>>();
+    mocks[type_id<deref_t<T>>()] = mock;
+    return wrapper<mock_t>{mock};
   }
 
-  template <class T, GTEST_REQUIRES(!is_copy_ctor__<TParent, T>::value && std::is_polymorphic<std::decay_t<T>>::value)>
+  template <class T, GTEST_REQUIRES(!is_copy_ctor<TParent, T>::value && std::is_polymorphic<deref_t<T>>::value)>
   operator const T&() const {
-    auto mock = std::make_shared<GMock<std::decay_t<T>>>();
-    mocks[type_id<std::decay_t<T>>()] = mock;
-    return *mock;
+    using mock_t = GMock<deref_t<T>>;
+    auto mock = std::make_shared<GMock<deref_t<T>>>();
+    mocks[type_id<deref_t<T>>()] = mock;
+    return wrapper<mock_t>{mock};
   }
 
-  template <class T, GTEST_REQUIRES(!is_copy_ctor__<TParent, T>::value && !std::is_polymorphic<std::decay_t<T>>::value)>
+  template <class T, GTEST_REQUIRES(!is_copy_ctor<TParent, T>::value && !std::is_polymorphic<deref_t<T>>::value)>
   operator T() {
     std::size_t elem = {};
     return get<T>(elem, std::integral_constant<bool, contains<T, TArgs>::value>{}, std::tuple_size<TArgs>{},
                   std::integral_constant<std::size_t, 0>{});
   }
 
-  template <class T, GTEST_REQUIRES(!is_copy_ctor__<TParent, T>::value && !std::is_polymorphic<std::decay_t<T>>::value)>
+  template <class T, GTEST_REQUIRES(!is_copy_ctor<TParent, T>::value && !std::is_polymorphic<deref_t<T>>::value)>
   operator T&() const {
     std::size_t elem = {};
     return const_cast<any_type*>(this)->get<T&>(elem, std::integral_constant<bool, contains<T&, TArgs>::value>{},
                                                 std::tuple_size<TArgs>{}, std::integral_constant<std::size_t, 0>{});
   }
 
-  template <class T, GTEST_REQUIRES(!is_copy_ctor__<TParent, T>::value && !std::is_polymorphic<std::decay_t<T>>::value)>
+  template <class T, GTEST_REQUIRES(!is_copy_ctor<TParent, T>::value && !std::is_polymorphic<deref_t<T>>::value)>
   operator const T&() const {
     std::size_t elem = {};
-    return get<const T&>(elem, std::integral_constant<bool, contains<const T&, TArgs>::value>{}, std::tuple_size<TArgs>{},
-                         std::integral_constant<std::size_t, 0>{});
+    return const_cast<any_type*>(this)->get<const T&>(elem, std::integral_constant<bool, contains<const T&, TArgs>::value>{},
+                                                      std::tuple_size<TArgs>{}, std::integral_constant<std::size_t, 0>{});
   }
 
   std::unordered_map<std::size_t, std::shared_ptr<void>>& mocks;

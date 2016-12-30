@@ -47,7 +47,6 @@ struct interface2 : interface {
 
 struct arg {
   int data = {};
-
   bool operator==(const arg& rhs) const { return data == rhs.data; }
 };
 
@@ -108,6 +107,35 @@ class upexample {
   std::unique_ptr<interface> i;
 };
 
+class spexample {
+ public:
+  explicit spexample(std::shared_ptr<interface> i) : i(i) {}
+
+  void update() { i->bar(1, "str"); }
+
+ private:
+  std::shared_ptr<interface> i;
+};
+
+class complex_example {
+ public:
+  complex_example(const std::shared_ptr<interface>& csp, std::shared_ptr<interface2> sp, interface4* ptr, interface_dtor& ref)
+      : csp(csp), sp(sp), ptr(ptr), ref(ref) {}
+
+  void update() {
+    const auto i = csp->get(42);
+    sp->f1(77.0);
+    ptr->f2(arg{});
+    ref.get(i);
+  }
+
+ private:
+  std::shared_ptr<interface> csp;
+  std::shared_ptr<interface2> sp;
+  interface4* ptr;
+  interface_dtor& ref;
+};
+
 class throw_example {
  public:
   throw_example(interface& i) : i(i) {}
@@ -164,8 +192,8 @@ TEST(GMock, ShouldMockSimpleInterface) {
   EXPECT_CALL(m, (foo)(12)).Times(0);
   EXPECT_CALL(m, (bar)(_, "str"));
 
-  example e{0, m};
-  e.update();
+  example sut{0, m};
+  sut.update();
 }
 
 TEST(GMock, ShouldMockExtendedInterface) {
@@ -245,8 +273,8 @@ TEST(GMock, ShouldMockUsingUniquePtr) {
   EXPECT_CALL(*m, (foo)(12)).Times(0);
   EXPECT_CALL(*m, (bar)(_, "str"));
 
-  example e{0, *m};
-  e.update();
+  example sut{0, *m};
+  sut.update();
 }
 
 TEST(GMock, ShouldMockUsingAndPassingUniquePtr) {
@@ -256,8 +284,8 @@ TEST(GMock, ShouldMockUsingAndPassingUniquePtr) {
 
   EXPECT_CALL(*i, (bar)(_, "str"));
 
-  upexample e{std::move(m)};
-  e.update();
+  upexample sut{std::move(m)};
+  sut.update();
   // uninterested dtor call
 }
 
@@ -269,8 +297,52 @@ TEST(GMock, ShouldMockUsingSharedPtr) {
   EXPECT_CALL(*m, (foo)(12)).Times(0);
   EXPECT_CALL(*m, (bar)(_, "str"));
 
-  example e{0, *m};
-  e.update();
+  example sut{0, *m};
+  sut.update();
+}
+
+TEST(GMock, ShouldMockUsingAndPassingSharedPtr) {
+  using namespace testing;
+  auto m = std::make_shared<GMock<interface>>();
+
+  EXPECT_CALL(*m, (bar)(_, "str"));
+
+  auto sut = std::make_unique<spexample>(std::static_pointer_cast<interface>(m));
+  sut->update();
+}
+
+TEST(GMock, ShouldMockComplexExample) {
+  using namespace testing;
+  auto csp = std::make_shared<GMock<interface>>();
+  auto sp = std::make_shared<GMock<interface2>>();
+  GMock<interface4> ptr;
+  StrictGMock<interface_dtor> ref;
+
+  EXPECT_CALL(*csp, (get)(_)).WillOnce(Return(123));
+  EXPECT_CALL(*sp, (f1)(77.0)).Times(1);
+  EXPECT_CALL(ptr, (f2)(_)).Times(1);
+  EXPECT_CALL(ref, (get)(123)).Times(1);
+
+  complex_example sut{std::static_pointer_cast<interface>(csp), std::static_pointer_cast<interface2>(sp), &ptr, ref};
+
+  sut.update();
+}
+
+TEST(GMock, ShouldMockComplexExampleUniquePtr) {
+  using namespace testing;
+  auto csp = std::make_shared<GMock<interface>>();
+  auto sp = std::make_shared<GMock<interface2>>();
+  GMock<interface4> ptr;
+  StrictGMock<interface_dtor> ref;
+
+  EXPECT_CALL(*csp, (get)(_)).WillOnce(Return(123));
+  EXPECT_CALL(*sp, (f1)(77.0)).Times(1);
+  EXPECT_CALL(ptr, (f2)(_)).Times(1);
+  EXPECT_CALL(ref, (get)(123)).Times(1);
+
+  auto sut = std::make_unique<complex_example>(std::static_pointer_cast<interface>(csp),
+                                               std::static_pointer_cast<interface2>(sp), &ptr, ref);
+  sut->update();
 }
 
 TEST(GMock, ShouldMockUsingConstInterface) {
@@ -279,8 +351,8 @@ TEST(GMock, ShouldMockUsingConstInterface) {
 
   EXPECT_CALL(m, (bar)(_, "str"));
 
-  cexample e{m};
-  e.update();
+  cexample sut{m};
+  sut.update();
 }
 
 TEST(GMock, ShouldMockUsingConstPointer) {
@@ -289,8 +361,8 @@ TEST(GMock, ShouldMockUsingConstPointer) {
 
   EXPECT_CALL(m, (bar)(_, "str"));
 
-  cpexample e{&m};
-  e.update();
+  cpexample sut{&m};
+  sut.update();
 }
 
 TEST(GMock, ShouldMockEmptyMethods) {
@@ -310,9 +382,9 @@ TEST(GMock, ShouldWorkTogetherWithGMock) {
   EXPECT_CALL(m, (get)(42)).WillOnce(Return(87));
   EXPECT_CALL(gm, f(87)).Times(1);
 
-  auto e = gmock_example{gm, &m};
+  auto sut = gmock_example{gm, &m};
 
-  e.test();
+  sut.test();
 }
 
 TEST(GMock, ShouldHandleExceptions) {
@@ -320,10 +392,10 @@ TEST(GMock, ShouldHandleExceptions) {
   GMock<interface> m;
   EXPECT_CALL(m, (foo)(42)).Times(1);
 
-  throw_example e{m};
-  e.update();
+  throw_example sut{m};
+  sut.update();
 
-  EXPECT_THROW(e.update(), std::runtime_error);
+  EXPECT_THROW(sut.update(), std::runtime_error);
 }
 
 TEST(GMock, ShouldHandleInterfaceWithDtorNotBeingAtTheBeginning) {

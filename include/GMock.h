@@ -270,7 +270,6 @@ class GMock {
   }
 
   T* operator&() { return reinterpret_cast<T*>(this); }
-  operator T*() { return reinterpret_cast<T*>(this); }
   operator T&() { return reinterpret_cast<T&>(*this); }
 
  private:
@@ -289,12 +288,15 @@ using NiceGMock = NiceMock<GMock<T>>;
 namespace std {
 
 template <class T, class TDeleter>
-auto move(unique_ptr<::testing::GMock<T>, TDeleter>& object) {
-  auto* i = object.get();
-  return unique_ptr<T>(*i);
+auto move(unique_ptr<::testing::GMock<T>, TDeleter>& mock) noexcept {
+  return unique_ptr<T>{reinterpret_cast<T*>(mock.get())};
 }
-// static_pointer_cast for shraed_ptr
+
+template <class T, class U>
+auto static_pointer_cast(const std::shared_ptr<testing::GMock<U>>& mock) noexcept {
+  return std::shared_ptr<T>{mock, reinterpret_cast<T*>(mock.get())};
 }
+}  // std
 
 #define __GMOCK_VPTR_COMMA() ,
 #define __GMOCK_VPTR_IGNORE(...)
