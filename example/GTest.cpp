@@ -29,17 +29,17 @@ class example {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-using GTest = testing::GTest<example>;
+/*using GTest = testing::GTest<example>;*/
 
-TEST_F(GTest, ShoudlMake) {
-  using namespace testing;
-  EXPECT_CALL(mock<interface>(), (foo)(42)).Times(1);
-  EXPECT_CALL(mock<interface>(), (bar)(_, "str"));
+// TEST_F(GTest, ShoudlMake) {
+// using namespace testing;
+// EXPECT_CALL(mock<interface>(), (foo)(42)).Times(1);
+// EXPECT_CALL(mock<interface>(), (bar)(_, "str"));
 
-  sut->update();
-}
+// sut->update();
+//}
 
-TEST_F(GTest, ShoudlMakeCustom) {
-  using namespace testing;
-  std::tie(sut, mocks) = make<example>(/*2, 1*/);
-}
+// TEST_F(GTest, ShoudlMakeCustom) {
+// using namespace testing;
+// std::tie(sut, mocks) = make<example>([>2, 1<]);
+/*}*/
