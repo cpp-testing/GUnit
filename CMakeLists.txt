@@ -28,7 +28,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -rdynamic")
 
 enable_testing()
 
-add_subdirectory(libs/googletest/gmock)
+add_subdirectory(libs/googletest)
 
 include_directories(include)
 include_directories(${gtest_SOURCE_DIR}/include)
