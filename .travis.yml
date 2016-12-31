@@ -57,5 +57,5 @@ install:
   - if [ "$TRAVIS_OS_NAME" == "osx" ] && [ "${BS}" == "cmake" ]; then (brew uninstall cmake; brew install cmake); fi
 
 script:
-  - if [ "${CXX}" != "" ]; then (travis_wait mkdir build && cd build && cmake .. && make -j2 && ctest --output-on-failure); fi
+  - if [ "${CXX}" != "" ]; then (travis_wait mkdir build && cd build && cmake -DENABLE_MEMCHECK=ON .. && make -j2 && ctest --output-on-failure); fi
 
