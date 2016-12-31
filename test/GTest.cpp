@@ -32,14 +32,18 @@ TEST(GTest, ShouldReturnTrueWhenTupleContainsType) {
 TEST(GTest, ShouldReturnCtorSize) {
   using namespace testing::detail;
 
-   {
-  struct c { c() {} };
-  static_assert(0 == ctor_size<c>::value, "");
+  {
+    struct c {
+      c() {}
+    };
+    static_assert(0 == ctor_size<c>::value, "");
   }
 
   {
-  struct c { c(int&) {} };
-  static_assert(1 == ctor_size<c>::value, "");
+    struct c {
+      c(int&) {}
+    };
+    static_assert(1 == ctor_size<c>::value, "");
   }
 
   {
@@ -139,9 +143,9 @@ class example_data_ref {
   const int& cref;
 };
 
-class complex_example { public:
-  complex_example(const std::shared_ptr<interface>& csp, std::shared_ptr<interface2> sp, interface4* ptr,
-                  interface_dtor& ref)
+class complex_example {
+ public:
+  complex_example(const std::shared_ptr<interface>& csp, std::shared_ptr<interface2> sp, interface4* ptr, interface_dtor& ref)
       : csp(csp), sp(sp), ptr(ptr), ref(ref) {}
 
   void update() {
@@ -158,9 +162,10 @@ class complex_example { public:
   interface_dtor& ref;
 };
 
-class complex_example_const { public:
+class complex_example_const {
+ public:
   complex_example_const(const std::shared_ptr<interface>& csp, const std::shared_ptr<interface2>& sp, const interface4* ptr,
-                  const interface_dtor& ref)
+                        const interface_dtor& ref)
       : csp(csp), sp(sp), ptr(ptr), ref(ref) {}
 
   void update() {
@@ -175,6 +180,20 @@ class complex_example_const { public:
   std::shared_ptr<interface2> sp;
   const interface4* ptr;
   const interface_dtor& ref;
+};
+
+struct non_default_constructible {
+  non_default_constructible(int) {}
+};
+
+class upexample {
+ public:
+  explicit upexample(std::unique_ptr<interface> i) : i(std::move(i)) {}
+
+  void update() { i->bar(1, "str"); }
+
+ private:
+  std::unique_ptr<interface> i;
 };
 
 using Test = testing::GTest<example>;
@@ -200,7 +219,7 @@ TEST_F(Test, ShouldOverrideSutAndMocks) {
 
 using UninitializedTest = testing::GTest<example>;
 
-TEST_F(UninitializedTest, ShoudlNotCreateSUTAndMocks) {
+TEST_F(UninitializedTest, ShouldNotCreateSUTAndMocks) {
   using namespace testing;
 
   std::tie(sut, mocks) = Make<example>();
@@ -215,11 +234,10 @@ TEST_F(UninitializedTest, ShoudlNotCreateSUTAndMocks) {
 }
 
 struct CtorTest : testing::GTest<example> {
-  CtorTest() {
-    std::tie(sut, mocks) = Make<example>(77); }
+  CtorTest() { std::tie(sut, mocks) = Make<example>(77); }
 };
 
-TEST_F(CtorTest, ShoudlPassValueIntoExampleCtor) {
+TEST_F(CtorTest, ShouldPassValueIntoExampleCtor) {
   using namespace testing;
 
   ASSERT_TRUE(nullptr != sut.get());
@@ -236,7 +254,7 @@ struct CtorMultipleTest : testing::GTest<example_data> {
   CtorMultipleTest() { std::tie(sut, mocks) = Make(77, 22); }
 };
 
-TEST_F(CtorMultipleTest, ShoudlPassMultipleValuesIntoExampleCtor) {
+TEST_F(CtorMultipleTest, ShouldPassMultipleValuesIntoExampleCtor) {
   using namespace testing;
 
   ASSERT_TRUE(nullptr != sut.get());
@@ -256,7 +274,7 @@ struct CtorMultiplePlusRefTest : testing::GTest<example_data_ref> {
   const int cref = 7;
 };
 
-TEST_F(CtorMultiplePlusRefTest, ShoudlPassMultipleValuesIntoExampleCtor) {
+TEST_F(CtorMultiplePlusRefTest, ShouldPassMultipleValuesIntoExampleCtor) {
   using namespace testing;
 
   ASSERT_TRUE(nullptr != sut.get());
@@ -280,7 +298,7 @@ struct CtorMultiplePlusRefOrderTest : testing::GTest<example_data_ref> {
   const int cref = 7;
 };
 
-TEST_F(CtorMultiplePlusRefOrderTest, ShoudlPassMultipleValuesIntoExampleCtor) {
+TEST_F(CtorMultiplePlusRefOrderTest, ShouldPassMultipleValuesIntoExampleCtor) {
   using namespace testing;
 
   ASSERT_TRUE(nullptr != sut.get());
@@ -300,7 +318,7 @@ TEST_F(CtorMultiplePlusRefOrderTest, ShoudlPassMultipleValuesIntoExampleCtor) {
 
 using ComplexTest = testing::GTest<complex_example>;
 
-TEST_F(ComplexTest, ShoudlMakeComplexExample) {
+TEST_F(ComplexTest, ShouldMakeComplexExample) {
   using namespace testing;
 
   EXPECT_CALL(Mock<interface>(), (get)(_)).WillOnce(Return(123));
@@ -313,7 +331,7 @@ TEST_F(ComplexTest, ShoudlMakeComplexExample) {
 
 using ComplexConstTest = testing::GTest<complex_example_const>;
 
-TEST_F(ComplexConstTest, ShoudlMakeComplexConstExample) {
+TEST_F(ComplexConstTest, ShouldMakeComplexConstExample) {
   using namespace testing;
 
   EXPECT_CALL(Mock<interface>(), (get)(_)).WillOnce(Return(123));
@@ -323,3 +341,16 @@ TEST_F(ComplexConstTest, ShoudlMakeComplexConstExample) {
 
   sut->update();
 }
+
+// using UniquePtrAndNonDefaultConstructibleTest = testing::GTest<upexample>;
+
+// TEST_F(UniquePtrAndNonDefaultConstructibleTest, ShouldMakeUpExample) {
+// using namespace testing;
+
+// EXPECT_CALL(Mock<interface>(), (get)(_)).WillOnce(Return(123));
+// EXPECT_CALL(Mock<interface2>(), (f1)(77.0)).Times(1);
+// EXPECT_CALL(Mock<interface4>(), (f2)(_)).Times(1);
+// EXPECT_CALL(Mock<interface_dtor>(), (get)(123)).Times(1);
+
+// sut->update();
+//}

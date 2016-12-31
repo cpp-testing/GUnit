@@ -44,140 +44,64 @@ struct string {
 };
 
 template <class T>
-inline auto vptr_offset(T f) {
-  struct vptr {
-    virtual int f0() { return 0; }
-    virtual int f1() { return 1; }
-    virtual int f2() { return 2; }
-    virtual int f3() { return 3; }
-    virtual int f4() { return 4; }
-    virtual int f5() { return 5; }
-    virtual int f6() { return 6; }
-    virtual int f7() { return 7; }
-    virtual int f8() { return 8; }
-    virtual int f9() { return 9; }
-    virtual int f10() { return 10; }
-    virtual int f11() { return 11; }
-    virtual int f12() { return 12; }
-    virtual int f13() { return 13; }
-    virtual int f14() { return 14; }
-    virtual int f15() { return 15; }
-    virtual int f16() { return 16; }
-    virtual int f17() { return 17; }
-    virtual int f18() { return 18; }
-    virtual int f19() { return 19; }
-    virtual int f20() { return 20; }
-    virtual int f21() { return 21; }
-    virtual int f22() { return 22; }
-    virtual int f23() { return 23; }
-    virtual int f24() { return 24; }
-    virtual int f25() { return 25; }
-    virtual int f26() { return 26; }
-    virtual int f27() { return 27; }
-    virtual int f28() { return 28; }
-    virtual int f29() { return 29; }
-    virtual int f30() { return 30; }
-    virtual int f31() { return 31; }
-    virtual int f32() { return 32; }
-    virtual int f33() { return 33; }
-    virtual int f34() { return 34; }
-    virtual int f35() { return 35; }
-    virtual int f36() { return 36; }
-    virtual int f37() { return 37; }
-    virtual int f38() { return 38; }
-    virtual int f39() { return 39; }
-    virtual int f40() { return 40; }
-    virtual int f41() { return 41; }
-    virtual int f42() { return 42; }
-    virtual int f43() { return 43; }
-    virtual int f44() { return 44; }
-    virtual int f45() { return 45; }
-    virtual int f46() { return 46; }
-    virtual int f47() { return 47; }
-    virtual int f48() { return 48; }
-    virtual int f49() { return 49; }
-    virtual int f50() { return 50; }
-    virtual int f51() { return 51; }
-    virtual int f52() { return 52; }
-    virtual int f53() { return 53; }
-    virtual int f54() { return 54; }
-    virtual int f55() { return 55; }
-    virtual int f56() { return 56; }
-    virtual int f57() { return 57; }
-    virtual int f58() { return 58; }
-    virtual int f59() { return 59; }
-    virtual int f60() { return 60; }
-    virtual int f61() { return 61; }
-    virtual int f62() { return 62; }
-    virtual int f63() { return 63; }
-    virtual int f64() { return 64; }
-    virtual int f65() { return 65; }
-    virtual int f66() { return 66; }
-    virtual int f67() { return 67; }
-    virtual int f68() { return 68; }
-    virtual int f69() { return 69; }
-    virtual int f70() { return 70; }
-    virtual int f71() { return 71; }
-    virtual int f72() { return 72; }
-    virtual int f73() { return 73; }
-    virtual int f74() { return 74; }
-    virtual int f75() { return 75; }
-    virtual int f76() { return 76; }
-    virtual int f77() { return 77; }
-    virtual int f78() { return 78; }
-    virtual int f79() { return 79; }
-    virtual int f80() { return 80; }
-    virtual int f81() { return 81; }
-    virtual int f82() { return 82; }
-    virtual int f83() { return 83; }
-    virtual int f84() { return 84; }
-    virtual int f85() { return 85; }
-    virtual int f86() { return 86; }
-    virtual int f87() { return 87; }
-    virtual int f88() { return 88; }
-    virtual int f89() { return 89; }
-    virtual int f90() { return 90; }
-    virtual int f91() { return 91; }
-    virtual int f92() { return 92; }
-    virtual int f93() { return 93; }
-    virtual int f94() { return 94; }
-    virtual int f95() { return 95; }
-    virtual int f96() { return 96; }
-    virtual int f97() { return 97; }
-    virtual int f98() { return 98; }
-    virtual int f99() { return 99; }
-    virtual int f100() { return 100; }
-    virtual int f101() { return 101; }
-    virtual int f102() { return 102; }
-    virtual int f103() { return 103; }
-    virtual int f104() { return 104; }
-    virtual int f105() { return 105; }
-    virtual int f106() { return 106; }
-    virtual int f107() { return 107; }
-    virtual int f108() { return 108; }
-    virtual int f109() { return 109; }
-    virtual int f110() { return 110; }
-    virtual int f111() { return 111; }
-    virtual int f112() { return 112; }
-    virtual int f113() { return 113; }
-    virtual int f114() { return 114; }
-    virtual int f115() { return 115; }
-    virtual int f116() { return 116; }
-    virtual int f117() { return 117; }
-    virtual int f118() { return 118; }
-    virtual int f119() { return 119; }
-    virtual int f120() { return 120; }
-    virtual int f121() { return 121; }
-    virtual int f122() { return 122; }
-    virtual int f123() { return 123; }
-    virtual int f124() { return 124; }
-    virtual int f125() { return 125; }
-    virtual int f126() { return 126; }
-    virtual int f127() { return 127; }
-    virtual ~vptr() = default;
-  } _;
-  int (vptr::*ptr)() = (int (vptr::*)())f;
-  return (_.*ptr)();
+inline std::size_t vf_offset(T f) {
+  union {  // GNU
+    T f;
+    struct {
+      unsigned long value;
+      unsigned long baseoffs;
+    } u;
+  } conv;
+  conv.f = f;
+
+  static constexpr auto IsItaniumABI = 1;
+  return (conv.u.value & IsItaniumABI) ? conv.u.value / sizeof(void*) : std::size_t{};
+}
+
+template <class T>
+inline std::size_t vf_dtor_offset() {
+  // clang-format off
+  struct vptr_index {
+    std::size_t offset;
+    virtual std::size_t f0(std::size_t) { return offset = 0; }     virtual std::size_t f1(std::size_t) { return offset = 1; }     virtual std::size_t f2(std::size_t) { return offset = 2; }      virtual std::size_t f3(std::size_t) { return offset = 3; }
+    virtual std::size_t f4(std::size_t) { return offset = 4; }     virtual std::size_t f5(std::size_t) { return offset = 5; }     virtual std::size_t f6(std::size_t) { return offset = 6; }      virtual std::size_t f7(std::size_t) { return offset = 7; }
+    virtual std::size_t f8(std::size_t) { return offset = 8; }     virtual std::size_t f9(std::size_t) { return offset = 9; }     virtual std::size_t f10(std::size_t) { return offset = 10; }    virtual std::size_t f11(std::size_t) { return offset = 11; }
+    virtual std::size_t f12(std::size_t) { return offset = 12; }   virtual std::size_t f13(std::size_t) { return offset = 13; }   virtual std::size_t f14(std::size_t) { return offset = 14; }    virtual std::size_t f15(std::size_t) { return offset = 15; }
+    virtual std::size_t f16(std::size_t) { return offset = 16; }   virtual std::size_t f17(std::size_t) { return offset = 17; }   virtual std::size_t f18(std::size_t) { return offset = 18; }    virtual std::size_t f19(std::size_t) { return offset = 19; }
+    virtual std::size_t f20(std::size_t) { return offset = 20; }   virtual std::size_t f21(std::size_t) { return offset = 21; }   virtual std::size_t f22(std::size_t) { return offset = 22; }    virtual std::size_t f23(std::size_t) { return offset = 23; }
+    virtual std::size_t f24(std::size_t) { return offset = 24; }   virtual std::size_t f25(std::size_t) { return offset = 25; }   virtual std::size_t f26(std::size_t) { return offset = 26; }    virtual std::size_t f27(std::size_t) { return offset = 27; }
+    virtual std::size_t f28(std::size_t) { return offset = 28; }   virtual std::size_t f29(std::size_t) { return offset = 29; }   virtual std::size_t f30(std::size_t) { return offset = 30; }    virtual std::size_t f31(std::size_t) { return offset = 31; }
+    virtual std::size_t f32(std::size_t) { return offset = 32; }   virtual std::size_t f33(std::size_t) { return offset = 33; }   virtual std::size_t f34(std::size_t) { return offset = 34; }    virtual std::size_t f35(std::size_t) { return offset = 35; }
+    virtual std::size_t f36(std::size_t) { return offset = 36; }   virtual std::size_t f37(std::size_t) { return offset = 37; }   virtual std::size_t f38(std::size_t) { return offset = 38; }    virtual std::size_t f39(std::size_t) { return offset = 39; }
+    virtual std::size_t f40(std::size_t) { return offset = 40; }   virtual std::size_t f41(std::size_t) { return offset = 41; }   virtual std::size_t f42(std::size_t) { return offset = 42; }    virtual std::size_t f43(std::size_t) { return offset = 43; }
+    virtual std::size_t f44(std::size_t) { return offset = 44; }   virtual std::size_t f45(std::size_t) { return offset = 45; }   virtual std::size_t f46(std::size_t) { return offset = 46; }    virtual std::size_t f47(std::size_t) { return offset = 47; }
+    virtual std::size_t f48(std::size_t) { return offset = 48; }   virtual std::size_t f49(std::size_t) { return offset = 49; }   virtual std::size_t f50(std::size_t) { return offset = 50; }    virtual std::size_t f51(std::size_t) { return offset = 51; }
+    virtual std::size_t f52(std::size_t) { return offset = 52; }   virtual std::size_t f53(std::size_t) { return offset = 53; }   virtual std::size_t f54(std::size_t) { return offset = 54; }    virtual std::size_t f55(std::size_t) { return offset = 55; }
+    virtual std::size_t f56(std::size_t) { return offset = 56; }   virtual std::size_t f57(std::size_t) { return offset = 57; }   virtual std::size_t f58(std::size_t) { return offset = 58; }    virtual std::size_t f59(std::size_t) { return offset = 59; }
+    virtual std::size_t f60(std::size_t) { return offset = 60; }   virtual std::size_t f61(std::size_t) { return offset = 61; }   virtual std::size_t f62(std::size_t) { return offset = 62; }    virtual std::size_t f63(std::size_t) { return offset = 63; }
+    virtual std::size_t f64(std::size_t) { return offset = 64; }   virtual std::size_t f65(std::size_t) { return offset = 65; }   virtual std::size_t f66(std::size_t) { return offset = 66; }    virtual std::size_t f67(std::size_t) { return offset = 67; }
+    virtual std::size_t f68(std::size_t) { return offset = 68; }   virtual std::size_t f69(std::size_t) { return offset = 69; }   virtual std::size_t f70(std::size_t) { return offset = 70; }    virtual std::size_t f71(std::size_t) { return offset = 71; }
+    virtual std::size_t f72(std::size_t) { return offset = 72; }   virtual std::size_t f73(std::size_t) { return offset = 73; }   virtual std::size_t f74(std::size_t) { return offset = 74; }    virtual std::size_t f75(std::size_t) { return offset = 75; }
+    virtual std::size_t f76(std::size_t) { return offset = 76; }   virtual std::size_t f77(std::size_t) { return offset = 77; }   virtual std::size_t f78(std::size_t) { return offset = 78; }    virtual std::size_t f79(std::size_t) { return offset = 79; }
+    virtual std::size_t f80(std::size_t) { return offset = 80; }   virtual std::size_t f81(std::size_t) { return offset = 81; }   virtual std::size_t f82(std::size_t) { return offset = 82; }    virtual std::size_t f83(std::size_t) { return offset = 83; }
+    virtual std::size_t f84(std::size_t) { return offset = 84; }   virtual std::size_t f85(std::size_t) { return offset = 85; }   virtual std::size_t f86(std::size_t) { return offset = 86; }    virtual std::size_t f87(std::size_t) { return offset = 87; }
+    virtual std::size_t f88(std::size_t) { return offset = 88; }   virtual std::size_t f89(std::size_t) { return offset = 89; }   virtual std::size_t f90(std::size_t) { return offset = 90; }    virtual std::size_t f91(std::size_t) { return offset = 91; }
+    virtual std::size_t f92(std::size_t) { return offset = 92; }   virtual std::size_t f93(std::size_t) { return offset = 93; }   virtual std::size_t f94(std::size_t) { return offset = 94; }    virtual std::size_t f95(std::size_t) { return offset = 95; }
+    virtual std::size_t f96(std::size_t) { return offset = 96; }   virtual std::size_t f97(std::size_t) { return offset = 97; }   virtual std::size_t f98(std::size_t) { return offset = 98; }    virtual std::size_t f99(std::size_t) { return offset = 99; }
+    virtual std::size_t f100(std::size_t) { return offset = 100; } virtual std::size_t f101(std::size_t) { return offset = 101; } virtual std::size_t f102(std::size_t) { return offset = 102; }    virtual std::size_t f103(std::size_t) { return offset = 103; }
+    virtual std::size_t f104(std::size_t) { return offset = 104; } virtual std::size_t f105(std::size_t) { return offset = 105; } virtual std::size_t f106(std::size_t) { return offset = 106; }    virtual std::size_t f107(std::size_t) { return offset = 107; }
+    virtual std::size_t f108(std::size_t) { return offset = 108; } virtual std::size_t f109(std::size_t) { return offset = 109; } virtual std::size_t f110(std::size_t) { return offset = 110; }    virtual std::size_t f111(std::size_t) { return offset = 111; }
+    virtual std::size_t f112(std::size_t) { return offset = 112; } virtual std::size_t f113(std::size_t) { return offset = 113; } virtual std::size_t f114(std::size_t) { return offset = 114; }    virtual std::size_t f115(std::size_t) { return offset = 115; }
+    virtual std::size_t f116(std::size_t) { return offset = 116; } virtual std::size_t f117(std::size_t) { return offset = 117; } virtual std::size_t f118(std::size_t) { return offset = 118; }    virtual std::size_t f119(std::size_t) { return offset = 119; }
+    virtual std::size_t f120(std::size_t) { return offset = 120; } virtual std::size_t f121(std::size_t) { return offset = 121; } virtual std::size_t f122(std::size_t) { return offset = 122; }    virtual std::size_t f123(std::size_t) { return offset = 123; }
+    virtual std::size_t f124(std::size_t) { return offset = 124; } virtual std::size_t f125(std::size_t) { return offset = 125; } virtual std::size_t f126(std::size_t) { return offset = 126; }    virtual std::size_t f127(std::size_t) { return offset = 127; }
+    virtual ~vptr_index() = default;
+  };
+  // clang-format on
+
+  vptr_index vptr;
+  ((T*)&vptr)->~T();
+  return vptr.offset;
 }
 
 }  // detail
@@ -186,36 +110,14 @@ template <class T>
 class GMock {
   static_assert(std::is_polymorphic<T>::value, "T has to be a polymorphic type");
   static_assert(std::has_virtual_destructor<T>::value, "T has to have a virtual destructor");
+  static constexpr auto VPTR_LIMIT_SIZE = 128;
 
   unsigned char _[sizeof(T)] = {0};
   void* old_vptr = nullptr;
-  void (*vptr[128])() = {
-      not_implemented(), not_implemented(), not_implemented(), not_implemented(), not_implemented(), not_implemented(),
-      not_implemented(), not_implemented(), not_implemented(), not_implemented(), not_implemented(), not_implemented(),
-      not_implemented(), not_implemented(), not_implemented(), not_implemented(), not_implemented(), not_implemented(),
-      not_implemented(), not_implemented(), not_implemented(), not_implemented(), not_implemented(), not_implemented(),
-      not_implemented(), not_implemented(), not_implemented(), not_implemented(), not_implemented(), not_implemented(),
-      not_implemented(), not_implemented(), not_implemented(), not_implemented(), not_implemented(), not_implemented(),
-      not_implemented(), not_implemented(), not_implemented(), not_implemented(), not_implemented(), not_implemented(),
-      not_implemented(), not_implemented(), not_implemented(), not_implemented(), not_implemented(), not_implemented(),
-      not_implemented(), not_implemented(), not_implemented(), not_implemented(), not_implemented(), not_implemented(),
-      not_implemented(), not_implemented(), not_implemented(), not_implemented(), not_implemented(), not_implemented(),
-      not_implemented(), not_implemented(), not_implemented(), not_implemented(), not_implemented(), not_implemented(),
-      not_implemented(), not_implemented(), not_implemented(), not_implemented(), not_implemented(), not_implemented(),
-      not_implemented(), not_implemented(), not_implemented(), not_implemented(), not_implemented(), not_implemented(),
-      not_implemented(), not_implemented(), not_implemented(), not_implemented(), not_implemented(), not_implemented(),
-      not_implemented(), not_implemented(), not_implemented(), not_implemented(), not_implemented(), not_implemented(),
-      not_implemented(), not_implemented(), not_implemented(), not_implemented(), not_implemented(), not_implemented(),
-      not_implemented(), not_implemented(), not_implemented(), not_implemented(), not_implemented(), not_implemented(),
-      not_implemented(), not_implemented(), not_implemented(), not_implemented(), not_implemented(), not_implemented(),
-      not_implemented(), not_implemented(), not_implemented(), not_implemented(), not_implemented(), not_implemented(),
-      not_implemented(), not_implemented(), not_implemented(), not_implemented(), not_implemented(), not_implemented(),
-      not_implemented(), not_implemented(), not_implemented(), not_implemented(), not_implemented(), not_implemented(),
-      not_implemented(), not_implemented()};
+  void (*vptr[VPTR_LIMIT_SIZE])() = {0};
 
-  auto not_implemented() { return detail::union_cast<void (*)()>(&GMock::unknown); }
-
-  void* unknown() {
+  void expected() {}
+  void* not_expected() {
     auto* ptr = [this] {
       fs[__PRETTY_FUNCTION__] = std::make_unique<FunctionMocker<void*()>>();
       return static_cast<FunctionMocker<void*()>*>(fs[__PRETTY_FUNCTION__].get());
@@ -254,19 +156,29 @@ class GMock {
     return f->Invoke(args...);
   }
 
+  void init(const std::size_t dtor_offset) {
+    for (auto i = 0u; i < VPTR_LIMIT_SIZE; ++i) {
+      vptr[i] = i == dtor_offset || i == dtor_offset + 1 /*GNU*/ ? detail::union_cast<void (*)()>(&GMock::expected) :  // dtor
+                    detail::union_cast<void (*)()>(&GMock::not_expected);
+    }
+  }
+
  public:
   using type = T;
 
-  GMock() : old_vptr(update_vptr(vptr)) {}
+  GMock() {
+    init(detail::vf_dtor_offset<T>());
+    old_vptr = update_vptr(vptr);
+  }
 
   template <class TName, class R, class B, class... TArgs>
   decltype(auto) gmock_call(R (B::*f)(TArgs...), const detail::identity_t<Matcher<TArgs>>&... args) {
-    return gmock_call_impl<TName, R, TArgs...>(detail::vptr_offset(f), args...);
+    return gmock_call_impl<TName, R, TArgs...>(detail::vf_offset(f), args...);
   }
 
   template <class TName, class R, class B, class... TArgs>
   decltype(auto) gmock_call(R (B::*f)(TArgs...) const, const typename detail::identity_t<Matcher<TArgs>>&... args) {
-    return gmock_call_impl<TName, R, TArgs...>(detail::vptr_offset(f), args...);
+    return gmock_call_impl<TName, R, TArgs...>(detail::vf_offset(f), args...);
   }
 
   T* operator&() { return reinterpret_cast<T*>(this); }

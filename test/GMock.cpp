@@ -157,9 +157,9 @@ class throw_example {
 
 TEST(GMock, ShouldReturnFunctionOffset) {
   using namespace testing;
-  EXPECT_EQ(2, detail::vptr_offset(&interface::get));
-  EXPECT_EQ(3, detail::vptr_offset(&interface::foo));
-  EXPECT_EQ(4, detail::vptr_offset(&interface::bar));
+  EXPECT_EQ(2u, detail::vf_offset(&interface::get));
+  EXPECT_EQ(3u, detail::vf_offset(&interface::foo));
+  EXPECT_EQ(4u, detail::vf_offset(&interface::bar));
 }
 
 TEST(GMock, ShouldBeConvertible) {
@@ -286,7 +286,6 @@ TEST(GMock, ShouldMockUsingAndPassingUniquePtr) {
 
   upexample sut{std::move(m)};
   sut.update();
-  // uninterested dtor call
 }
 
 TEST(GMock, ShouldMockUsingSharedPtr) {
@@ -416,4 +415,18 @@ TEST(GMock, ShouldHandleMissingExpectations) {
   using namespace testing;
   NiceMock<GMock<interface_dtor>> m;
   static_cast<interface_dtor&>(m).get(0);
+}
+
+TEST(GMock, ShouldNotTriggerUnexpectedCallForCtor) {
+  using namespace testing;
+  std::shared_ptr<void> mock = std::make_shared<GMock<interface>>();
+  std::unique_ptr<interface> up = std::unique_ptr<interface>(reinterpret_cast<interface*>(mock.get()));
+  (void)up;
+}
+
+TEST(GMock, ShouldNotTriggerUnexpectedCallForCtorOrder) {
+  using namespace testing;
+  std::shared_ptr<void> mock = std::make_shared<GMock<interface_dtor>>();
+  std::unique_ptr<interface_dtor> up = std::unique_ptr<interface_dtor>(reinterpret_cast<interface_dtor*>(mock.get()));
+  (void)up;
 }
