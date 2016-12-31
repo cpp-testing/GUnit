@@ -36,18 +36,6 @@ auto type_id() {
   return reinterpret_cast<std::size_t>(&type<std::remove_cv_t<T>>::id);
 }
 
-template <class>
-struct is_shared_ptr_impl : std::false_type {};
-
-template <class T>
-struct is_shared_ptr_impl<std::shared_ptr<T>> : std::true_type {};
-
-template <class T>
-using is_shared_ptr = typename is_shared_ptr_impl<std::remove_cv_t<T>>::type;
-
-template <class T, class U>
-using is_copy_ctor = std::is_same<deref_t<T>, deref_t<U>>;
-
 template <class T>
 struct deref {
   using type = std::remove_cv_t<std::remove_reference_t<std::remove_pointer_t<T>>>;
@@ -70,6 +58,18 @@ struct deref<std::weak_ptr<T>> {
 
 template <class T>
 using deref_t = typename deref<std::remove_cv_t<T>>::type;
+
+template <class>
+struct is_shared_ptr_impl : std::false_type {};
+
+template <class T>
+struct is_shared_ptr_impl<std::shared_ptr<T>> : std::true_type {};
+
+template <class T>
+using is_shared_ptr = typename is_shared_ptr_impl<std::remove_cv_t<T>>::type;
+
+template <class T, class U>
+using is_copy_ctor = std::is_same<deref_t<T>, deref_t<U>>;
 
 template <class, class>
 struct contains;
