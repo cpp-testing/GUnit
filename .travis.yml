@@ -35,6 +35,12 @@ matrix:
         packages: ["clang-3.8", "libstdc++-5-dev", "valgrind", "gdb"]
         sources: ["ubuntu-toolchain-r-test", "llvm-toolchain-precise-3.8"]
   - os: linux
+    env: CXX=clang++-3.9
+    addons:
+      apt:
+        packages: ["clang-3.9", "libstdc++-6-dev", "valgrind", "gdb"]
+        sources: ["ubuntu-toolchain-r-test", "llvm-toolchain-precise-3.9"]
+  - os: linux
     env: CXX=g++-5
     addons:
       apt:

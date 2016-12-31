@@ -79,7 +79,7 @@ struct arg {
 };
 
 struct interface4 : interface {
-  virtual void f2(arg) = 0;
+  virtual void f2(arg) const = 0;
 };
 
 class example {
@@ -139,8 +139,7 @@ class example_data_ref {
   const int& cref;
 };
 
-class complex_example {
- public:
+class complex_example { public:
   complex_example(const std::shared_ptr<interface>& csp, std::shared_ptr<interface2> sp, interface4* ptr,
                   interface_dtor& ref)
       : csp(csp), sp(sp), ptr(ptr), ref(ref) {}
@@ -157,6 +156,25 @@ class complex_example {
   std::shared_ptr<interface2> sp;
   interface4* ptr;
   interface_dtor& ref;
+};
+
+class complex_example_const { public:
+  complex_example_const(const std::shared_ptr<interface>& csp, const std::shared_ptr<interface2>& sp, const interface4* ptr,
+                  const interface_dtor& ref)
+      : csp(csp), sp(sp), ptr(ptr), ref(ref) {}
+
+  void update() {
+    const auto i = csp->get(42);
+    sp->f1(77.0);
+    ptr->f2(arg{});
+    ref.get(i);
+  }
+
+ private:
+  std::shared_ptr<interface> csp;
+  std::shared_ptr<interface2> sp;
+  const interface4* ptr;
+  const interface_dtor& ref;
 };
 
 using Test = testing::GTest<example>;
@@ -232,57 +250,70 @@ TEST_F(CtorMultipleTest, ShoudlPassMultipleValuesIntoExampleCtor) {
   sut->update();
 }
 
-/*struct CtorMultiplePlusRefTest : testing::GTest<example_data_ref> {*/
-  //CtorMultiplePlusRefTest() { std::tie(sut, mocks) = Make<example_data_ref>(77, ref, 22, cref); }
-  //int ref = 42;
-  //const int cref = 7;
-//};
+struct CtorMultiplePlusRefTest : testing::GTest<example_data_ref> {
+  CtorMultiplePlusRefTest() { std::tie(sut, mocks) = Make(77, ref, 22, cref); }
+  int ref = 42;
+  const int cref = 7;
+};
 
-//TEST_F(CtorMultiplePlusRefTest, ShoudlPassMultipleValuesIntoExampleCtor) {
-  //using namespace testing;
+TEST_F(CtorMultiplePlusRefTest, ShoudlPassMultipleValuesIntoExampleCtor) {
+  using namespace testing;
 
-  //ASSERT_TRUE(nullptr != sut.get());
-  //EXPECT_EQ(1u, mocks.size());
-  //EXPECT_EQ(77, sut->get_data1());
-  //EXPECT_EQ(22, sut->get_data2());
-  //EXPECT_EQ(ref, sut->get_ref());
-  //EXPECT_EQ(&ref, &sut->get_ref());
-  //EXPECT_EQ(cref, sut->get_cref());
-  //EXPECT_EQ(&cref, &sut->get_cref());
+  ASSERT_TRUE(nullptr != sut.get());
+  EXPECT_EQ(1u, mocks.size());
+  EXPECT_EQ(77, sut->get_data1());
+  EXPECT_EQ(22, sut->get_data2());
+  EXPECT_EQ(ref, sut->get_ref());
+  EXPECT_EQ(&ref, &sut->get_ref());
+  EXPECT_EQ(cref, sut->get_cref());
+  EXPECT_EQ(&cref, &sut->get_cref());
 
-  //EXPECT_CALL(Mock<interface>(), (foo)(42)).Times(1);
-  //EXPECT_CALL(Mock<interface>(), (bar)(_, "str"));
+  EXPECT_CALL(Mock<interface>(), (foo)(42)).Times(1);
+  EXPECT_CALL(Mock<interface>(), (bar)(_, "str"));
 
-  //sut->update();
-//}
+  sut->update();
+}
 
-//struct CtorMultiplePlusRefOrderTest : testing::GTest<example_data_ref> {
-  //CtorMultiplePlusRefTest() { std::tie(sut, mocks) = Make<example_data_ref>(cref, 77, ref, 22); }
-  //int ref = 42;
-  //const int cref = 7;
-//};
+struct CtorMultiplePlusRefOrderTest : testing::GTest<example_data_ref> {
+  CtorMultiplePlusRefOrderTest() { std::tie(sut, mocks) = Make(cref, 77, ref, 22); }
+  int ref = 42;
+  const int cref = 7;
+};
 
-//TEST_F(CtorMultiplePlusRefOrderTest, ShoudlPassMultipleValuesIntoExampleCtor) {
-  //using namespace testing;
+TEST_F(CtorMultiplePlusRefOrderTest, ShoudlPassMultipleValuesIntoExampleCtor) {
+  using namespace testing;
 
-  //ASSERT_TRUE(nullptr != sut.get());
-  //EXPECT_EQ(1u, mocks.size());
-  //EXPECT_EQ(77, sut->get_data1());
-  //EXPECT_EQ(22, sut->get_data2());
-  //EXPECT_EQ(ref, sut->get_ref());
-  //EXPECT_EQ(&ref, &sut->get_ref());
-  //EXPECT_EQ(cref, sut->get_cref());
-  //EXPECT_EQ(&cref, &sut->get_cref());
+  ASSERT_TRUE(nullptr != sut.get());
+  EXPECT_EQ(1u, mocks.size());
+  EXPECT_EQ(77, sut->get_data1());
+  EXPECT_EQ(22, sut->get_data2());
+  EXPECT_EQ(ref, sut->get_ref());
+  EXPECT_EQ(&ref, &sut->get_ref());
+  EXPECT_EQ(cref, sut->get_cref());
+  EXPECT_EQ(&cref, &sut->get_cref());
 
-  //EXPECT_CALL(Mock<interface>(), (foo)(42)).Times(1);
-  //EXPECT_CALL(Mock<interface>(), (bar)(_, "str"));
+  EXPECT_CALL(Mock<interface>(), (foo)(42)).Times(1);
+  EXPECT_CALL(Mock<interface>(), (bar)(_, "str"));
 
-  //sut->update();
-/*}*/
+  sut->update();
+}
 
 using ComplexTest = testing::GTest<complex_example>;
 
 TEST_F(ComplexTest, ShoudlMakeComplexExample) {
+  using namespace testing;
+
+  EXPECT_CALL(Mock<interface>(), (get)(_)).WillOnce(Return(123));
+  EXPECT_CALL(Mock<interface2>(), (f1)(77.0)).Times(1);
+  EXPECT_CALL(Mock<interface4>(), (f2)(_)).Times(1);
+  EXPECT_CALL(Mock<interface_dtor>(), (get)(123)).Times(1);
+
+  sut->update();
+}
+
+using ComplexConstTest = testing::GTest<complex_example_const>;
+
+TEST_F(ComplexConstTest, ShoudlMakeComplexConstExample) {
   using namespace testing;
 
   EXPECT_CALL(Mock<interface>(), (get)(_)).WillOnce(Return(123));

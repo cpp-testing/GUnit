@@ -24,6 +24,18 @@ namespace testing {
 inline namespace v1 {
 namespace detail {
 
+struct none {};
+
+template <class T>
+struct type {
+  static void id() {}
+};
+
+template <class T>
+auto type_id() {
+  return reinterpret_cast<std::size_t>(&type<std::remove_cv_t<T>>::id);
+}
+
 template <class>
 struct is_shared_ptr_impl : std::false_type {};
 
@@ -32,6 +44,9 @@ struct is_shared_ptr_impl<std::shared_ptr<T>> : std::true_type {};
 
 template <class T>
 using is_shared_ptr = typename is_shared_ptr_impl<std::remove_cv_t<T>>::type;
+
+template <class T, class U>
+using is_copy_ctor = std::is_same<deref_t<T>, deref_t<U>>;
 
 template <class T>
 struct deref {
@@ -56,18 +71,6 @@ struct deref<std::weak_ptr<T>> {
 template <class T>
 using deref_t = typename deref<std::remove_cv_t<T>>::type;
 
-struct none {};
-
-template <class T>
-struct type {
-  static void id() {}
-};
-
-template <class T>
-auto type_id() {
-  return reinterpret_cast<std::size_t>(&type<std::remove_cv_t<T>>::id);
-}
-
 template <class, class>
 struct contains;
 
@@ -77,9 +80,6 @@ struct contains<T, std::tuple<TArgs...>>
                                                  std::integer_sequence<bool, std::is_same<T, TArgs>::value..., false>>::value> {
 };
 
-template <class T, class U>
-using is_copy_ctor = std::is_same<deref_t<T>, deref_t<U>>;
-
 template <class>
 struct wrapper;
 
@@ -88,7 +88,6 @@ struct wrapper<GMock<T>> {
   operator std::shared_ptr<T>() { return std::static_pointer_cast<T>(mock); }
   operator T*() { return reinterpret_cast<T*>(mock.get()); }
   operator T&() { return *mock; }
-
   std::shared_ptr<GMock<T>> mock;
 };
 
@@ -106,7 +105,7 @@ struct any_type {
     if (type_id<T>() == type_id<std::tuple_element_t<N, TArgs>>()) ++elem;
     if (elem - 1 == arg_nums[type_id<T>()]) {
       ++arg_nums[type_id<T>()];
-      return std::get<N>(args);
+      return (T)std::get<N>(args);
     }
     return get<T>(elem, v, max, std::integral_constant<std::size_t, N + 1>{});
   }
@@ -208,7 +207,7 @@ class GTest : public Test {
 
   void TearDown() override final { }
 
-  template <class U = T /*just for readability*/, class... TArgs>
+  template <class U = T, class... TArgs>
   auto Make(TArgs&&... args) {
     static_assert(std::is_same<T, U>::value, "Make<T> requires the same type as GTest<T>");
     std::tuple<TArgs...> tuple{std::forward<TArgs>(args)...};
