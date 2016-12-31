@@ -24,6 +24,15 @@ namespace testing {
 inline namespace v1 {
 namespace detail {
 
+template <class>
+struct is_shared_ptr_impl : std::false_type {};
+
+template <class T>
+struct is_shared_ptr_impl<std::shared_ptr<T>> : std::true_type {};
+
+template <class T>
+using is_shared_ptr = typename is_shared_ptr_impl<std::remove_cv_t<T>>::type;
+
 template <class T>
 struct deref {
   using type = std::remove_cv_t<std::remove_reference_t<std::remove_pointer_t<T>>>;
@@ -31,21 +40,21 @@ struct deref {
 
 template <class T, class TDeleter>
 struct deref<std::unique_ptr<T, TDeleter>> {
-  using type = std::remove_cv_t<std::remove_reference_t<std::remove_pointer_t<T>>>;
+  using type = typename deref<T>::type;
 };
 
 template <class T>
 struct deref<std::shared_ptr<T>> {
-  using type = std::remove_cv_t<std::remove_reference_t<std::remove_pointer_t<T>>>;
+  using type = typename deref<T>::type;
 };
 
 template <class T>
 struct deref<std::weak_ptr<T>> {
-  using type = std::remove_cv_t<std::remove_reference_t<std::remove_pointer_t<T>>>;
+  using type = typename deref<T>::type;
 };
 
 template <class T>
-using deref_t = typename deref<T>::type;
+using deref_t = typename deref<std::remove_cv_t<T>>::type;
 
 struct none {};
 
@@ -116,7 +125,7 @@ struct any_type {
     return wrapper<mock_t>{mock};
   }
 
-  template <class T, GTEST_REQUIRES(!is_copy_ctor<TParent, T>::value && std::is_polymorphic<deref_t<T>>::value)>
+  template <class T, GTEST_REQUIRES(!is_copy_ctor<TParent, T>::value && std::is_polymorphic<deref_t<T>>::value  && !is_shared_ptr<T>::value)>
   operator T&() const {
     using mock_t = GMock<deref_t<T>>;
     auto mock = std::make_shared<GMock<deref_t<T>>>();
@@ -124,7 +133,7 @@ struct any_type {
     return wrapper<mock_t>{mock};
   }
 
-  template <class T, GTEST_REQUIRES(!is_copy_ctor<TParent, T>::value && std::is_polymorphic<deref_t<T>>::value)>
+  template <class T, GTEST_REQUIRES(!is_copy_ctor<TParent, T>::value && std::is_polymorphic<deref_t<T>>::value && !is_shared_ptr<T>::value)>
   operator const T&() const {
     using mock_t = GMock<deref_t<T>>;
     auto mock = std::make_shared<GMock<deref_t<T>>>();
@@ -139,7 +148,7 @@ struct any_type {
                   std::integral_constant<std::size_t, 0>{});
   }
 
-  template <class T, GTEST_REQUIRES(!is_copy_ctor<TParent, T>::value && !std::is_polymorphic<deref_t<T>>::value)>
+  template <class T, GTEST_REQUIRES(!is_copy_ctor<TParent, T>::value && !std::is_polymorphic<deref_t<T>>::value) >
   operator T&() const {
     std::size_t elem = {};
     return const_cast<any_type*>(this)->get<T&>(elem, std::integral_constant<bool, contains<T&, TArgs>::value>{},
@@ -188,19 +197,26 @@ auto Make(std::tuple<TArgs...>& args) {
 
 }  // detail
 
-template <class T, class... TArgs>
-auto Make(TArgs&&... args) {
-  std::tuple<TArgs...> tuple{std::forward<TArgs>(args)...};
-  return detail::Make<T>(tuple);
-}
-
 template <class T>
 class GTest : public Test {
  public:
-  GTest() { std::tie(sut, mocks) = Make<T>(); }
+  void SetUp() override final {
+    if (!sut.get()) {
+      std::tie(sut, mocks) = Make<T>();
+    }
+  }
+
+  void TearDown() override final { }
+
+  template <class U = T /*just for readability*/, class... TArgs>
+  auto Make(TArgs&&... args) {
+    static_assert(std::is_same<T, U>::value, "Make<T> requires the same type as GTest<T>");
+    std::tuple<TArgs...> tuple{std::forward<TArgs>(args)...};
+    return detail::Make<T>(tuple);
+  }
 
   template <class TMock>
-  GMock<TMock>& mock() {
+  decltype(auto) Mock() {
     return *static_cast<GMock<TMock>*>(mocks[detail::type_id<TMock>()].get());
   }
 
