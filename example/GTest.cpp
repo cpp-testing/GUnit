@@ -32,7 +32,7 @@ class example {
 ////////////////////////////////////////////////////////////////////////////////
 
 class GTest : public testing::GTest<example> {
-public:
+ public:
   GTest() {
     using namespace testing;
     std::tie(sut, mocks) = make<SUT, NaggyMock>();

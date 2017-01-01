@@ -235,7 +235,7 @@ TEST(MakeTest, ShouldMakeComplexExampleUsingMakeAndTie) {
 
   std::tie(sut, mocks) = make<std::unique_ptr<complex_example>, testing::NaggyMock>();
   EXPECT_TRUE(nullptr != sut.get());
-  EXPECT_EQ(4u, mocks.size());
+  ASSERT_EQ(4u, mocks.size());
 }
 
 struct Test : testing::GTest<example> {

@@ -24,22 +24,6 @@ namespace testing {
 inline namespace v1 {
 namespace detail {
 
-class mock_wrapper : public std::shared_ptr<void> {
- public:
-  using std::shared_ptr<void>::shared_ptr;
-
-  template <class TMock>
-  decltype(auto) mock() {
-    return *static_cast<GMock<TMock>*>(get());
-  }
-};
-
-}  // detail
-
-using mocks_t = std::unordered_map<std::size_t, detail::mock_wrapper>;
-
-namespace detail {
-
 template <class T>
 struct type {
   static void id() {}
@@ -115,7 +99,7 @@ struct wrapper {
   }
   operator T*() { return reinterpret_cast<T*>(mock.get()); }
   operator T&() { return *reinterpret_cast<T*>(mock.get()); }
-  mock_wrapper& mock;
+  std::shared_ptr<void>& mock;
 };
 
 template <class T>
@@ -137,6 +121,18 @@ template <class T>
 decltype(auto) convert(GMock<T>& mock) {
   return static_cast<T&>(mock);
 }
+
+}  // detail
+
+class mocks_t : public std::unordered_map<std::size_t, std::shared_ptr<void>> {
+ public:
+  template <class TMock>
+  decltype(auto) mock() {
+    return *static_cast<GMock<TMock>*>((*this)[detail::type_id<TMock>()].get());
+  }
+};
+
+namespace detail {
 
 template <class TParent, class TArgs = std::tuple<>>
 struct any_type {
@@ -271,8 +267,9 @@ template <class T, template <class> class TMock = NoMock, GTEST_REQUIRES(detail:
 auto make(TArgs&&... args) {
   std::tuple<TArgs...> tuple{std::forward<TArgs>(args)...};
   mocks_t mocks;
-  return std::make_pair(
-      detail::make_impl(detail::type<T>{}, mocks, tuple, std::make_index_sequence<detail::ctor_size<detail::deref_t<T>>::value>{}), mocks);
+  return std::make_pair(detail::make_impl(detail::type<T>{}, mocks, tuple,
+                                          std::make_index_sequence<detail::ctor_size<detail::deref_t<T>>::value>{}),
+                        mocks);
 }
 
 template <class T>
@@ -285,7 +282,7 @@ class GTest : public Test {
 
   template <class TMock>
   decltype(auto) mock() {
-    return mocks[detail::type_id<TMock>()].template mock<TMock>();
+    return mocks.mock<TMock>();
   }
 
   SUT sut;
