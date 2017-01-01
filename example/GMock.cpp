@@ -7,6 +7,7 @@
 //
 #include "GMock.h"
 #include <stdexcept>
+#include "GTest.h"
 #include "gtest/gtest.h"
 
 class interface {
@@ -87,6 +88,45 @@ TEST(GMock, ShouldWorkWithMacroDefinedMocks) {
 
   example e{static_cast<const interface&>(imock), static_cast<extended_interface&>(emock)};
   e.update();
+}
+
+TEST(GMock, ShouldMakeExample) {
+  using namespace testing;
+  GMock<interface> imock;
+  GMock<extended_interface> emock;
+
+  EXPECT_CALL(imock, (get)()).WillOnce(Return(false));
+  EXPECT_CALL(emock, (bar)(false)).Times(1);
+
+  auto sut = make<example>(imock, emock);
+
+  sut.update();
+}
+
+TEST(GMock, ShouldMakeUniquePtrExample) {
+  using namespace testing;
+  GMock<interface> imock;
+  GMock<extended_interface> emock;
+
+  EXPECT_CALL(imock, (get)()).WillOnce(Return(false));
+  EXPECT_CALL(emock, (bar)(false)).Times(1);
+
+  auto sut = make<std::unique_ptr<example>>(imock, emock);
+
+  sut->update();
+}
+
+TEST(GMock, ShouldMakeSharedPtrExample) {
+  using namespace testing;
+  GMock<interface> imock;
+  GMock<extended_interface> emock;
+
+  EXPECT_CALL(imock, (get)()).WillOnce(Return(false));
+  EXPECT_CALL(emock, (bar)(false)).Times(1);
+
+  auto sut = make<std::shared_ptr<example>>(imock, emock);
+
+  sut->update();
 }
 
 TEST(GMock, ShouldFailDueToUninterestingGetCall) {

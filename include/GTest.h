@@ -24,8 +24,6 @@ namespace testing {
 inline namespace v1 {
 namespace detail {
 
-struct none {};
-
 template <class T>
 struct type {
   static void id() {}
@@ -134,7 +132,7 @@ decltype(auto) convert(GMock<T>& mock) {
   return static_cast<T&>(mock);
 }
 
-template <class TParent, class TArgs = none>
+template <class TParent, class TArgs = std::tuple<>>
 struct any_type {
   template <class T, std::size_t N>
   T get(std::size_t&, std::true_type, std::integral_constant<std::size_t, N>, std::integral_constant<std::size_t, N>) {
@@ -170,7 +168,6 @@ struct any_type {
                                     !is_shared_ptr<T>::value)>
   operator T&() const {
     mocks[type_id<deref_t<T>>()] = std::make_shared<GMock<deref_t<T>>>();
-    ;
     return wrapper<deref_t<T>>{mocks[type_id<deref_t<T>>()]};
   }
 
@@ -178,7 +175,6 @@ struct any_type {
                                     !is_shared_ptr<T>::value)>
   operator const T&() const {
     mocks[type_id<deref_t<T>>()] = std::make_shared<GMock<deref_t<T>>>();
-    ;
     return wrapper<deref_t<T>>{mocks[type_id<deref_t<T>>()]};
   }
 
@@ -208,7 +204,7 @@ struct any_type {
   std::unordered_map<std::size_t, std::size_t>& arg_nums;
 };
 
-template <std::size_t, class T, class TArgs = none>
+template <std::size_t, class T, class TArgs = std::tuple<>>
 using any_type_t = any_type<T, TArgs>;
 
 template <class, class = std::make_index_sequence<GTEST_MAX_CTOR_SIZE>>
