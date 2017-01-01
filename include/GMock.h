@@ -181,8 +181,11 @@ class GMock {
     return gmock_call_impl<TName, R, TArgs...>(detail::vf_offset(f), args...);
   }
 
-  T* operator&() { return reinterpret_cast<T*>(this); }
   operator T&() { return reinterpret_cast<T&>(*this); }
+  operator const T&() const { return reinterpret_cast<const T&>(*this); }
+
+  operator T*() { return reinterpret_cast<T*>(this); }
+  operator const T*() const { return reinterpret_cast<const T*>(this); }
 
  private:
   std::unordered_map<std::string, std::unique_ptr<internal::UntypedFunctionMockerBase>> fs;
