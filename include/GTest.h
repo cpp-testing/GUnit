@@ -24,6 +24,22 @@ namespace testing {
 inline namespace v1 {
 namespace detail {
 
+class mock_wrapper : public std::shared_ptr<void> {
+ public:
+  using std::shared_ptr<void>::shared_ptr;
+
+  template <class TMock>
+  decltype(auto) mock() {
+    return *static_cast<GMock<TMock>*>(get());
+  }
+};
+
+}  // detail
+
+using mocks_t = std::unordered_map<std::size_t, detail::mock_wrapper>;
+
+namespace detail {
+
 template <class T>
 struct type {
   static void id() {}
@@ -90,16 +106,6 @@ struct contains<T, std::tuple<TArgs...>>
                                                  std::integer_sequence<bool, std::is_same<T, TArgs>::value..., false>>::value> {
 };
 
-class mock_wrapper : public std::shared_ptr<void> {
- public:
-  using std::shared_ptr<void>::shared_ptr;
-
-  template <class TMock>
-  decltype(auto) mock() {
-    return *static_cast<GMock<TMock>*>(get());
-  }
-};
-
 template <class T>
 struct wrapper {
   operator std::shared_ptr<T>() { return std::static_pointer_cast<T>(mock); }
@@ -160,7 +166,6 @@ struct any_type {
   template <class T, GTEST_REQUIRES(!is_copy_ctor<TParent, T>::value && std::is_polymorphic<deref_t<T>>::value)>
   operator T() {
     mocks[type_id<deref_t<T>>()] = std::make_shared<GMock<deref_t<T>>>();
-    ;
     return wrapper<deref_t<T>>{mocks[type_id<deref_t<T>>()]};
   }
 
@@ -199,7 +204,7 @@ struct any_type {
                                                       std::tuple_size<TArgs>{}, std::integral_constant<std::size_t, 0>{});
   }
 
-  std::unordered_map<std::size_t, mock_wrapper>& mocks;
+  mocks_t& mocks;
   TArgs& args;
   std::unordered_map<std::size_t, std::size_t>& arg_nums;
 };
@@ -220,9 +225,21 @@ struct ctor_size<T, std::index_sequence<Ns...>>
                          ctor_size<T, std::make_index_sequence<sizeof...(Ns) - 1>>> {};
 
 template <class T, class... TArgs, std::size_t... Ns>
-auto make_impl(std::unordered_map<std::size_t, mock_wrapper>& mocks, std::tuple<TArgs...>& args, std::index_sequence<Ns...>) {
+auto make_impl(detail::type<std::unique_ptr<T>>, mocks_t& mocks, std::tuple<TArgs...>& args, std::index_sequence<Ns...>) {
   std::unordered_map<std::size_t, std::size_t> arg_nums;
-  return std::make_unique<T>(any_type_t<Ns, T, std::tuple<TArgs...>>{mocks, args, arg_nums}...);
+  return std::make_unique<T>(any_type_t<Ns, detail::deref_t<T>, std::tuple<TArgs...>>{mocks, args, arg_nums}...);
+}
+
+template <class T, class... TArgs, std::size_t... Ns>
+auto make_impl(detail::type<std::shared_ptr<T>>, mocks_t& mocks, std::tuple<TArgs...>& args, std::index_sequence<Ns...>) {
+  std::unordered_map<std::size_t, std::size_t> arg_nums;
+  return std::make_shared<T>(any_type_t<Ns, detail::deref_t<T>, std::tuple<TArgs...>>{mocks, args, arg_nums}...);
+}
+
+template <class T, class... TArgs, std::size_t... Ns>
+auto make_impl(detail::type<T>, mocks_t& mocks, std::tuple<TArgs...>& args, std::index_sequence<Ns...>) {
+  std::unordered_map<std::size_t, std::size_t> arg_nums;
+  return T(any_type_t<Ns, detail::deref_t<T>, std::tuple<TArgs...>>{mocks, args, arg_nums}...);
 }
 
 template <class T, class... TArgs>
@@ -253,35 +270,26 @@ auto make(TArgs&&... args) {
 template <class T, template <class> class TMock = NoMock, GTEST_REQUIRES(detail::is_gmock<TMock>::value), class... TArgs>
 auto make(TArgs&&... args) {
   std::tuple<TArgs...> tuple{std::forward<TArgs>(args)...};
-  std::unordered_map<std::size_t, detail::mock_wrapper> mocks;
-  return std::make_pair(detail::make_impl<T>(mocks, tuple, std::make_index_sequence<detail::ctor_size<T>::value>{}), mocks);
+  mocks_t mocks;
+  return std::make_pair(
+      detail::make_impl(detail::type<T>{}, mocks, tuple, std::make_index_sequence<detail::ctor_size<detail::deref_t<T>>::value>{}), mocks);
 }
 
 template <class T>
 class GTest : public Test {
- public:
-  void SetUp() override final {
-    if (!sut.get()) {
-      std::tie(sut, mocks) = testing::make<T, NaggyMock>();
-    }
-  }
-
+  void SetUp() override final {}
   void TearDown() override final {}
 
-  template <class U = T, class... TArgs>
-  auto make(TArgs&&... args) {
-    static_assert(std::is_same<T, U>::value, "make<T> requires the same type as GTest<T>");
-    return testing::make<U, NaggyMock>(std::forward<TArgs>(args)...);
-  }
+ protected:
+  using SUT = std::unique_ptr<T>;
 
   template <class TMock>
   decltype(auto) mock() {
     return mocks[detail::type_id<TMock>()].template mock<TMock>();
   }
 
- protected:
-  std::unique_ptr<T> sut;
-  std::unordered_map<std::size_t, detail::mock_wrapper> mocks;
+  SUT sut;
+  mocks_t mocks;
 };
 
 }  // v1

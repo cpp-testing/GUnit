@@ -31,7 +31,13 @@ class example {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-using GTest = testing::GTest<example>;
+class GTest : public testing::GTest<example> {
+public:
+  GTest() {
+    using namespace testing;
+    std::tie(sut, mocks) = make<SUT, NaggyMock>();
+  }
+};
 
 TEST_F(GTest, ShouldMakeExample) {
   using namespace testing;
@@ -46,7 +52,7 @@ TEST_F(GTest, ShouldMakeExample) {
 TEST_F(GTest, ShouldOverrideExample) {
   using namespace testing;
 
-  std::tie(sut, mocks) = make<example>(77);
+  std::tie(sut, mocks) = make<SUT, NaggyMock>(77);
   EXPECT_EQ(77, sut->get_data());
 
   EXPECT_CALL(mock<interface>(), (foo)(42)).Times(1);
