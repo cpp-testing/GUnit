@@ -18,8 +18,7 @@ TEST(benchmark, test1) {
   EXPECT_CALL(m2, (f2_1)()).Times(1);
   EXPECT_CALL(m3, (f3)(0, 1, 2)).Times(1);
 
-  example e{m1, m2, m3};
-
+  example e{static_cast<const interface1&>(m1), static_cast<interface2&>(m2), static_cast<interface3&>(m3)};
   e.test();
 }
 
@@ -33,7 +32,6 @@ TEST(benchmark, test2) {
   EXPECT_CALL(m2, (f2_2)()).Times(1);
   EXPECT_CALL(m3, (f3)(0, 1, 2)).Times(1);
 
-  example e{m1, m2, m3};
-
+  example e{static_cast<const interface1&>(m1), static_cast<interface2&>(m2), static_cast<interface3&>(m3)};
   e.test();
 }

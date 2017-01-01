@@ -163,34 +163,33 @@ TEST(GMock, ShouldBeConvertible) {
   GMock<interface> m;
 
   {
-    interface* i = m;
+    interface* i = &static_cast<interface&>(m);
     (void)i;
   }
   {
-    const interface* i = m;
+    const interface* i = &static_cast<interface&>(m);
     (void)i;
   }
   {
-    interface& i = m;
+    interface& i = static_cast<interface&>(m);
     (void)i;
   }
   {
-    const interface& i = m;
+    const interface& i = static_cast<interface&>(m);
     (void)i;
   }
 }
-
 
 TEST(GMock, ShouldConstBeConvertible) {
   using namespace testing;
   const GMock<interface> m;
 
   {
-    const interface* i = m;
+    const interface* i = &static_cast<const interface&>(m);
     (void)i;
   }
   {
-    const interface& i = m;
+    const interface& i = static_cast<const interface&>(m);
     (void)i;
   }
 }
@@ -203,14 +202,14 @@ TEST(GMock, ShouldMockSimpleInterface) {
   EXPECT_CALL(m, (foo)(12)).Times(0);
   EXPECT_CALL(m, (bar)(_, "str"));
 
-  example sut{0, m};
+  example sut{0, static_cast<interface&>(m)};
   sut.update();
 }
 
 TEST(GMock, ShouldMockExtendedInterface) {
   using namespace testing;
   GMock<interface2> m;
-  interface2* i = m;
+  auto* i = &static_cast<interface2&>(m);
 
   EXPECT_CALL(m, (foo)(42)).Times(1);
   EXPECT_CALL(m, (bar)(_, "str"));
@@ -228,7 +227,7 @@ TEST(GMock, ShouldMockExtendedInterfaceWithArg) {
   EXPECT_CALL(m, (get)(0)).WillOnce(Return(42));
   EXPECT_CALL(m, (f2)(arg{42})).Times(1);
 
-  interface4& i = m;
+  auto& i = static_cast<interface4&>(m);
   EXPECT_EQ(42, i.get(0));
   i.f2(arg{42});
 }
@@ -236,7 +235,7 @@ TEST(GMock, ShouldMockExtendedInterfaceWithArg) {
 TEST(GMock, ShouldHandleMultipleCalls) {
   using namespace testing;
   GMock<interface> m;
-  interface& i = m;
+  auto& i = static_cast<interface&>(m);
 
   EXPECT_CALL(m, (get)(42)).Times(1);
   i.get(42);
@@ -260,7 +259,7 @@ TEST(GMock, ShouldHandleMultipleCalls) {
 TEST(GMock, ShouldMockVariadicFactory) {
   using namespace testing;
   GMock<ifactory<int, short, int>> m;
-  ifactory<int, short, int>* i = m;
+  auto* i = &static_cast<ifactory<int, short, int>&>(m);
 
   EXPECT_CALL(m, (create)(_, 3)).WillOnce(Return(42));
   EXPECT_EQ(42, i->create(1, 3));
@@ -269,11 +268,11 @@ TEST(GMock, ShouldMockVariadicFactory) {
 TEST(GMock, ShouldMockVariadicFactories) {
   using namespace testing;
   GMock<ifactory<std::string, float>> m;
-  ifactory<std::string, float>* i = m;
+  auto& i = static_cast<ifactory<std::string, float>&>(m);
 
   std::string str = "str";
   EXPECT_CALL(m, (create)(8.0)).WillOnce(Return(str));
-  EXPECT_STREQ("str", i->create(8.0).c_str());
+  EXPECT_STREQ("str", i.create(8.0).c_str());
 }
 
 TEST(GMock, ShouldMockUsingUniquePtr) {
@@ -284,7 +283,7 @@ TEST(GMock, ShouldMockUsingUniquePtr) {
   EXPECT_CALL(*m, (foo)(12)).Times(0);
   EXPECT_CALL(*m, (bar)(_, "str"));
 
-  example sut{0, *m};
+  example sut{0, static_cast<interface&>(*m)};
   sut.update();
 }
 
@@ -307,7 +306,7 @@ TEST(GMock, ShouldMockUsingSharedPtr) {
   EXPECT_CALL(*m, (foo)(12)).Times(0);
   EXPECT_CALL(*m, (bar)(_, "str"));
 
-  example sut{0, *m};
+  example sut{0, static_cast<interface&>(*m)};
   sut.update();
 }
 
@@ -333,7 +332,8 @@ TEST(GMock, ShouldMockComplexExample) {
   EXPECT_CALL(ptr, (f2)(_)).Times(1);
   EXPECT_CALL(ref, (get)(123)).Times(1);
 
-  complex_example sut{std::static_pointer_cast<interface>(csp), std::static_pointer_cast<interface2>(sp), ptr, ref};
+  complex_example sut{std::static_pointer_cast<interface>(csp), std::static_pointer_cast<interface2>(sp),
+                      &static_cast<interface4&>(ptr), static_cast<interface_dtor&>(ref)};
 
   sut.update();
 }
@@ -350,8 +350,9 @@ TEST(GMock, ShouldMockComplexExampleUniquePtr) {
   EXPECT_CALL(ptr, (f2)(_)).Times(1);
   EXPECT_CALL(ref, (get)(123)).Times(1);
 
-  auto sut = std::make_unique<complex_example>(std::static_pointer_cast<interface>(csp),
-                                               std::static_pointer_cast<interface2>(sp), ptr, ref);
+  auto sut =
+      std::make_unique<complex_example>(std::static_pointer_cast<interface>(csp), std::static_pointer_cast<interface2>(sp),
+                                        &static_cast<interface4&>(ptr), static_cast<interface_dtor&>(ref));
   sut->update();
 }
 
@@ -361,7 +362,7 @@ TEST(GMock, ShouldMockUsingConstInterface) {
 
   EXPECT_CALL(m, (bar)(_, "str"));
 
-  cexample sut{m};
+  cexample sut{static_cast<interface&>(m)};
   sut.update();
 }
 
@@ -371,7 +372,7 @@ TEST(GMock, ShouldMockUsingConstPointer) {
 
   EXPECT_CALL(m, (bar)(_, "str"));
 
-  cpexample sut{m};
+  cpexample sut{&static_cast<const interface&>(m)};
   sut.update();
 }
 
@@ -381,7 +382,7 @@ TEST(GMock, ShouldMockEmptyMethods) {
 
   EXPECT_CALL(m, (empty)()).Times(1);
 
-  static_cast<const interface3*>(m)->empty();
+  static_cast<const interface3&>(m).empty();
 }
 
 TEST(GMock, ShouldWorkTogetherWithGMock) {
@@ -392,7 +393,7 @@ TEST(GMock, ShouldWorkTogetherWithGMock) {
   EXPECT_CALL(m, (get)(42)).WillOnce(Return(87));
   EXPECT_CALL(gm, f(87)).Times(1);
 
-  auto sut = gmock_example{gm, m};
+  auto sut = gmock_example{gm, &static_cast<interface&>(m)};
 
   sut.test();
 }
@@ -402,7 +403,7 @@ TEST(GMock, ShouldHandleExceptions) {
   GMock<interface> m;
   EXPECT_CALL(m, (foo)(42)).Times(1);
 
-  throw_example sut{m};
+  throw_example sut{static_cast<interface&>(m)};
   sut.update();
 
   EXPECT_THROW(sut.update(), std::runtime_error);

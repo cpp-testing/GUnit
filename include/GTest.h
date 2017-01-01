@@ -176,10 +176,10 @@ template <class T>
 struct ctor_size<T, std::index_sequence<>> : std::integral_constant<std::size_t, 0> {};
 
 template <class T, std::size_t... Ns>
-struct ctor_size<T, std::index_sequence<Ns...>> : std::conditional_t<std::is_constructible<T, any_type_t<Ns, T>...>::value,
-                                                                     std::integral_constant<std::size_t, sizeof...(Ns)>,
-                                                                     ctor_size<T, std::make_index_sequence<sizeof...(Ns)-1>>> {
-};
+struct ctor_size<T, std::index_sequence<Ns...>>
+    : std::conditional_t<std::is_constructible<T, any_type_t<Ns, T>...>::value,
+                         std::integral_constant<std::size_t, sizeof...(Ns)>,
+                         ctor_size<T, std::make_index_sequence<sizeof...(Ns) - 1>>> {};
 
 template <class T, class... TArgs, std::size_t... Ns>
 auto MakeImpl(std::unordered_map<std::size_t, std::shared_ptr<void>>& mocks, std::tuple<TArgs...>& args,
