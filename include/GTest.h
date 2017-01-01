@@ -71,6 +71,18 @@ using is_shared_ptr = typename is_shared_ptr_impl<std::remove_cv_t<T>>::type;
 template <class T, class U>
 using is_copy_ctor = std::is_same<deref_t<T>, deref_t<U>>;
 
+template <template <class> class>
+struct is_gmock : std::false_type {};
+
+template <>
+struct is_gmock<NaggyMock> : std::true_type {};
+
+template <>
+struct is_gmock<StrictMock> : std::true_type {};
+
+template <>
+struct is_gmock<NiceMock> : std::true_type {};
+
 template <class, class>
 struct contains;
 
@@ -78,6 +90,16 @@ template <class T, class... TArgs>
 struct contains<T, std::tuple<TArgs...>>
     : std::integral_constant<bool, !std::is_same<std::integer_sequence<bool, false, std::is_same<T, TArgs>::value...>,
                                                  std::integer_sequence<bool, std::is_same<T, TArgs>::value..., false>>::value> {
+};
+
+class mock_wrapper : public std::shared_ptr<void> {
+ public:
+  using std::shared_ptr<void>::shared_ptr;
+
+  template <class TMock>
+  decltype(auto) mock() {
+    return *static_cast<GMock<TMock>*>(get());
+  }
 };
 
 template <class T>
@@ -89,8 +111,28 @@ struct wrapper {
   }
   operator T*() { return reinterpret_cast<T*>(mock.get()); }
   operator T&() { return *reinterpret_cast<T*>(mock.get()); }
-  std::shared_ptr<void>& mock;
+  mock_wrapper& mock;
 };
+
+template <class T>
+decltype(auto) convert(T&& arg) {
+  return std::forward<T>(arg);
+}
+
+template <class T>
+decltype(auto) convert(std::shared_ptr<GMock<T>>& mock) {
+  return std::static_pointer_cast<T>(mock);
+}
+
+template <class T>
+decltype(auto) convert(GMock<T>* mock) {
+  return &static_cast<T&>(*mock);
+}
+
+template <class T>
+decltype(auto) convert(GMock<T>& mock) {
+  return static_cast<T&>(mock);
+}
 
 template <class TParent, class TArgs = none>
 struct any_type {
@@ -161,7 +203,7 @@ struct any_type {
                                                       std::tuple_size<TArgs>{}, std::integral_constant<std::size_t, 0>{});
   }
 
-  std::unordered_map<std::size_t, std::shared_ptr<void>>& mocks;
+  std::unordered_map<std::size_t, mock_wrapper>& mocks;
   TArgs& args;
   std::unordered_map<std::size_t, std::size_t>& arg_nums;
 };
@@ -182,46 +224,68 @@ struct ctor_size<T, std::index_sequence<Ns...>>
                          ctor_size<T, std::make_index_sequence<sizeof...(Ns) - 1>>> {};
 
 template <class T, class... TArgs, std::size_t... Ns>
-auto MakeImpl(std::unordered_map<std::size_t, std::shared_ptr<void>>& mocks, std::tuple<TArgs...>& args,
-              std::index_sequence<Ns...>) {
+auto make_impl(std::unordered_map<std::size_t, mock_wrapper>& mocks, std::tuple<TArgs...>& args, std::index_sequence<Ns...>) {
   std::unordered_map<std::size_t, std::size_t> arg_nums;
   return std::make_unique<T>(any_type_t<Ns, T, std::tuple<TArgs...>>{mocks, args, arg_nums}...);
 }
 
 template <class T, class... TArgs>
-auto Make(std::tuple<TArgs...>& args) {
-  std::unordered_map<std::size_t, std::shared_ptr<void>> mocks;
-  return std::make_pair(MakeImpl<T>(mocks, args, std::make_index_sequence<ctor_size<T>::value>{}), mocks);
+auto make_impl(detail::type<std::unique_ptr<T>>, TArgs&&... args) {
+  return std::make_unique<T>(detail::convert(std::forward<TArgs>(args))...);
+}
+
+template <class T, class... TArgs>
+auto make_impl(detail::type<std::shared_ptr<T>>, TArgs&&... args) {
+  return std::make_shared<T>(detail::convert(std::forward<TArgs>(args))...);
+}
+
+template <class T, class... TArgs>
+auto make_impl(detail::type<T>, TArgs&&... args) {
+  return T(detail::convert(std::forward<TArgs>(args))...);
 }
 
 }  // detail
+
+template <class>
+struct NoMock {};
+
+template <class T, template <class> class TMock = NoMock, GTEST_REQUIRES(!detail::is_gmock<TMock>::value), class... TArgs>
+auto make(TArgs&&... args) {
+  return detail::make_impl(detail::type<T>{}, std::forward<TArgs>(args)...);
+}
+
+template <class T, template <class> class TMock = NoMock, GTEST_REQUIRES(detail::is_gmock<TMock>::value), class... TArgs>
+auto make(TArgs&&... args) {
+  std::tuple<TArgs...> tuple{std::forward<TArgs>(args)...};
+  std::unordered_map<std::size_t, detail::mock_wrapper> mocks;
+  return std::make_pair(detail::make_impl<T>(mocks, tuple, std::make_index_sequence<detail::ctor_size<T>::value>{}), mocks);
+}
 
 template <class T>
 class GTest : public Test {
  public:
   void SetUp() override final {
     if (!sut.get()) {
-      std::tie(sut, mocks) = Make<T>();
+      std::tie(sut, mocks) = testing::make<T, NaggyMock>();
     }
   }
 
   void TearDown() override final {}
 
   template <class U = T, class... TArgs>
-  auto Make(TArgs&&... args) {
-    static_assert(std::is_same<T, U>::value, "Make<T> requires the same type as GTest<T>");
-    std::tuple<TArgs...> tuple{std::forward<TArgs>(args)...};
-    return detail::Make<T>(tuple);
+  auto make(TArgs&&... args) {
+    static_assert(std::is_same<T, U>::value, "make<T> requires the same type as GTest<T>");
+    return testing::make<U, NaggyMock>(std::forward<TArgs>(args)...);
   }
 
   template <class TMock>
-  decltype(auto) Mock() {
-    return *static_cast<GMock<TMock>*>(mocks[detail::type_id<TMock>()].get());
+  decltype(auto) mock() {
+    return mocks[detail::type_id<TMock>()].template mock<TMock>();
   }
 
  protected:
   std::unique_ptr<T> sut;
-  std::unordered_map<std::size_t, std::shared_ptr<void>> mocks;
+  std::unordered_map<std::size_t, detail::mock_wrapper> mocks;
 };
 
 }  // v1

@@ -442,3 +442,18 @@ TEST(GMock, ShouldNotTriggerUnexpectedCallForCtorOrder) {
   std::unique_ptr<interface_dtor> up = std::unique_ptr<interface_dtor>(reinterpret_cast<interface_dtor*>(mock.get()));
   (void)up;
 }
+
+TEST(GMock, ShouldAllowDeletingMock) {
+  using namespace testing;
+  {
+    auto mock = new GMock<interface>();
+    delete mock;
+  }
+
+  { auto mock = std::make_unique<GMock<interface>>(); }
+
+  {
+    auto mock = std::make_unique<GMock<interface>>();
+    std::unique_ptr<interface> up = std::move(mock);
+  }
+}
