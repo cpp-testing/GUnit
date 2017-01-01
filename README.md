@@ -30,3 +30,4 @@ Tested compilers:
 
 TODO
 uniteresting call - show backtrace
+http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0338r0.pdf
