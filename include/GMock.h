@@ -12,6 +12,9 @@
 #include <string>
 #include <type_traits>
 #include <unordered_map>
+#include <utility>
+
+#define GREQUIRES(...) typename std::enable_if<__VA_ARGS__, int>::type = 0
 
 namespace testing {
 inline namespace v1 {
@@ -188,6 +191,9 @@ class GMock {
   std::unordered_map<std::string, std::unique_ptr<internal::UntypedFunctionMockerBase>> fs;
 };
 
+template <class>
+struct NoMock {};
+
 template <class T>
 using StrictGMock = StrictMock<GMock<T>>;
 
@@ -209,6 +215,67 @@ auto static_pointer_cast(const std::shared_ptr<testing::GMock<U>>& mock) noexcep
   return std::shared_ptr<T>{mock, reinterpret_cast<T*>(mock.get())};
 }
 }  // std
+
+namespace testing {
+inline namespace v1 {
+namespace detail {
+
+template <template <class> class>
+struct is_gmock : std::false_type {};
+
+template <>
+struct is_gmock<NaggyMock> : std::true_type {};
+
+template <>
+struct is_gmock<StrictMock> : std::true_type {};
+
+template <>
+struct is_gmock<NiceMock> : std::true_type {};
+
+template <class T>
+decltype(auto) convert(T&& arg) {
+  return std::forward<T>(arg);
+}
+
+template <class T>
+decltype(auto) convert(std::shared_ptr<GMock<T>>& mock) {
+  return std::static_pointer_cast<T>(mock);
+}
+
+template <class T>
+decltype(auto) convert(GMock<T>* mock) {
+  return &static_cast<T&>(*mock);
+}
+
+template <class T>
+decltype(auto) convert(GMock<T>& mock) {
+  return static_cast<T&>(mock);
+}
+
+template <class T, class... TArgs>
+auto make_impl(detail::identity<std::unique_ptr<T>>, TArgs&&... args) {
+  return std::make_unique<T>(detail::convert(std::forward<TArgs>(args))...);
+}
+
+template <class T, class... TArgs>
+auto make_impl(detail::identity<std::shared_ptr<T>>, TArgs&&... args) {
+  return std::make_shared<T>(detail::convert(std::forward<TArgs>(args))...);
+}
+
+template <class T, class... TArgs>
+auto make_impl(detail::identity<T>, TArgs&&... args) {
+  return T(detail::convert(std::forward<TArgs>(args))...);
+}
+
+}  // detail
+
+template <class T, template <class> class TMock = NoMock, GREQUIRES(!detail::is_gmock<TMock>::value), class... TArgs>
+auto make(TArgs&&... args) {
+  return detail::make_impl(detail::identity<T>{}, std::forward<TArgs>(args)...);
+}
+
+}  // v1
+}  // testing
 
 #define __GMOCK_VPTR_COMMA() ,
 #define __GMOCK_VPTR_IGNORE(...)

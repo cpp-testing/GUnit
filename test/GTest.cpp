@@ -196,28 +196,6 @@ class upexample {
   std::unique_ptr<interface> i;
 };
 
-TEST(MakeTest, ShouldMakeComplexExampleUsingMakeUniquePtr) {
-  using namespace ::testing;
-  auto csp = std::make_shared<GMock<interface>>();
-  auto sp = std::make_shared<GMock<interface2>>();
-  auto ptr = GMock<interface4>();
-  auto ref = GMock<interface_dtor>();
-
-  auto sut = make<std::unique_ptr<complex_example>>(csp, sp, &ptr, ref);
-  EXPECT_TRUE(nullptr != sut.get());
-}
-
-TEST(MakeTest, ShouldMakeComplexExampleUsingMakeSharedPtr) {
-  using namespace ::testing;
-  auto csp = std::make_shared<GMock<interface>>();
-  auto sp = std::make_shared<GMock<interface2>>();
-  auto ptr = GMock<interface4>();
-  auto ref = GMock<interface_dtor>();
-
-  auto sut = make<std::shared_ptr<complex_example>>(csp, sp, &ptr, ref);
-  EXPECT_TRUE(nullptr != sut.get());
-}
-
 TEST(MakeTest, ShouldMakeComplexExampleUsingMakeType) {
   using namespace ::testing;
   auto csp = std::make_shared<GMock<interface>>();
@@ -239,7 +217,7 @@ TEST(MakeTest, ShouldMakeComplexExampleUsingMakeAndTie) {
 }
 
 struct Test : testing::GTest<example> {
-  Test() { std::tie(sut, mocks) = testing::make<SUT, testing::NaggyMock>(); }
+  void SetUp() override { std::tie(sut, mocks) = testing::make<SUT, testing::NaggyMock>(); }
 };
 
 TEST_F(Test, ShouldMakeExample) {
@@ -281,7 +259,7 @@ TEST_F(UninitializedTest, ShouldNotCreateSUTAndMocks) {
 }
 
 struct CtorTest : testing::GTest<example> {
-  CtorTest() { std::tie(sut, mocks) = testing::make<SUT, testing::NaggyMock>(77); }
+  void SetUp() override { std::tie(sut, mocks) = testing::make<SUT, testing::NaggyMock>(77); }
 };
 
 TEST_F(CtorTest, ShouldPassValueIntoExampleCtor) {
@@ -298,7 +276,7 @@ TEST_F(CtorTest, ShouldPassValueIntoExampleCtor) {
 }
 
 struct CtorMultipleTest : testing::GTest<example_data> {
-  CtorMultipleTest() { std::tie(sut, mocks) = testing::make<SUT, testing::NaggyMock>(77, 22); }
+  void SetUp() override { std::tie(sut, mocks) = testing::make<SUT, testing::NaggyMock>(77, 22); }
 };
 
 TEST_F(CtorMultipleTest, ShouldPassMultipleValuesIntoExampleCtor) {
@@ -316,7 +294,7 @@ TEST_F(CtorMultipleTest, ShouldPassMultipleValuesIntoExampleCtor) {
 }
 
 struct CtorMultiplePlusRefTest : testing::GTest<example_data_ref> {
-  CtorMultiplePlusRefTest() { std::tie(sut, mocks) = testing::make<SUT, testing::NaggyMock>(77, ref, 22, cref); }
+  void SetUp() override { std::tie(sut, mocks) = testing::make<SUT, testing::NaggyMock>(77, ref, 22, cref); }
   int ref = 42;
   const int cref = 7;
 };
@@ -340,7 +318,7 @@ TEST_F(CtorMultiplePlusRefTest, ShouldPassMultipleValuesIntoExampleCtor) {
 }
 
 struct CtorMultiplePlusRefOrderTest : testing::GTest<example_data_ref> {
-  CtorMultiplePlusRefOrderTest() { std::tie(sut, mocks) = testing::make<SUT, testing::NaggyMock>(cref, 77, ref, 22); }
+  void SetUp() override { std::tie(sut, mocks) = testing::make<SUT, testing::NaggyMock>(cref, 77, ref, 22); }
   int ref = 42;
   const int cref = 7;
 };
@@ -364,7 +342,7 @@ TEST_F(CtorMultiplePlusRefOrderTest, ShouldPassMultipleValuesIntoExampleCtor) {
 }
 
 struct ComplexTest : testing::GTest<complex_example> {
-  ComplexTest() { std::tie(sut, mocks) = testing::make<SUT, testing::NaggyMock>(); }
+  void SetUp() override { std::tie(sut, mocks) = testing::make<SUT, testing::NaggyMock>(); }
 };
 
 TEST_F(ComplexTest, ShouldMakeComplexExample) {
@@ -379,7 +357,7 @@ TEST_F(ComplexTest, ShouldMakeComplexExample) {
 }
 
 struct ComplexConstTest : testing::GTest<complex_example_const> {
-  ComplexConstTest() { std::tie(sut, mocks) = testing::make<SUT, testing::NaggyMock>(); }
+  void SetUp() override { std::tie(sut, mocks) = testing::make<SUT, testing::NaggyMock>(); }
 };
 
 TEST_F(ComplexConstTest, ShouldMakeComplexConstExample) {

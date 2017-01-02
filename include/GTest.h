@@ -15,7 +15,6 @@
 #include <utility>
 #include "GMock.h"
 
-#define GTEST_REQUIRES(...) typename std::enable_if<__VA_ARGS__, int>::type = 0
 #if !defined(GTEST_MAX_CTOR_SIZE)
 #define GTEST_MAX_CTOR_SIZE 10
 #endif
@@ -69,18 +68,6 @@ using is_shared_ptr = typename is_shared_ptr_impl<std::remove_cv_t<T>>::type;
 template <class T, class U>
 using is_copy_ctor = std::is_same<deref_t<T>, deref_t<U>>;
 
-template <template <class> class>
-struct is_gmock : std::false_type {};
-
-template <>
-struct is_gmock<NaggyMock> : std::true_type {};
-
-template <>
-struct is_gmock<StrictMock> : std::true_type {};
-
-template <>
-struct is_gmock<NiceMock> : std::true_type {};
-
 template <class, class>
 struct contains;
 
@@ -101,26 +88,6 @@ struct wrapper {
   operator T&() { return *reinterpret_cast<T*>(mock.get()); }
   std::shared_ptr<void>& mock;
 };
-
-template <class T>
-decltype(auto) convert(T&& arg) {
-  return std::forward<T>(arg);
-}
-
-template <class T>
-decltype(auto) convert(std::shared_ptr<GMock<T>>& mock) {
-  return std::static_pointer_cast<T>(mock);
-}
-
-template <class T>
-decltype(auto) convert(GMock<T>* mock) {
-  return &static_cast<T&>(*mock);
-}
-
-template <class T>
-decltype(auto) convert(GMock<T>& mock) {
-  return static_cast<T&>(mock);
-}
 
 }  // detail
 
@@ -159,41 +126,41 @@ struct any_type {
     return type;
   }
 
-  template <class T, GTEST_REQUIRES(!is_copy_ctor<TParent, T>::value && std::is_polymorphic<deref_t<T>>::value)>
+  template <class T, GREQUIRES(!is_copy_ctor<TParent, T>::value && std::is_polymorphic<deref_t<T>>::value)>
   operator T() {
     mocks[type_id<deref_t<T>>()] = std::make_shared<GMock<deref_t<T>>>();
     return wrapper<deref_t<T>>{mocks[type_id<deref_t<T>>()]};
   }
 
-  template <class T, GTEST_REQUIRES(!is_copy_ctor<TParent, T>::value && std::is_polymorphic<deref_t<T>>::value &&
-                                    !is_shared_ptr<T>::value)>
+  template <class T,
+            GREQUIRES(!is_copy_ctor<TParent, T>::value && std::is_polymorphic<deref_t<T>>::value && !is_shared_ptr<T>::value)>
   operator T&() const {
     mocks[type_id<deref_t<T>>()] = std::make_shared<GMock<deref_t<T>>>();
     return wrapper<deref_t<T>>{mocks[type_id<deref_t<T>>()]};
   }
 
-  template <class T, GTEST_REQUIRES(!is_copy_ctor<TParent, T>::value && std::is_polymorphic<deref_t<T>>::value &&
-                                    !is_shared_ptr<T>::value)>
+  template <class T,
+            GREQUIRES(!is_copy_ctor<TParent, T>::value && std::is_polymorphic<deref_t<T>>::value && !is_shared_ptr<T>::value)>
   operator const T&() const {
     mocks[type_id<deref_t<T>>()] = std::make_shared<GMock<deref_t<T>>>();
     return wrapper<deref_t<T>>{mocks[type_id<deref_t<T>>()]};
   }
 
-  template <class T, GTEST_REQUIRES(!is_copy_ctor<TParent, T>::value && !std::is_polymorphic<deref_t<T>>::value)>
+  template <class T, GREQUIRES(!is_copy_ctor<TParent, T>::value && !std::is_polymorphic<deref_t<T>>::value)>
   operator T() {
     std::size_t elem = {};
     return get<T>(elem, std::integral_constant<bool, contains<T, TArgs>::value>{}, std::tuple_size<TArgs>{},
                   std::integral_constant<std::size_t, 0>{});
   }
 
-  template <class T, GTEST_REQUIRES(!is_copy_ctor<TParent, T>::value && !std::is_polymorphic<deref_t<T>>::value)>
+  template <class T, GREQUIRES(!is_copy_ctor<TParent, T>::value && !std::is_polymorphic<deref_t<T>>::value)>
   operator T&() const {
     std::size_t elem = {};
     return const_cast<any_type*>(this)->get<T&>(elem, std::integral_constant<bool, contains<T&, TArgs>::value>{},
                                                 std::tuple_size<TArgs>{}, std::integral_constant<std::size_t, 0>{});
   }
 
-  template <class T, GTEST_REQUIRES(!is_copy_ctor<TParent, T>::value && !std::is_polymorphic<deref_t<T>>::value)>
+  template <class T, GREQUIRES(!is_copy_ctor<TParent, T>::value && !std::is_polymorphic<deref_t<T>>::value)>
   operator const T&() const {
     std::size_t elem = {};
     return const_cast<any_type*>(this)->get<const T&>(elem, std::integral_constant<bool, contains<const T&, TArgs>::value>{},
@@ -215,68 +182,42 @@ template <class T>
 struct ctor_size<T, std::index_sequence<>> : std::integral_constant<std::size_t, 0> {};
 
 template <class T, std::size_t... Ns>
-struct ctor_size<T, std::index_sequence<Ns...>>
-    : std::conditional_t<std::is_constructible<T, any_type_t<Ns, T>...>::value,
-                         std::integral_constant<std::size_t, sizeof...(Ns)>,
-                         ctor_size<T, std::make_index_sequence<sizeof...(Ns) - 1>>> {};
+struct ctor_size<T, std::index_sequence<Ns...>> : std::conditional_t<std::is_constructible<T, any_type_t<Ns, T>...>::value,
+                                                                     std::integral_constant<std::size_t, sizeof...(Ns)>,
+                                                                     ctor_size<T, std::make_index_sequence<sizeof...(Ns)-1>>> {
+};
 
 template <class T, class... TArgs, std::size_t... Ns>
-auto make_impl(detail::type<std::unique_ptr<T>>, mocks_t& mocks, std::tuple<TArgs...>& args, std::index_sequence<Ns...>) {
+auto make_impl(detail::identity<std::unique_ptr<T>>, mocks_t& mocks, std::tuple<TArgs...>& args, std::index_sequence<Ns...>) {
   std::unordered_map<std::size_t, std::size_t> arg_nums;
   return std::make_unique<T>(any_type_t<Ns, detail::deref_t<T>, std::tuple<TArgs...>>{mocks, args, arg_nums}...);
 }
 
 template <class T, class... TArgs, std::size_t... Ns>
-auto make_impl(detail::type<std::shared_ptr<T>>, mocks_t& mocks, std::tuple<TArgs...>& args, std::index_sequence<Ns...>) {
+auto make_impl(detail::identity<std::shared_ptr<T>>, mocks_t& mocks, std::tuple<TArgs...>& args, std::index_sequence<Ns...>) {
   std::unordered_map<std::size_t, std::size_t> arg_nums;
   return std::make_shared<T>(any_type_t<Ns, detail::deref_t<T>, std::tuple<TArgs...>>{mocks, args, arg_nums}...);
 }
 
 template <class T, class... TArgs, std::size_t... Ns>
-auto make_impl(detail::type<T>, mocks_t& mocks, std::tuple<TArgs...>& args, std::index_sequence<Ns...>) {
+auto make_impl(detail::identity<T>, mocks_t& mocks, std::tuple<TArgs...>& args, std::index_sequence<Ns...>) {
   std::unordered_map<std::size_t, std::size_t> arg_nums;
   return T(any_type_t<Ns, detail::deref_t<T>, std::tuple<TArgs...>>{mocks, args, arg_nums}...);
 }
 
-template <class T, class... TArgs>
-auto make_impl(detail::type<std::unique_ptr<T>>, TArgs&&... args) {
-  return std::make_unique<T>(detail::convert(std::forward<TArgs>(args))...);
-}
-
-template <class T, class... TArgs>
-auto make_impl(detail::type<std::shared_ptr<T>>, TArgs&&... args) {
-  return std::make_shared<T>(detail::convert(std::forward<TArgs>(args))...);
-}
-
-template <class T, class... TArgs>
-auto make_impl(detail::type<T>, TArgs&&... args) {
-  return T(detail::convert(std::forward<TArgs>(args))...);
-}
-
 }  // detail
 
-template <class>
-struct NoMock {};
-
-template <class T, template <class> class TMock = NoMock, GTEST_REQUIRES(!detail::is_gmock<TMock>::value), class... TArgs>
-auto make(TArgs&&... args) {
-  return detail::make_impl(detail::type<T>{}, std::forward<TArgs>(args)...);
-}
-
-template <class T, template <class> class TMock = NoMock, GTEST_REQUIRES(detail::is_gmock<TMock>::value), class... TArgs>
+template <class T, template <class> class TMock = NoMock, GREQUIRES(detail::is_gmock<TMock>::value), class... TArgs>
 auto make(TArgs&&... args) {
   std::tuple<TArgs...> tuple{std::forward<TArgs>(args)...};
   mocks_t mocks;
-  return std::make_pair(detail::make_impl(detail::type<T>{}, mocks, tuple,
+  return std::make_pair(detail::make_impl(detail::identity<T>{}, mocks, tuple,
                                           std::make_index_sequence<detail::ctor_size<detail::deref_t<T>>::value>{}),
                         mocks);
 }
 
 template <class T>
 class GTest : public Test {
-  void SetUp() override final {}
-  void TearDown() override final {}
-
  protected:
   using SUT = std::unique_ptr<T>;
 

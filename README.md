@@ -283,7 +283,7 @@ TEST(Test, ShouldPrintTextWhenUpdate) {
 ```cpp
 class Test : public GTest<example> {
 public:
-  Test() {
+  void SetUp() override {
     std::tie(sut, mocks) = testing::make<SUT, NaggyMock>();
   }
 };
@@ -333,6 +333,8 @@ EXPECT_CALL(mock<iconfigfactory>(), (create)("string")).WillOnce(Return(mockconf
 ```
 
 ---
+
+Vision/Going Forward
 
 Going Forward (BDD)?
 * Automatic Mocks Injector

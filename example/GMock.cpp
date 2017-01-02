@@ -6,9 +6,8 @@
 // http://www.boost.org/LICENSE_1_0.txt)
 //
 #include "GMock.h"
+#include <gtest/gtest.h>
 #include <stdexcept>
-#include "GTest.h"
-#include "gtest/gtest.h"
 
 class interface {
  public:
