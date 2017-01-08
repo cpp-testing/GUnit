@@ -24,7 +24,6 @@
 namespace testing {
 inline namespace v1 {
 namespace detail {
-
 template <bool...>
 struct bool_list {};
 template <class>
@@ -131,7 +130,6 @@ struct wrapper {
   operator std::shared_ptr<T>() { return std::static_pointer_cast<T>(mock); }
   std::shared_ptr<void>& mock;
 };
-
 }  // detail
 
 class mocks_t : public std::unordered_map<std::size_t, std::shared_ptr<void>> {
@@ -143,12 +141,11 @@ class mocks_t : public std::unordered_map<std::size_t, std::shared_ptr<void>> {
 };
 
 namespace detail {
-
 template <class>
 struct required_type_not_found {};
 
 template <class TParent>
-struct arg_size {
+struct resolve_size {
   template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value)>
   operator T();
 
@@ -160,9 +157,9 @@ struct arg_size {
 };
 
 template <class TParent, template <class> class TMock, class TArgs = std::tuple<>>
-class arg {
+class resolve {
  public:
-  arg(mocks_t& mocks, TArgs& args) : mocks(mocks), args(args) {}
+  resolve(mocks_t& mocks, TArgs& args) : mocks(mocks), args(args) {}
 
   template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value && detail::is_abstract<deref_t<T>>::value)>
   operator T() {
@@ -189,13 +186,13 @@ class arg {
   template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value && !detail::is_abstract<deref_t<T>>::value &&
                                     contains<T&, TArgs>::value)>
   operator T&() const {
-    return const_cast<arg*>(this)->get<T&>(std::true_type{});
+    return const_cast<resolve*>(this)->get<T&>(std::true_type{});
   }
 
   template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value && !detail::is_abstract<deref_t<T>>::value &&
                                     contains<const T&, TArgs>::value)>
   operator const T&() const {
-    return const_cast<arg*>(this)->get<const T&>(std::true_type{});
+    return const_cast<resolve*>(this)->get<const T&>(std::true_type{});
   }
 
  private:
@@ -225,10 +222,10 @@ class arg {
 };
 
 template <std::size_t, class T, template <class> class TMock, class TArgs = std::tuple<>>
-using arg_t = arg<T, TMock, TArgs>;
+using resolve_t = resolve<T, TMock, TArgs>;
 
 template <std::size_t, class T>
-using arg_size_t = arg_size<T>;
+using resolve_size_t = resolve_size<T>;
 
 template <class, class = std::make_index_sequence<GUNIT_MAX_CTOR_SIZE>>
 struct ctor_size;
@@ -238,25 +235,24 @@ struct ctor_size<T, std::index_sequence<>> : std::integral_constant<std::size_t,
 
 template <class T, std::size_t... Ns>
 struct ctor_size<T, std::index_sequence<Ns...>>
-    : std::conditional_t<std::is_constructible<T, arg_size_t<Ns, T>...>::value,
+    : std::conditional_t<std::is_constructible<T, resolve_size_t<Ns, T>...>::value,
                          std::integral_constant<std::size_t, sizeof...(Ns)>,
                          ctor_size<T, std::make_index_sequence<sizeof...(Ns) - 1>>> {};
 
 template <template <class> class TMock, class T, class... TArgs, std::size_t... Ns>
 auto make_impl(detail::identity<std::unique_ptr<T>>, mocks_t& mocks, std::tuple<TArgs...>& args, std::index_sequence<Ns...>) {
-  return std::make_unique<T>(arg_t<Ns, detail::deref_t<T>, TMock, std::tuple<TArgs...>>{mocks, args}...);
+  return std::make_unique<T>(resolve_t<Ns, detail::deref_t<T>, TMock, std::tuple<TArgs...>>{mocks, args}...);
 }
 
 template <template <class> class TMock, class T, class... TArgs, std::size_t... Ns>
 auto make_impl(detail::identity<std::shared_ptr<T>>, mocks_t& mocks, std::tuple<TArgs...>& args, std::index_sequence<Ns...>) {
-  return std::make_shared<T>(arg_t<Ns, detail::deref_t<T>, TMock, std::tuple<TArgs...>>{mocks, args}...);
+  return std::make_shared<T>(resolve_t<Ns, detail::deref_t<T>, TMock, std::tuple<TArgs...>>{mocks, args}...);
 }
 
 template <template <class> class TMock, class T, class... TArgs, std::size_t... Ns>
 auto make_impl(detail::identity<T>, mocks_t& mocks, std::tuple<TArgs...>& args, std::index_sequence<Ns...>) {
-  return T(arg_t<Ns, detail::deref_t<T>, TMock, std::tuple<TArgs...>>{mocks, args}...);
+  return T(resolve_t<Ns, detail::deref_t<T>, TMock, std::tuple<TArgs...>>{mocks, args}...);
 }
-
 }  // detail
 
 template <class T, template <class> class TMock, class... TMocks,
@@ -287,6 +283,5 @@ class GTest : public Test {
   mocks_t mocks;
   SUT sut;  // has to be after mocks
 };
-
 }  // v1
 }  // testing

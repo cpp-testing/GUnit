@@ -22,7 +22,6 @@
 namespace testing {
 inline namespace v1 {
 namespace detail {
-
 template <class T>
 struct identity {
   using type = T;
@@ -231,7 +230,6 @@ class vtable {
 #elif defined(__GNUC__)
 #pragma GCC pop_options
 #endif
-
 }  // detail
 
 template <class T>
@@ -332,11 +330,9 @@ using StrictGMock = StrictMock<GMock<T>>;
 template <class T>
 using NiceGMock = NiceMock<GMock<T>>;
 }  // v1
-
 }  // testing
 
 namespace std {
-
 template <class T, class TDeleter>
 auto move(unique_ptr<testing::GMock<T>, TDeleter> &mock) noexcept {
   return unique_ptr<T>{reinterpret_cast<T *>(mock.get())};  // it's not release
@@ -365,7 +361,6 @@ auto static_pointer_cast(const std::shared_ptr<testing::NiceGMock<U>> &mock) noe
 }  // std
 
 namespace testing {
-
 template <class R>
 auto Return(const std::shared_ptr<GMock<R>> &value) {
   return internal::ReturnAction<std::shared_ptr<R>>(std::move(std::static_pointer_cast<R>(value)));
