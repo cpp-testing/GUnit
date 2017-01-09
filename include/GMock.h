@@ -392,12 +392,38 @@ inline auto ReturnRef(GMock<R> &x) {
   return internal::ReturnRefAction<R>(static_cast<R &>(x));
 }
 template <class R>
-inline auto ReturnRef(NiceGMock<R> &x) {
+inline auto ReturnRef(StrictGMock<R> &x) {
   return internal::ReturnRefAction<R>(static_cast<R &>(x));
 }
 template <class R>
-inline auto ReturnRef(StrictGMock<R> &x) {
+inline auto ReturnRef(NiceGMock<R> &x) {
   return internal::ReturnRefAction<R>(static_cast<R &>(x));
+}
+
+template <class T>
+inline auto Ref(GMock<T> &x) {
+  return internal::RefMatcher<T &>(static_cast<T &>(x));
+}
+template <class T>
+inline auto Ref(StrictGMock<T> &x) {
+  return internal::RefMatcher<T &>(static_cast<T &>(x));
+}
+template <class T>
+inline auto Ref(NiceGMock<T> &x) {
+  return internal::RefMatcher<T &>(static_cast<T &>(x));
+}
+
+template <class T>
+inline auto ByRef(GMock<T> &x) {
+  return internal::ReferenceWrapper<T>(static_cast<T &>(x));
+}
+template <class T>
+inline auto ByRef(StrictGMock<T> &x) {
+  return internal::ReferenceWrapper<T>(static_cast<T &>(x));
+}
+template <class T>
+inline auto ByRef(NiceGMock<T> &x) {
+  return internal::ReferenceWrapper<T>(static_cast<T &>(x));
 }
 
 inline namespace v1 {
@@ -467,14 +493,12 @@ template <class T, class... TArgs>
 auto make_impl(detail::identity<T>, TArgs &&... args) {
   return T(detail::convert(std::forward<TArgs>(args))...);
 }
-
 }  // detail
 
 template <class T, class... TArgs>
 auto make(TArgs &&... args) {
   return detail::make_impl(detail::identity<T>{}, std::forward<TArgs>(args)...);
 }
-
 }  // v1
 }  // testing
 

@@ -312,7 +312,7 @@ class longest_ctor_force final {
 };
 
 TEST(MakeTest, ShouldMakeComplexExampleUsingMakeType) {
-  using namespace ::testing;
+  using namespace testing;
   auto csp = std::make_shared<GMock<interface>>();
   auto sp = std::make_shared<GMock<interface2>>();
   auto ptr = GMock<interface4>();

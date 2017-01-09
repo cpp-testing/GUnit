@@ -58,6 +58,11 @@ struct interface3 : interface4 {
   virtual void empty() const = 0;
 };
 
+struct interface5 : interface4 {
+  virtual std::shared_ptr<interface> handle(interface4&) = 0;
+  virtual std::shared_ptr<interface> handle2(const interface3&, interface2*) = 0;
+};
+
 template <class T, class... TArgs>
 struct ifactory {
   virtual T create(TArgs...) = 0;
@@ -483,7 +488,7 @@ TEST(GMock, ShouldAllowDeletingMock) {
 }
 
 TEST(GMock, ShouldMakeComplexExampleUsingMakeUniquePtr) {
-  using namespace ::testing;
+  using namespace testing;
   auto csp = std::make_shared<GMock<interface>>();
   auto sp = std::make_shared<GMock<interface2>>();
   auto ptr = GMock<interface4>();
@@ -494,7 +499,7 @@ TEST(GMock, ShouldMakeComplexExampleUsingMakeUniquePtr) {
 }
 
 TEST(GMock, ShouldMakeComplexExampleUsingMakeSharedPtr) {
-  using namespace ::testing;
+  using namespace testing;
   auto csp = std::make_shared<GMock<interface>>();
   auto sp = std::make_shared<GMock<interface2>>();
   auto ptr = GMock<interface4>();
@@ -502,4 +507,25 @@ TEST(GMock, ShouldMakeComplexExampleUsingMakeSharedPtr) {
 
   auto sut = make<std::shared_ptr<complex_example>>(csp, sp, &ptr, ref);
   EXPECT_TRUE(nullptr != sut.get());
+}
+
+TEST(GMock, ShouldHandleByRef) {
+  using namespace testing;
+  auto i = std::make_shared<GMock<interface>>();
+  NiceGMock<interface2> i2;
+  StrictGMock<interface3> i3;
+  GMock<interface4> i4;
+  GMock<interface5> i5;
+
+  auto&& sut = static_cast<interface5&>(i5);
+
+  {
+    EXPECT_CALL(i5, (handle)(Ref(i4))).WillOnce(Return(i));
+    sut.handle(static_cast<interface4&>(i4));
+  }
+
+  {
+    EXPECT_CALL(i5, (handle2)(Ref(i3), &static_cast<interface2&>(i2))).WillOnce(Return(i));
+    sut.handle2(static_cast<interface3&>(i3), &static_cast<interface2&>(i2));
+  }
 }
