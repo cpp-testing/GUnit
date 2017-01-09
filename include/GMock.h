@@ -61,15 +61,15 @@ inline std::string demangle(const std::string &mangled) {
 }
 
 inline std::string call_stack() {
+  static constexpr auto GUNIT_SHOW_STACK_SIZE = 3;
   static constexpr auto CALL_STACK_SIZE = 64;
-  static constexpr auto GUNIT_OFFSET_SIZE = 13;
-  void *callstack[CALL_STACK_SIZE];
-  const auto frames = backtrace(callstack, sizeof(callstack) / sizeof(callstack[0])) - GUNIT_OFFSET_SIZE;
-  const auto symbols = backtrace_symbols(callstack, frames);
+  void *bt[CALL_STACK_SIZE];
+  const auto frames = backtrace(bt, sizeof(bt) / sizeof(bt[0]));
+  const auto symbols = backtrace_symbols(bt, frames);
   std::shared_ptr<char *> free{symbols, std::free};
   std::stringstream result;
 
-  for (auto i = 1; i < frames; ++i) {
+  for (auto i = 1; i < (frames > GUNIT_SHOW_STACK_SIZE ? GUNIT_SHOW_STACK_SIZE : frames); ++i) {
     std::smatch match;
     const auto symbol = std::string{symbols[i]};
     if (std::regex_search(symbol, match, std::regex{"\\((.*)\\+.*\\[(.*)\\]"}) && 3 == match.size()) {
