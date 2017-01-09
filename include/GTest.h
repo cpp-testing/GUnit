@@ -27,7 +27,7 @@ namespace detail {
 template <bool...>
 struct bool_list {};
 template <class>
-using always = std::true_type;
+struct always : std::true_type {};
 
 template <class T>
 struct type {
