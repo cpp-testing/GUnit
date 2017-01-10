@@ -198,8 +198,8 @@ class vtable {
   void set(void *f) {
     const auto offset = dtor_offset<T>();
     const auto ptr = union_cast<void *>(&vtable<T>::dtor);
-    vptr[offset] = f;        // non-deleting ctor
-    vptr[offset + 1] = ptr;  // deleting ctor
+    vptr[offset] = f;        // non-deleting dtor
+    vptr[offset + 1] = ptr;  // deleting dtor
   }
   auto get(std::size_t offset) const { return vptr[offset]; }
 
