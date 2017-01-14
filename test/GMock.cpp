@@ -564,7 +564,7 @@ TEST(GMock, ShouldSupportOverloadedMethods) {
 
   mock.object().f(42);
   mock.object().f(77.0);
-};
+}
 
 TEST(GMock, ShouldSupportOverloadedConstMethods) {
   struct interface {
@@ -581,7 +581,7 @@ TEST(GMock, ShouldSupportOverloadedConstMethods) {
   const interface& i = mock.object();
   i.f(1);
   mock.object().f(2);
-};
+}
 
 TEST(GMock, ShouldHandleON_CALLWithOverloadMethods) {
   struct interface {
