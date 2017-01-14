@@ -163,6 +163,19 @@ TEST(GMock, ShouldReturnVirtualFunctionOffset) {
   EXPECT_EQ(4u, detail::offset(&interface::bar));
 }
 
+TEST(GMock, ShouldReturnVirtualOverloadedFunctionOffset) {
+  struct interface {
+    virtual int f(int) = 0;
+    virtual int f(double) = 0;
+    virtual void bar() = 0;
+    virtual ~interface() = default;
+  };
+  using namespace testing;
+  EXPECT_EQ(0u, detail::offset(static_cast<int(interface::*)(int)>(&interface::f)));
+  EXPECT_EQ(1u, detail::offset(static_cast<int(interface::*)(double)>(&interface::f)));
+  EXPECT_EQ(2u, detail::offset(&interface::bar));
+}
+
 TEST(GMock, ShouldReturnDtorOffset) {
   using namespace testing;
   EXPECT_EQ(0u, detail::dtor_offset<interface>());
