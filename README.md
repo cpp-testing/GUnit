@@ -531,6 +531,25 @@ EXPECT_CALL(mock<iconfigfactory>(), (create)("string")).WillOnce(Return(mockconf
 
 ##FAQ
 
+* How to mock overloaded function?
+
+```cpp
+class interface {
+ public:
+  virtual void f(int) = 0;
+  virtual void f(int) const = 0;
+  virtual ~interface() = default;
+};
+
+GMock<interface> mock;
+
+EXPECT_CALL(mock, (f, void(int) const)(1));
+EXPECT_CALL(mock, (f, void(int))(2));
+
+static_cast<const interface&>(mock).f(1);
+mock.object().f(2);
+```
+
 * Can GUnit be used with [Catch](https://github.com/philsquared/Catch)?
   * Yes, GUnit isn't tied to GoogleTest, however it's tied to GoogleMock
 

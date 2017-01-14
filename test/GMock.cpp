@@ -6,9 +6,9 @@
 // http://www.boost.org/LICENSE_1_0.txt)
 //
 #include "GMock.h"
+#include <gtest/gtest.h>
 #include <memory>
 #include <stdexcept>
-#include "gtest/gtest.h"
 
 struct interface {
   virtual ~interface() = default;
@@ -548,4 +548,50 @@ TEST(GMock, ShouldHandleByRef) {
     EXPECT_CALL(i5, (handle2)(Ref(i3), &static_cast<interface2&>(i2))).WillOnce(Return(i));
     sut.handle2(static_cast<interface3&>(i3), &static_cast<interface2&>(i2));
   }
+}
+
+TEST(GMock, ShouldSupportOverloadedMethods) {
+  struct interface {
+    virtual void f(int) = 0;
+    virtual void f(double) = 0;
+    virtual ~interface() = default;
+  };
+
+  testing::GMock<interface> mock;
+
+  EXPECT_CALL(mock, (f, void(int))(42));
+  EXPECT_CALL(mock, (f, void(double))(77.0));
+
+  mock.object().f(42);
+  mock.object().f(77.0);
+};
+
+TEST(GMock, ShouldSupportOverloadedConstMethods) {
+  struct interface {
+    virtual void f(int) = 0;
+    virtual void f(int) const = 0;
+    virtual ~interface() = default;
+  };
+
+  testing::GMock<interface> mock;
+
+  EXPECT_CALL(mock, (f, void(int) const)(1));
+  EXPECT_CALL(mock, (f, void(int))(2));
+
+  const interface& i = mock.object();
+  i.f(1);
+  mock.object().f(2);
+};
+
+TEST(GMock, ShouldHandleON_CALLWithOverloadMethods) {
+  struct interface {
+    virtual int f(int) = 0;
+    virtual int f(double) = 0;
+    virtual ~interface() = default;
+  };
+
+  using namespace testing;
+  NiceGMock<interface> m;
+  ON_CALL(m, (f, int(int))(42)).WillByDefault(Return(87));
+  EXPECT_EQ(87, static_cast<interface&>(m).f(42));
 }
