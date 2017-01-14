@@ -410,6 +410,7 @@ TEST(GMock, ShouldReturnUnderlyingType) {
   GMock<interface> m;
 
   EXPECT_CALL(m, (bar)(_, "str"));
+  EXPECT_CALL(m, (foo)(42)).Times(1);
 
   example sut{0, m.object()};
   sut.update();
