@@ -405,6 +405,26 @@ TEST(GMock, ShouldMockUsingConstPointer) {
   sut.update();
 }
 
+TEST(GMock, ShouldReturnUnderlyingType) {
+  using namespace testing;
+  GMock<interface> m;
+
+  EXPECT_CALL(m, (bar)(_, "str"));
+
+  example sut{0, m.object()};
+  sut.update();
+}
+
+TEST(GMock, ShouldReturnUnderlyingConstType) {
+  using namespace testing;
+  GMock<interface> m;
+
+  EXPECT_CALL(m, (bar)(_, "str"));
+
+  cpexample sut{&m.object()};
+  sut.update();
+}
+
 TEST(GMock, ShouldMockEmptyMethods) {
   using namespace testing;
   GMock<interface3> m;

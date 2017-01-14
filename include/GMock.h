@@ -293,8 +293,10 @@ class GMock {
     return gmock_call_impl<TName, R, TArgs...>(detail::offset(f), args...);
   }
 
-  explicit operator T &() { return reinterpret_cast<T &>(*this); }
-  explicit operator const T &() const { return reinterpret_cast<const T &>(*this); }
+  T &object() { return reinterpret_cast<T &>(*this); }
+  const T &object() const { return reinterpret_cast<const T &>(*this); }
+  explicit operator T &() { return object(); }
+  explicit operator const T &() const { return object(); }
 
  private:
   std::unordered_map<std::string, std::unique_ptr<internal::UntypedFunctionMockerBase>> fs;

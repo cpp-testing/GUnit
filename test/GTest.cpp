@@ -311,6 +311,11 @@ class longest_ctor_force final {
   std::shared_ptr<interface2> i2;
 };
 
+class passing_ref {
+ public:
+  passing_ref(interface*, arg&) {}
+};
+
 TEST(MakeTest, ShouldMakeComplexExampleUsingMakeType) {
   using namespace testing;
   auto csp = std::make_shared<GMock<interface>>();
@@ -371,6 +376,15 @@ TEST(MakeTest, ShouldMakeSimpleExampleUsingMakeAndTie) {
     EXPECT_DOUBLE_EQ(sut.f, 2.f);
     EXPECT_DOUBLE_EQ(sut.d, 3.);
   }
+}
+
+TEST(PassingArgTest, ShouldMakePassingRef) {
+  using namespace testing;
+  mocks_t mocks;
+  std::unique_ptr<passing_ref> sut;
+  auto a = std::make_unique<arg>();
+  std::tie(sut, mocks) = make<std::unique_ptr<passing_ref>, testing::NaggyGMock>(*a);
+  EXPECT_TRUE(sut.get());
 }
 
 TEST(MakeTest, ShouldThrowThenRequestedMockIsNotFound) {

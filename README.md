@@ -224,6 +224,10 @@ TEST_F(BenchmarkTest, ShouldCallF2) {           | TEST_F(BenchmarkTest, ShouldCa
 
     public:
       using type = T;
+
+      T&() object();
+      const T&() object() const;
+
       explicit operator T&();
       explicit operator const T&() const;
     };

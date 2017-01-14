@@ -234,10 +234,10 @@ template <class T>
 struct ctor_size<T, std::index_sequence<>> : std::integral_constant<std::size_t, 0> {};
 
 template <class T, std::size_t... Ns>
-struct ctor_size<T, std::index_sequence<Ns...>>
-    : std::conditional_t<std::is_constructible<T, resolve_size_t<Ns, T>...>::value,
-                         std::integral_constant<std::size_t, sizeof...(Ns)>,
-                         ctor_size<T, std::make_index_sequence<sizeof...(Ns) - 1>>> {};
+struct ctor_size<T, std::index_sequence<Ns...>> : std::conditional_t<std::is_constructible<T, resolve_size_t<Ns, T>...>::value,
+                                                                     std::integral_constant<std::size_t, sizeof...(Ns)>,
+                                                                     ctor_size<T, std::make_index_sequence<sizeof...(Ns)-1>>> {
+};
 
 template <template <class> class TMock, class T, class... TArgs, std::size_t... Ns>
 auto make_impl(detail::identity<std::unique_ptr<T>>, mocks_t& mocks, std::tuple<TArgs...>& args, std::index_sequence<Ns...>) {
