@@ -171,8 +171,8 @@ TEST(GMock, ShouldReturnVirtualOverloadedFunctionOffset) {
     virtual ~interface() = default;
   };
   using namespace testing;
-  EXPECT_EQ(0u, detail::offset(static_cast<int(interface::*)(int)>(&interface::f)));
-  EXPECT_EQ(1u, detail::offset(static_cast<int(interface::*)(double)>(&interface::f)));
+  EXPECT_EQ(0u, detail::offset(static_cast<int (interface::*)(int)>(&interface::f)));
+  EXPECT_EQ(1u, detail::offset(static_cast<int (interface::*)(double)>(&interface::f)));
   EXPECT_EQ(2u, detail::offset(&interface::bar));
 }
 
@@ -564,14 +564,14 @@ TEST(GMock, ShouldHandleByRef) {
   }
 }
 
-TEST(GMock, ShouldSupportOverloadedMethods) {
-  struct interface {
-    virtual void f(int) = 0;
-    virtual void f(double) = 0;
-    virtual ~interface() = default;
-  };
+struct interface_overload {
+  virtual void f(int) = 0;
+  virtual void f(double) = 0;
+  virtual ~interface_overload() = default;
+};
 
-  testing::GMock<interface> mock;
+TEST(GMock, ShouldSupportOverloadedMethods) {
+  testing::GMock<interface_overload> mock;
 
   EXPECT_CALL(mock, (f, void(int))(42));
   EXPECT_CALL(mock, (f, void(double))(77.0));
@@ -580,32 +580,32 @@ TEST(GMock, ShouldSupportOverloadedMethods) {
   mock.object().f(77.0);
 }
 
-TEST(GMock, ShouldSupportOverloadedConstMethods) {
-  struct interface {
-    virtual void f(int) = 0;
-    virtual void f(int) const = 0;
-    virtual ~interface() = default;
-  };
+struct interface_overload_const {
+  virtual void f(int) = 0;
+  virtual void f(int) const = 0;
+  virtual ~interface_overload_const() = default;
+};
 
-  testing::GMock<interface> mock;
+TEST(GMock, ShouldSupportOverloadedConstMethods) {
+  testing::GMock<interface_overload_const> mock;
 
   EXPECT_CALL(mock, (f, void(int) const)(1));
   EXPECT_CALL(mock, (f, void(int))(2));
 
-  const interface& i = mock.object();
+  const interface_overload_const& i = mock.object();
   i.f(1);
   mock.object().f(2);
 }
 
-TEST(GMock, ShouldHandleON_CALLWithOverloadMethods) {
-  struct interface {
-    virtual int f(int) = 0;
-    virtual int f(double) = 0;
-    virtual ~interface() = default;
-  };
+struct interface_overload_ret {
+  virtual int f(int) = 0;
+  virtual int f(double) = 0;
+  virtual ~interface_overload_ret() = default;
+};
 
+TEST(GMock, ShouldHandleON_CALLWithOverloadMethods) {
   using namespace testing;
-  NiceGMock<interface> m;
+  NiceGMock<interface_overload_ret> m;
   ON_CALL(m, (f, int(int))(42)).WillByDefault(Return(87));
-  EXPECT_EQ(87, static_cast<interface&>(m).f(42));
+  EXPECT_EQ(87, static_cast<interface_overload_ret&>(m).f(42));
 }
