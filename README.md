@@ -122,7 +122,7 @@ struct BenchmarkTest : testing::Test {          | struct BenchmarkTest : testing
    sut = std::make_unique<example>(m1, m2, m3); |   std::tie(sut, mocks) = make<SUT, NaggyGMock>();
  }                                              |  }
                                                 |
- mock_i1 m1;                                    | // mock and SUT declaration are NOT NEEDED!
+ mock_i1 m1;                                    | // mocks and SUT declaration are NOT NEEDED!
  mock_i2 m2;                                    |
  mock_i3 m3;                                    |
  std::unique_ptr<example> sut;                  |
