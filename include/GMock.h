@@ -11,7 +11,6 @@
 #include <execinfo.h>
 #include <gmock/gmock.h>
 #include <memory>
-#include <regex>
 #include <sstream>
 #include <string>
 #include <type_traits>
@@ -86,10 +85,17 @@ inline std::string call_stack() {
   std::stringstream result;
 
   for (auto i = 1; i < (frames > GUNIT_SHOW_STACK_SIZE ? GUNIT_SHOW_STACK_SIZE : frames); ++i) {
-    std::smatch match;
     const auto symbol = std::string{symbols[i]};
-    if (std::regex_search(symbol, match, std::regex{"\\((.*)\\+.*\\[(.*)\\]"}) && 3 == match.size()) {
-      result << demangle(match[1].str()) << " [" << match[2] << "]";
+
+    const auto name_begin = symbol.find("(");
+    const auto name_end = symbol.find("+");
+    const auto address_begin = symbol.find("[");
+    const auto address_end = symbol.find("]");
+
+    if (name_begin != std::string::npos && name_end != std::string::npos && address_begin != std::string::npos &&
+        address_end != std::string::npos) {
+      result << demangle(symbol.substr(name_begin + 1, name_end - name_begin - 1)) << " "
+             << symbol.substr(address_begin, address_end - address_begin + 1);
     } else {
       result << symbol;
     }
