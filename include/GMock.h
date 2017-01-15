@@ -18,6 +18,13 @@
 #include <unordered_map>
 #include <utility>
 
+#if defined(__clang__)
+#pragma clang optimize off
+#elif defined(__GNUC__)
+#pragma GCC push_options
+#pragma GCC optimize("O0")
+#endif
+
 namespace testing {
 inline namespace v1 {
 namespace detail {
@@ -105,13 +112,6 @@ inline std::string call_stack() {
 }
 
 using byte = unsigned char;
-
-#if defined(__clang__)
-#pragma clang optimize off
-#elif defined(__GNUC__)
-#pragma GCC push_options
-#pragma GCC optimize("O0")
-#endif
 
 // clang-format off
 /**
@@ -238,20 +238,14 @@ class vtable {
 
   static auto make_vtable() {
     const auto size = vtable_size<T>();
-    auto vptr = new volatile void *[size + OFFSET_SIZE + COOKIES_SIZE]{};
+    auto vptr = new void *[size + OFFSET_SIZE + COOKIES_SIZE]{};
     vptr[0] = const_cast<std::type_info *>(&typeid(T));
     vptr += COOKIES_SIZE + OFFSET_SIZE;
     return vptr;
   }
 
-  volatile void **vptr = nullptr;
+  void **vptr = nullptr;
 };
-
-#if defined(__clang__)
-#pragma clang optimize on
-#elif defined(__GNUC__)
-#pragma GCC pop_options
-#endif
 }  // detail
 
 template <class T>
@@ -323,7 +317,6 @@ class GMock {
  private:
   std::unordered_map<std::string, std::unique_ptr<internal::UntypedFunctionMockerBase>> fs;
 };
-
 }  // v1
 
 template <class T>
@@ -525,6 +518,12 @@ auto make(TArgs &&... args) {
 }
 }  // v1
 }  // testing
+
+#if defined(__clang__)
+#pragma clang optimize on
+#elif defined(__GNUC__)
+#pragma GCC pop_options
+#endif
 
 #define __GMOCK_COMMA() ,
 #define __GMOCK_IGNORE(...)
