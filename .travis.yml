@@ -43,6 +43,12 @@ matrix:
   - os: osx
     osx_image: xcode8
     env: CXX=clang++
+  - os: osx
+    osx_image: xcode8.1
+    env: CXX=clang++
+  - os: osx
+    osx_image: xcode8.2
+    env: CXX=clang++
 
 install:
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then (brew install valgrind); fi
