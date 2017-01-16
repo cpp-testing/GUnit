@@ -597,6 +597,43 @@ TEST(GMock, ShouldSupportOverloadedConstMethods) {
   mock.object().f(2);
 }
 
+struct averrrrrrrrrrrrrrrrrrrrrrylooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooongtype1 {
+};
+struct averrrrrrrrrrrrrrrrrrrrrrylooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooongtype2 {
+};
+struct interface_overload_long {
+  virtual void f(
+      averrrrrrrrrrrrrrrrrrrrrrylooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooongtype1)
+      const = 0;
+  virtual void f(
+      averrrrrrrrrrrrrrrrrrrrrrylooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooongtype2)
+      const = 0;
+  virtual void f(int) = 0;
+  virtual ~interface_overload_long() = default;
+};
+
+TEST(GMock, ShouldSupportOverloadedLongMethods) {
+  using namespace testing;
+  GMock<interface_overload_long> mock;
+
+  using f_long_type1 = void(
+      averrrrrrrrrrrrrrrrrrrrrrylooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooongtype1)
+      const;
+  using f_long_type2 = void(
+      averrrrrrrrrrrrrrrrrrrrrrylooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooongtype2)
+      const;
+
+  InSequence sequence;
+  EXPECT_CALL(mock, (f, f_long_type1)(_));
+  EXPECT_CALL(mock, (f, f_long_type2)(_));
+  EXPECT_CALL(mock, (f, void(int))(2));
+
+  const interface_overload_long& i = mock.object();
+  i.f(averrrrrrrrrrrrrrrrrrrrrrylooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooongtype1{});
+  i.f(averrrrrrrrrrrrrrrrrrrrrrylooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooongtype2{});
+  mock.object().f(2);
+}
+
 struct interface_overload_ret {
   virtual int f(int) = 0;
   virtual int f(double) = 0;

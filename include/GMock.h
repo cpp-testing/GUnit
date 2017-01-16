@@ -63,6 +63,12 @@ struct string {
   }
 };
 
+template <char... Chrs>
+void assert_name_size(string<Chrs...>) {
+  static constexpr char str[] = {Chrs...};
+  static_assert(!str[sizeof...(Chrs)-2], "assert_name_size!");
+}
+
 template <class TDst, class TSrc>
 inline TDst union_cast(TSrc src) {
   union {
@@ -269,6 +275,7 @@ class GMock {
 
   template <class TName, class R, class... TArgs>
   decltype(auto) gmock_call_impl(int offset, const detail::identity_t<Matcher<TArgs>> &... args) {
+    detail::assert_name_size(TName{});
     vtable.set(offset, detail::union_cast<void *>(&GMock::template original_call<TName, R, TArgs...>));
 
     const auto it = fs.find(TName::c_str());
