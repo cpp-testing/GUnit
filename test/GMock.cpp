@@ -521,7 +521,6 @@ TEST(GMock, ShouldAllowDeletingMock) {
   }
 }
 
-
 TEST(GMock, ShouldHandleByRef) {
   using namespace testing;
   auto i = std::make_shared<GMock<interface>>();

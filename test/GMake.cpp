@@ -6,8 +6,8 @@
 // http://www.boost.org/LICENSE_1_0.txt)
 //
 #include "GUnit/GMake.h"
-#include "GUnit/GMock.h"
 #include <gtest/gtest.h>
+#include "GUnit/GMock.h"
 
 struct interface {
   virtual ~interface() = default;

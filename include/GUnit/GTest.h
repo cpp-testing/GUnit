@@ -57,7 +57,6 @@ class GTestAutoRegister {
   class ScopedVisibility {
    public:
     ScopedVisibility() { gmock_ready = false; }
-
     ~ScopedVisibility() { gmock_ready = true; }
 
    private:
@@ -78,6 +77,12 @@ class GTest {
  protected:
   using SUT = std::unique_ptr<T>;
 
+  explicit GTest(std::false_type) {}
+  explicit GTest(std::true_type) { std::tie(sut, mocks) = make<SUT, StrictGMock>(); }
+
+ public:
+  GTest() : GTest(is_creatable<T>{}) {}
+
   template <class TMock>
   decltype(auto) mock() {
     return mocks.mock<TMock>();
@@ -90,7 +95,7 @@ class GTest {
 template <class T>
 class GTest<T, std::false_type> {};
 
-} // detail
+}  // detail
 
 template <class T>
 class GTest : public detail::GTest<T>, public Test {};

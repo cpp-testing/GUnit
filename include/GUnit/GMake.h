@@ -186,6 +186,24 @@ struct resolve_size {
   operator const T &() const;
 };
 
+template <std::size_t, class T>
+using resolve_size_t = resolve_size<T>;
+
+template <class TParent>
+struct resolve_creatable {
+  template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value && detail::is_abstract<deref_t<T>>::value)>
+  operator T();
+
+  template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value && detail::is_abstract<deref_t<T>>::value)>
+  operator T &() const;
+
+  template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value && detail::is_abstract<deref_t<T>>::value)>
+  operator const T &() const;
+};
+
+template <std::size_t, class T>
+using resolve_creatable_t = resolve_creatable<T>;
+
 template <class TParent, template <class> class TMock, class TArgs = std::tuple<>>
 class resolve {
  public:
@@ -254,9 +272,6 @@ class resolve {
 template <std::size_t, class T, template <class> class TMock, class TArgs = std::tuple<>>
 using resolve_t = resolve<T, TMock, TArgs>;
 
-template <std::size_t, class T>
-using resolve_size_t = resolve_size<T>;
-
 template <class, class = std::make_index_sequence<GUNIT_MAX_CTOR_SIZE>>
 struct ctor_size;
 
@@ -284,7 +299,16 @@ auto make_impl(detail::identity<T>, mocks_t &mocks, std::tuple<TArgs...> &args, 
   return T(resolve_t<Ns, detail::deref_t<T>, TMock, std::tuple<TArgs...>>{mocks, args}...);
 }
 
-} // detail
+template <class, class>
+struct is_creatable_impl;
+
+template <class T, std::size_t... Ns>
+struct is_creatable_impl<T, std::index_sequence<Ns...>> : std::is_constructible<T, resolve_creatable_t<Ns, T>...> {};
+
+template <class T>
+using is_creatable = is_creatable_impl<T, std::make_index_sequence<ctor_size<T>::value>>;
+
+}  // detail
 
 template <class T, class... TArgs>
 auto make(TArgs &&... args) {

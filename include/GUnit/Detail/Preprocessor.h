@@ -20,7 +20,7 @@
 #define __GUNIT_IBP_IS_VARIADIC_R_1 1,
 #define __GUNIT_IBP_IS_VARIADIC_R___GUNIT_IBP_IS_VARIADIC_C 0,
 #define __GUNIT_IBP(...) __GUNIT_IBP_SPLIT(0, __GUNIT_CAT(__GUNIT_IBP_IS_VARIADIC_R_, __GUNIT_IBP_IS_VARIADIC_C __VA_ARGS__))
-#define __GUNIT_IS_EMPTY(...)                 \
+#define __GUNIT_IS_EMPTY(...)                    \
   __GUNIT_IS_EMPTY_IIF(__GUNIT_IBP(__VA_ARGS__)) \
   (__GUNIT_IS_EMPTY_GEN_ZERO, __GUNIT_IS_EMPTY_PROCESS)(__VA_ARGS__)
 #define __GUNIT_IS_EMPTY_PRIMITIVE_CAT(a, b) a##b

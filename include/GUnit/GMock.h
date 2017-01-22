@@ -26,7 +26,6 @@
 namespace testing {
 inline namespace v1 {
 namespace detail {
-
 static auto gmock_ready = true;
 
 // clang-format off
@@ -164,7 +163,7 @@ class vtable {
 };
 }  // detail
 
-template <class T>
+template <class T, class = detail::is_complete<T>>
 class GMock {
   static_assert(detail::is_abstract<T>::value, "T has to be an abstract type");
   static_assert(std::has_virtual_destructor<T>::value, "T has to have a virtual destructor");
@@ -390,7 +389,7 @@ inline auto ByRef(NiceGMock<T> &x) {
 #define __GMOCK_OVERLOAD_CAST_IMPL_1(obj, call)
 #define __GMOCK_OVERLOAD_CAST_IMPL_2(obj, call) \
   (::testing::detail::function_type_t<std::decay_t<decltype(obj)>::type, __GMOCK_FUNCTION call>)
-#define __GMOCK_INTERNAL(...)                  \
+#define __GMOCK_INTERNAL(...)               \
   __GUNIT_IF(__GUNIT_IS_EMPTY(__VA_ARGS__)) \
   (__GUNIT_IGNORE, __GUNIT_COMMA)() __VA_ARGS__
 #define __GMOCK_CALL(...) __GMOCK_INTERNAL

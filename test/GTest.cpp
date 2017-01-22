@@ -697,6 +697,12 @@ GTEST(longest_ctor) {
 
 GTEST(longest_ctor_force) {
   using namespace testing;
+
+  SHOULD("not create sut and mocks") {
+    EXPECT_FALSE((detail::is_creatable<longest_ctor_force>::value));
+    EXPECT_FALSE(sut.get());
+  }
+
   std::tie(sut, mocks) = testing::make<SUT, testing::NaggyGMock>(short{42}, 77.0);
 
   SHOULD("take injected, longest ctor") {
@@ -710,8 +716,13 @@ GTEST(longest_ctor_force) {
 GTEST(complex_example) {
   using namespace testing;
 
+  SHOULD("create sut and mocks") {
+    EXPECT_TRUE((detail::is_creatable<complex_example>::value));
+    EXPECT_TRUE(sut.get());
+  }
+
   SHOULD("make complex example with strict mocks") {
-    std::tie(sut, mocks) = testing::make<SUT, testing::StrictGMock, NiceGMock<interface_dtor>>();
+    std::tie(sut, mocks) = testing::make<SUT, StrictGMock, NiceGMock<interface_dtor>>();
     EXPECT_CALL(mock<interface>(), (get)(_)).WillOnce(Return(123));
     EXPECT_CALL(mock<interface2>(), (f1)(77.0)).Times(1);
     EXPECT_CALL(mock<interface4>(), (f2)(_)).Times(1);
@@ -728,6 +739,17 @@ GTEST(complex_example) {
     // Missing interface_dtor.get expectation
 
     sut->update();
+  }
+}
+
+struct is_default_constructible {};
+
+GTEST(is_default_constructible) {
+  using namespace testing;
+
+  SHOULD("create a default constructible type") {
+    EXPECT_TRUE((detail::is_creatable<is_default_constructible>::value));
+    EXPECT_TRUE(sut.get());
   }
 }
 
