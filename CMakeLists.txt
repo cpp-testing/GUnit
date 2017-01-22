@@ -50,6 +50,7 @@ else()
     endfunction()
 endif()
 
+test(test/GMake)
 test(test/GMock)
 test(test/GTest)
 test(example/GMock)

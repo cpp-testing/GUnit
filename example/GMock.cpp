@@ -6,6 +6,7 @@
 // http://www.boost.org/LICENSE_1_0.txt)
 //
 #include "GUnit/GMock.h"
+#include "GUnit/GMake.h"
 #include <gtest/gtest.h>
 #include <stdexcept>
 

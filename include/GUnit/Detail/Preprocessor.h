@@ -6,7 +6,3 @@
 // http://www.boost.org/LICENSE_1_0.txt)
 //
 #pragma once
-
-#include "GUnit/GMake.h"
-#include "GUnit/GMock.h"
-#include "GUnit/GTest.h"

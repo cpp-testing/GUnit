@@ -521,27 +521,6 @@ TEST(GMock, ShouldAllowDeletingMock) {
   }
 }
 
-TEST(GMock, ShouldMakeComplexExampleUsingMakeUniquePtr) {
-  using namespace testing;
-  auto csp = std::make_shared<GMock<interface>>();
-  auto sp = std::make_shared<GMock<interface2>>();
-  auto ptr = GMock<interface4>();
-  auto ref = GMock<interface_dtor>();
-
-  auto sut = make<std::unique_ptr<complex_example>>(csp, sp, &ptr, ref);
-  EXPECT_TRUE(nullptr != sut.get());
-}
-
-TEST(GMock, ShouldMakeComplexExampleUsingMakeSharedPtr) {
-  using namespace testing;
-  auto csp = std::make_shared<GMock<interface>>();
-  auto sp = std::make_shared<GMock<interface2>>();
-  auto ptr = GMock<interface4>();
-  auto ref = GMock<interface_dtor>();
-
-  auto sut = make<std::shared_ptr<complex_example>>(csp, sp, &ptr, ref);
-  EXPECT_TRUE(nullptr != sut.get());
-}
 
 TEST(GMock, ShouldHandleByRef) {
   using namespace testing;

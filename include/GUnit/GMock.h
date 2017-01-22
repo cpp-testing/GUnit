@@ -7,16 +7,13 @@
 //
 #pragma once
 
-#include <cxxabi.h>
-#include <execinfo.h>
 #include <gmock/gmock.h>
 #include <memory>
-#include <sstream>
 #include <string>
-#include <type_traits>
 #include <typeinfo>
 #include <unordered_map>
-#include <utility>
+#include "GUnit/Detail/TypeTraits.h"
+#include "GUnit/Detail/Utility.h"
 
 #if defined(__clang__)
 #pragma clang optimize off
@@ -28,96 +25,8 @@
 namespace testing {
 inline namespace v1 {
 namespace detail {
-template <class T>
-struct identity {
-  using type = T;
-};
 
-template <class T>
-using identity_t = typename identity<T>::type;
-
-template <class, class>
-struct function_type;
-
-template <class T, class R, class... TArgs>
-struct function_type<T, R(TArgs...)> {
-  using type = R (T::*)(TArgs...);
-};
-
-template <class T, class R, class... TArgs>
-struct function_type<T, R(TArgs...) const> {
-  using type = R (T::*)(TArgs...) const;
-};
-
-template <class T, class U>
-using function_type_t = typename function_type<T, U>::type;
-
-template <class T>  // wknd for xcode8
-using is_abstract = std::integral_constant<bool, __is_abstract(T)>;
-
-template <char... Chrs>
-struct string {
-  static auto c_str() {
-    static constexpr char str[] = {Chrs..., 0};
-    return str;
-  }
-};
-
-template <char... Chrs>
-void assert_name_size(string<Chrs...>) {
-  static constexpr char str[] = {Chrs...};
-  static_assert(!str[sizeof...(Chrs)-2], "assert_name_size!");
-}
-
-template <class TDst, class TSrc>
-inline TDst union_cast(TSrc src) {
-  union {
-    TSrc src;
-    TDst dst;
-  } u;
-  u.src = src;
-  return u.dst;
-}
-
-inline std::string demangle(const std::string &mangled) {
-  const auto demangled = abi::__cxa_demangle(mangled.c_str(), 0, 0, 0);
-  if (demangled) {
-    std::shared_ptr<char> free{demangled, std::free};
-    return demangled;
-  }
-  return {};
-}
-
-inline std::string call_stack() {
-  static constexpr auto GUNIT_SHOW_STACK_SIZE = 3;
-  static constexpr auto CALL_STACK_SIZE = 64;
-  void *bt[CALL_STACK_SIZE];
-  const auto frames = backtrace(bt, sizeof(bt) / sizeof(bt[0]));
-  const auto symbols = backtrace_symbols(bt, frames);
-  std::shared_ptr<char *> free{symbols, std::free};
-  std::stringstream result;
-
-  for (auto i = 1; i < (frames > GUNIT_SHOW_STACK_SIZE ? GUNIT_SHOW_STACK_SIZE : frames); ++i) {
-    const auto symbol = std::string{symbols[i]};
-
-    const auto name_begin = symbol.find("(");
-    const auto name_end = symbol.find("+");
-    const auto address_begin = symbol.find("[");
-    const auto address_end = symbol.find("]");
-
-    if (name_begin != std::string::npos && name_end != std::string::npos && address_begin != std::string::npos &&
-        address_end != std::string::npos) {
-      result << demangle(symbol.substr(name_begin + 1, name_end - name_begin - 1)) << " "
-             << symbol.substr(address_begin, address_end - address_begin + 1);
-    } else {
-      result << symbol;
-    }
-    result << "\n\t\t   ";
-  }
-  return result.str();
-}
-
-using byte = unsigned char;
+static auto gmock_ready = true;
 
 // clang-format off
 /**
@@ -252,8 +161,6 @@ class vtable {
 
   void **vptr = nullptr;
 };
-
-static auto gmock_ready = true;
 }  // detail
 
 template <class T>
@@ -263,6 +170,12 @@ class GMock {
 
   detail::vtable<T> vtable;
   detail::byte _[sizeof(T)] = {0};
+
+  template <char... Chrs>
+  static void assert_name_size(detail::string<Chrs...>) {
+    static constexpr char str[] = {Chrs...};
+    static_assert(!str[sizeof...(Chrs)-2], "assert_name_size!");
+  }
 
   void expected() {}
   void *not_expected() {
@@ -277,7 +190,7 @@ class GMock {
 
   template <class TName, class R, class... TArgs>
   decltype(auto) gmock_call_impl(int offset, const detail::identity_t<Matcher<TArgs>> &... args) {
-    detail::assert_name_size(TName{});
+    assert_name_size(TName{});
     vtable.set(offset, detail::union_cast<void *>(&GMock::template original_call<TName, R, TArgs...>));
 
     const auto it = fs.find(TName::c_str());
@@ -333,8 +246,12 @@ class NiceMock<GMock<T>> final : public GMock<T> {
  public:
   NiceMock(NiceMock &&) = default;
   NiceMock(const NiceMock &) = delete;
-  NiceMock() { Mock::AllowUninterestingCalls(internal::ImplicitCast_<GMock<T> *>(this)); }
-  ~NiceMock() { Mock::UnregisterCallReaction(internal::ImplicitCast_<GMock<T> *>(this)); }
+  NiceMock() {
+    if (detail::gmock_ready) Mock::AllowUninterestingCalls(internal::ImplicitCast_<GMock<T> *>(this));
+  }
+  ~NiceMock() {
+    if (detail::gmock_ready) Mock::UnregisterCallReaction(internal::ImplicitCast_<GMock<T> *>(this));
+  }
 };
 
 template <class T>
@@ -455,81 +372,6 @@ template <class T>
 inline auto ByRef(NiceGMock<T> &x) {
   return internal::ReferenceWrapper<T>(static_cast<T &>(x));
 }
-
-inline namespace v1 {
-namespace detail {
-
-template <class T>
-decltype(auto) convert(T &&arg) {
-  return std::forward<T>(arg);
-}
-
-template <class T>
-decltype(auto) convert(std::shared_ptr<GMock<T>> &mock) {
-  return std::static_pointer_cast<T>(mock);
-}
-
-template <class T>
-decltype(auto) convert(std::shared_ptr<StrictGMock<T>> &mock) {
-  return std::static_pointer_cast<T>(mock);
-}
-
-template <class T>
-decltype(auto) convert(std::shared_ptr<NiceGMock<T>> &mock) {
-  return std::static_pointer_cast<T>(mock);
-}
-
-template <class T>
-decltype(auto) convert(GMock<T> *mock) {
-  return &static_cast<T &>(*mock);
-}
-
-template <class T>
-decltype(auto) convert(StrictGMock<T> *mock) {
-  return &static_cast<T &>(*mock);
-}
-
-template <class T>
-decltype(auto) convert(NiceGMock<T> *mock) {
-  return &static_cast<T &>(*mock);
-}
-
-template <class T>
-decltype(auto) convert(GMock<T> &mock) {
-  return static_cast<T &>(mock);
-}
-
-template <class T>
-decltype(auto) convert(StrictGMock<T> &mock) {
-  return static_cast<T &>(mock);
-}
-
-template <class T>
-decltype(auto) convert(NiceGMock<T> &mock) {
-  return static_cast<T &>(mock);
-}
-
-template <class T, class... TArgs>
-auto make_impl(detail::identity<std::unique_ptr<T>>, TArgs &&... args) {
-  return std::make_unique<T>(detail::convert(std::forward<TArgs>(args))...);
-}
-
-template <class T, class... TArgs>
-auto make_impl(detail::identity<std::shared_ptr<T>>, TArgs &&... args) {
-  return std::make_shared<T>(detail::convert(std::forward<TArgs>(args))...);
-}
-
-template <class T, class... TArgs>
-auto make_impl(detail::identity<T>, TArgs &&... args) {
-  return T(detail::convert(std::forward<TArgs>(args))...);
-}
-}  // detail
-
-template <class T, class... TArgs>
-auto make(TArgs &&... args) {
-  return detail::make_impl(detail::identity<T>{}, std::forward<TArgs>(args)...);
-}
-}  // v1
 }  // testing
 
 #if defined(__clang__)
