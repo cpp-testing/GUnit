@@ -707,6 +707,15 @@ GTEST(longest_ctor_force) {
 GTEST(complex_example) {
   using namespace testing;
 
+  // setup
+  std::tie(sut, mocks) = testing::make<SUT, testing::NiceGMock>();
+  EXPECT_CALL(mock<interface>(), (get)(_)).WillOnce(Return(123));
+  EXPECT_CALL(mock<interface2>(), (f1)(77.0)).Times(1);
+  EXPECT_CALL(mock<interface4>(), (f2)(_)).Times(1);
+  // Missing interface_dtor.get expectation
+
+  sut->update();
+
   SHOULD("create sut and mocks") {
     EXPECT_TRUE((detail::is_creatable<complex_example>::value));
     EXPECT_TRUE(sut.get());

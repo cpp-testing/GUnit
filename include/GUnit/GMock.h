@@ -180,13 +180,16 @@ class GMock {
 
   void expected() {}
   void *not_expected() {
-    auto *ptr = [this] {
-      fs[__PRETTY_FUNCTION__] = std::make_unique<FunctionMocker<void *()>>();
-      return static_cast<FunctionMocker<void *()> *>(fs[__PRETTY_FUNCTION__].get());
-    }();
-    const auto call_stack = detail::call_stack();
-    ptr->SetOwnerAndName(this, call_stack.c_str());
-    return ptr->Invoke();
+    if (detail::gmock_ready) {
+      auto *ptr = [this] {
+        fs[__PRETTY_FUNCTION__] = std::make_unique<FunctionMocker<void *()>>();
+        return static_cast<FunctionMocker<void *()> *>(fs[__PRETTY_FUNCTION__].get());
+      }();
+      const auto call_stack = detail::call_stack();
+      ptr->SetOwnerAndName(this, call_stack.c_str());
+      return ptr->Invoke();
+    }
+    return nullptr;
   }
 
   template <class TName, class R, class... TArgs>
