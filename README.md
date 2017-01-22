@@ -134,19 +134,19 @@ TEST_F(BenchmarkTest, ShouldCallF1) {           | GTEST(example) {
  using namespace testing;                       |  using namespace testing;
                                                 |
  EXPECT_CALL(m1,f1(_)).WillOnce(Return(true));  |  SHOULD("call f1") {
- EXPECT_CALL(m2,f2_1()).Times(1);               |    EXPECT_CALL(mock<i1>(),(f1)(_)).WillOnce(Return(true));
- EXPECT_CALL(m3,f3(0, 1, 2)).Times(1);          |    EXPECT_CALL(mock<i2>(),(f2_1)()).Times(1);
-                                                |    EXPECT_CALL(mock<i3>(),(f3)(0, 1, 2)).Times(1);
+ EXPECT_CALL(m2,f2_1()).Times(1);               |   EXPECT_CALL(mock<i1>(),(f1)(_)).WillOnce(Return(true));
+ EXPECT_CALL(m3,f3(0, 1, 2)).Times(1);          |   EXPECT_CALL(mock<i2>(),(f2_1)()).Times(1);
+                                                |   EXPECT_CALL(mock<i3>(),(f3)(0, 1, 2)).Times(1);
  sut->test();                                   |
-}                                               |    sut->test();
+}                                               |   sut->test();
                                                 |  }
 TEST_F(BenchmarkTest, ShouldCallF2) {           |
  using namespace testing;                       |  SHOULD("call f2") {
-                                                |    EXPECT_CALL(mock<i1>(),(f1)(_)).WillOnce(Return(false));
- EXPECT_CALL(m1,f1(_)).WillOnce(Return(false)); |    EXPECT_CALL(mock<i2>(),(f2_2)()).Times(1);
- EXPECT_CALL(m2,f2_2()).Times(1);               |    EXPECT_CALL(mock<i3>(),(f3)(0, 1, 2)).Times(1);
+                                                |   EXPECT_CALL(mock<i1>(),(f1)(_)).WillOnce(Return(false));
+ EXPECT_CALL(m1,f1(_)).WillOnce(Return(false)); |   EXPECT_CALL(mock<i2>(),(f2_2)()).Times(1);
+ EXPECT_CALL(m2,f2_2()).Times(1);               |   EXPECT_CALL(mock<i3>(),(f3)(0, 1, 2)).Times(1);
  EXPECT_CALL(m3,f3(0, 1, 2)).Times(1);          |
-                                                |    sut->test();
+                                                |   sut->test();
  sut->test();                                   |  }
 }                                               | }
 ```
