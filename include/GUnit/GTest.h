@@ -12,6 +12,7 @@
 #include <unistd.h>
 #include <memory>
 #include <string>
+#include "GUnit/Detail/Preprocessor.h"
 #include "GUnit/Detail/TypeTraits.h"
 #include "GUnit/GMake.h"
 #include "GUnit/GMock.h"
@@ -108,17 +109,17 @@ class GTest : public detail::GTest<T>, public Test {};
    public:                                                                         \
     void test();                                                                   \
   };                                                                               \
-  ::testing::detail::GTestAutoRegister<GTest__<TYPE>> __GMOCK_CAT(ar, __LINE__){}; \
+  ::testing::detail::GTestAutoRegister<GTest__<TYPE>> __GUNIT_CAT(ar, __LINE__){}; \
   void GTest__<TYPE>::test()
 
 #define SHOULD(NAME)                                                                                                          \
-  static auto __GMOCK_CAT(once_, __LINE__) = true;                                                                            \
-  const auto __GMOCK_CAT(test_case_name_, __LINE__) = std::string{"should "} + NAME;                                          \
-  if (__GMOCK_CAT(once_, __LINE__)) {                                                                                         \
-    __GMOCK_CAT(once_, __LINE__) = false;                                                                                     \
-    ::testing::internal::MakeAndRegisterTestInfo(TEST_NAME, __GMOCK_CAT(test_case_name_, __LINE__).c_str(), nullptr, nullptr, \
+  static auto __GUNIT_CAT(once_, __LINE__) = true;                                                                            \
+  const auto __GUNIT_CAT(test_case_name_, __LINE__) = std::string{"should "} + NAME;                                          \
+  if (__GUNIT_CAT(once_, __LINE__)) {                                                                                         \
+    __GUNIT_CAT(once_, __LINE__) = false;                                                                                     \
+    ::testing::internal::MakeAndRegisterTestInfo(TEST_NAME, __GUNIT_CAT(test_case_name_, __LINE__).c_str(), nullptr, nullptr, \
                                                  ::testing::internal::CodeLocation(__FILE__, __LINE__),                       \
                                                  ::testing::internal::GetTestTypeId(), ::testing::Test::SetUpTestCase,        \
                                                  ::testing::Test::TearDownTestCase,                                           \
                                                  new ::testing::detail::GTestFactoryImpl<TEST_TYPE>{});                       \
-  } else if (__GMOCK_CAT(test_case_name_, __LINE__) == ::testing::UnitTest::GetInstance()->current_test_info()->name())
+  } else if (__GUNIT_CAT(test_case_name_, __LINE__) == ::testing::UnitTest::GetInstance()->current_test_info()->name())

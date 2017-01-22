@@ -12,6 +12,7 @@
 #include <string>
 #include <typeinfo>
 #include <unordered_map>
+#include "GUnit/Detail/Preprocessor.h"
 #include "GUnit/Detail/TypeTraits.h"
 #include "GUnit/Detail/Utility.h"
 
@@ -380,71 +381,34 @@ inline auto ByRef(NiceGMock<T> &x) {
 #pragma GCC pop_options
 #endif
 
-#define __GMOCK_COMMA() ,
-#define __GMOCK_IGNORE(...)
-#define __GMOCK_QNAME(...) ::testing::detail::string<__GMOCK_STR_IMPL_32(#__VA_ARGS__, 0), 0> __GMOCK_IGNORE
-#define __GMOCK_FUNCTION(a, b) b __GMOCK_IGNORE
-#define __GMOCK_NAME(...) __GMOCK_CAT(__GMOCK_NAME_, __GMOCK_SIZE(__VA_ARGS__))(__VA_ARGS__)
-#define __GMOCK_NAME_1(a) a __GMOCK_IGNORE
-#define __GMOCK_NAME_2(a, b) a __GMOCK_IGNORE
-#define __GMOCK_OVERLOAD_CALL(...) __GMOCK_SIZE(__VA_ARGS__) __GMOCK_IGNORE
+#define __GMOCK_QNAME(...) ::testing::detail::string<__GUNIT_STR_IMPL_32(#__VA_ARGS__, 0), 0> __GUNIT_IGNORE
+#define __GMOCK_FUNCTION(a, b) b __GUNIT_IGNORE
+#define __GMOCK_NAME(...) __GUNIT_CAT(__GMOCK_NAME_, __GUNIT_SIZE(__VA_ARGS__))(__VA_ARGS__)
+#define __GMOCK_NAME_1(a) a __GUNIT_IGNORE
+#define __GMOCK_NAME_2(a, b) a __GUNIT_IGNORE
+#define __GMOCK_OVERLOAD_CALL(...) __GUNIT_SIZE(__VA_ARGS__) __GUNIT_IGNORE
 #define __GMOCK_OVERLOAD_CAST_IMPL_1(obj, call)
 #define __GMOCK_OVERLOAD_CAST_IMPL_2(obj, call) \
   (::testing::detail::function_type_t<std::decay_t<decltype(obj)>::type, __GMOCK_FUNCTION call>)
 #define __GMOCK_INTERNAL(...)                  \
-  __GMOCK_IF(__BOOST_DI_IS_EMPTY(__VA_ARGS__)) \
-  (__GMOCK_IGNORE, __GMOCK_COMMA)() __VA_ARGS__
+  __GUNIT_IF(__GUNIT_IS_EMPTY(__VA_ARGS__)) \
+  (__GUNIT_IGNORE, __GUNIT_COMMA)() __VA_ARGS__
 #define __GMOCK_CALL(...) __GMOCK_INTERNAL
-#define __GMOCK_PRIMITIVE_CAT(arg, ...) arg##__VA_ARGS__
-#define __GMOCK_CAT(arg, ...) __GMOCK_PRIMITIVE_CAT(arg, __VA_ARGS__)
-#define __GMOCK_SIZE(...) __GMOCK_CAT(__GMOCK_VARIADIC_SIZE(__VA_ARGS__, 2, 1, ), )
-#define __GMOCK_VARIADIC_SIZE(e0, e1, size, ...) size
-#define __GMOCK_IBP_SPLIT(i, ...) __GMOCK_PRIMITIVE_CAT(__GMOCK_IBP_SPLIT_, i)(__VA_ARGS__)
-#define __GMOCK_IBP_SPLIT_0(a, ...) a
-#define __GMOCK_IBP_SPLIT_1(a, ...) __VA_ARGS__
-#define __GMOCK_IBP_IS_VARIADIC_C(...) 1
-#define __GMOCK_IBP_IS_VARIADIC_R_1 1,
-#define __GMOCK_IBP_IS_VARIADIC_R___GMOCK_IBP_IS_VARIADIC_C 0,
-#define __GMOCK_IBP(...) __GMOCK_IBP_SPLIT(0, __GMOCK_CAT(__GMOCK_IBP_IS_VARIADIC_R_, __GMOCK_IBP_IS_VARIADIC_C __VA_ARGS__))
-#define __BOOST_DI_IS_EMPTY(...)                 \
-  __GMOCK_IS_EMPTY_IIF(__GMOCK_IBP(__VA_ARGS__)) \
-  (__GMOCK_IS_EMPTY_GEN_ZERO, __GMOCK_IS_EMPTY_PROCESS)(__VA_ARGS__)
-#define __GMOCK_IS_EMPTY_PRIMITIVE_CAT(a, b) a##b
-#define __GMOCK_IS_EMPTY_IIF(bit) __GMOCK_IS_EMPTY_PRIMITIVE_CAT(__GMOCK_IS_EMPTY_IIF_, bit)
-#define __GMOCK_IS_EMPTY_NON_FUNCTION_C(...) ()
-#define __GMOCK_IS_EMPTY_GEN_ZERO(...) 0
-#define __GMOCK_IS_EMPTY_IIF_0(t, b) b
-#define __GMOCK_IS_EMPTY_IIF_1(t, b) t
-#define __GMOCK_IS_EMPTY_PROCESS(...) __GMOCK_IBP(__GMOCK_IS_EMPTY_NON_FUNCTION_C __VA_ARGS__())
-#define __GMOCK_IIF(c) __GMOCK_PRIMITIVE_CAT(__GMOCK_IIF_, c)
-#define __GMOCK_IIF_0(t, ...) __VA_ARGS__
-#define __GMOCK_IIF_1(t, ...) t
-#define __GMOCK_IF(c) __GMOCK_IIF(c)
-#define __GMOCK_STR_IMPL_1(str, i) (sizeof(str) > (i) ? str[(i)] : 0)
-#define __GMOCK_STR_IMPL_4(str, i) \
-  __GMOCK_STR_IMPL_1(str, i + 0)   \
-  , __GMOCK_STR_IMPL_1(str, i + 1), __GMOCK_STR_IMPL_1(str, i + 2), __GMOCK_STR_IMPL_1(str, i + 3)
-#define __GMOCK_STR_IMPL_16(str, i) \
-  __GMOCK_STR_IMPL_4(str, i + 0)    \
-  , __GMOCK_STR_IMPL_4(str, i + 4), __GMOCK_STR_IMPL_4(str, i + 8), __GMOCK_STR_IMPL_4(str, i + 12)
-#define __GMOCK_STR_IMPL_32(str, i) \
-  __GMOCK_STR_IMPL_16(str, i + 0)   \
-  , __GMOCK_STR_IMPL_16(str, i + 16), __GMOCK_STR_IMPL_16(str, i + 32)
 
 #undef EXPECT_CALL
 #define __GMOCK_EXPECT_CALL_0(obj, call) GMOCK_EXPECT_CALL_IMPL_(obj, call)
 #define __GMOCK_EXPECT_CALL_1(obj, call)                                                                                  \
   if (::testing::detail::gmock_ready)                                                                                     \
-  ((obj).gmock_call<__GMOCK_QNAME call>(__GMOCK_CAT(__GMOCK_OVERLOAD_CAST_IMPL_, __GMOCK_OVERLOAD_CALL call)(obj, call) & \
+  ((obj).gmock_call<__GMOCK_QNAME call>(__GUNIT_CAT(__GMOCK_OVERLOAD_CAST_IMPL_, __GMOCK_OVERLOAD_CALL call)(obj, call) & \
                                         std::decay_t<decltype(obj)>::type::__GMOCK_NAME call __GMOCK_CALL call))          \
       .InternalExpectedAt(__FILE__, __LINE__, #obj, #call)
-#define EXPECT_CALL(obj, call) __GMOCK_CAT(__GMOCK_EXPECT_CALL_, __GMOCK_IBP(call))(obj, call)
+#define EXPECT_CALL(obj, call) __GUNIT_CAT(__GMOCK_EXPECT_CALL_, __GUNIT_IBP(call))(obj, call)
 
 #undef ON_CALL
 #define __GMOCK_ON_CALL_0(obj, call) GMOCK_ON_CALL_IMPL_(obj, call)
 #define __GMOCK_ON_CALL_1(obj, call)                                                                                      \
   if (::testing::detail::gmock_ready)                                                                                     \
-  ((obj).gmock_call<__GMOCK_QNAME call>(__GMOCK_CAT(__GMOCK_OVERLOAD_CAST_IMPL_, __GMOCK_OVERLOAD_CALL call)(obj, call) & \
+  ((obj).gmock_call<__GMOCK_QNAME call>(__GUNIT_CAT(__GMOCK_OVERLOAD_CAST_IMPL_, __GMOCK_OVERLOAD_CALL call)(obj, call) & \
                                         std::decay_t<decltype(obj)>::type::__GMOCK_NAME call __GMOCK_CALL call))          \
       .InternalDefaultActionSetAt(__FILE__, __LINE__, #obj, #call)
-#define ON_CALL(obj, call) __GMOCK_CAT(__GMOCK_ON_CALL_, __GMOCK_IBP(call))(obj, call)
+#define ON_CALL(obj, call) __GUNIT_CAT(__GMOCK_ON_CALL_, __GUNIT_IBP(call))(obj, call)
