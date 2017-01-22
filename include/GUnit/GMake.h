@@ -8,6 +8,8 @@
 #pragma once
 
 #include <memory>
+#include <stdexcept>
+#include <typeinfo>
 #include <unordered_map>
 #include <utility>
 #include "GUnit/Detail/TypeTraits.h"
@@ -162,11 +164,42 @@ auto make_impl(detail::identity<T>, TArgs &&... args) {
 }
 }  // detail
 
+template <class>
+class mock_exception final : public std::exception {
+ public:
+  explicit mock_exception(const std::string &msg) : msg(msg) {}
+  const char *what() const throw() override { return msg.c_str(); }
+
+ private:
+  std::string msg;
+};
+
 class mocks_t : public std::unordered_map<std::size_t, std::shared_ptr<void>> {
  public:
   template <class TMock>
-  decltype(auto) mock() {
-    return *static_cast<GMock<TMock> *>(at(detail::type_id<TMock>()).get());
+  decltype(auto) mock() const {
+    const auto it = find(detail::type_id<TMock>());
+    if (it == end()) {
+      throw mock_exception<TMock>{std::string{"Requested mock \""} + typeid(TMock).name() + "\" wasn't created!"};
+    }
+    return *static_cast<GMock<TMock> *>(it->second.get());
+  }
+
+  template <class TMock>
+  void add() {
+    if (find(detail::type_id<TMock>()) != end()) {
+      throw mock_exception<TMock>{std::string{"Requested mock \""} + typeid(TMock).name() + "\" was already created!"};
+    }
+    emplace(detail::type_id<typename TMock::type>(), std::make_shared<TMock>());
+  }
+
+  template <class TMock>
+  auto get() const {
+    const auto it = find(detail::type_id<TMock>());
+    if (it == end()) {
+      throw mock_exception<TMock>{std::string{"Requested mock \""} + typeid(TMock).name() + "\" wasn't created!"};
+    }
+    return std::static_pointer_cast<TMock>(it->second);
   }
 };
 
@@ -329,6 +362,44 @@ auto make(TArgs &&... args) {
                                                  std::make_index_sequence<detail::ctor_size<detail::deref_t<T>>::value>{}),
                         mocks);
 }
-
 }  // v1
 }  // testing
+
+#if __has_include(<boost / di.hpp>)
+#include <boost/di.hpp>
+
+BOOST_DI_NAMESPACE_BEGIN
+
+namespace detail {
+template <template <class> class TMock>
+class Mock {
+ public:
+  explicit Mock(testing::mocks_t &mocks) : mocks(mocks) {}
+
+  template <class TInjector, class TDependency>
+  auto operator()(const TInjector &, const TDependency &) {
+    mocks.add<TMock<typename TDependency::expected>>();
+    return mocks.get<typename TDependency::expected>();
+  }
+
+ private:
+  testing::mocks_t &mocks;
+};
+}  // detail
+
+using GMock = detail::Mock<testing::GMock>;
+using NaggyGMock = detail::Mock<testing::NaggyGMock>;
+using StrictGMock = detail::Mock<testing::StrictGMock>;
+using NiceGMock = detail::Mock<testing::NiceGMock>;
+
+BOOST_DI_NAMESPACE_END
+
+namespace testing {
+inline namespace v1 {
+template <class T, class TInjector, GUNIT_REQUIRES(std::is_base_of<boost::di::core::injector_base, TInjector>::value)>
+decltype(auto) make(const TInjector &injector) {
+  return injector.template create<T>();
+}
+}  // v1
+}  // testing
+#endif

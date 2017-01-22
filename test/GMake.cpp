@@ -8,6 +8,7 @@
 #include "GUnit/GMake.h"
 #include <gtest/gtest.h>
 #include "GUnit/GMock.h"
+#include "GUnit/GTest.h"
 
 struct interface {
   virtual ~interface() = default;
@@ -18,6 +19,7 @@ struct interface {
 
 struct interface2 : interface {
   virtual int f1(double) = 0;
+  virtual void f2(int) = 0;
 };
 
 struct arg {
@@ -32,6 +34,20 @@ struct interface4 : interface {
 struct interface_dtor {
   virtual int get(int) const = 0;
   virtual ~interface_dtor() {}
+};
+
+class example {
+ public:
+  example(const interface& i1, interface2& i2) : i1(i1), i2(i2) {}
+
+  void update() {
+    const auto i = i1.get(42);
+    i2.f2(i);
+  }
+
+ private:
+  const interface& i1;
+  interface2& i2;
 };
 
 class complex_example {
@@ -53,7 +69,7 @@ class complex_example {
   interface_dtor& ref;
 };
 
-TEST(GMock, ShouldMakeComplexExampleUsingMakeUniquePtr) {
+TEST(GMake, ShouldMakeComplexExampleUsingMakeUniquePtr) {
   using namespace testing;
   auto csp = std::make_shared<GMock<interface>>();
   auto sp = std::make_shared<GMock<interface2>>();
@@ -64,7 +80,7 @@ TEST(GMock, ShouldMakeComplexExampleUsingMakeUniquePtr) {
   EXPECT_TRUE(nullptr != sut.get());
 }
 
-TEST(GMock, ShouldMakeComplexExampleUsingMakeSharedPtr) {
+TEST(GMake, ShouldMakeComplexExampleUsingMakeSharedPtr) {
   using namespace testing;
   auto csp = std::make_shared<GMock<interface>>();
   auto sp = std::make_shared<GMock<interface2>>();
@@ -74,3 +90,34 @@ TEST(GMock, ShouldMakeComplexExampleUsingMakeSharedPtr) {
   auto sut = make<std::shared_ptr<complex_example>>(csp, sp, &ptr, ref);
   EXPECT_TRUE(nullptr != sut.get());
 }
+
+TEST(GMake, ShouldMakeComplexExampleUsingMakeType) {
+  using namespace testing;
+  auto csp = std::make_shared<GMock<interface>>();
+  auto sp = std::make_shared<GMock<interface2>>();
+  auto ptr = GMock<interface4>();
+  auto ref = GMock<interface_dtor>();
+  auto sut = make<complex_example>(csp, sp, &ptr, ref);
+}
+
+#if __has_include(<boost / di.hpp>)
+TEST(GMake, ShouldCreateUsingInjector) {
+  using namespace testing;
+  namespace di = boost::di;
+  mocks_t mocks;
+
+  // clang-format off
+  const auto injector = di::make_injector(
+    di::bind<interface>.to(di::GMock{mocks}) [di::override]
+  , di::bind<interface2>.to(di::StrictGMock{mocks}) [di::override]
+  );
+  // clang-format on
+
+  auto object = make<example>(injector);
+
+  EXPECT_CALL(mocks.mock<interface>(), (get)(_)).WillOnce(Return(123));
+  EXPECT_CALL(mocks.mock<interface2>(), (f2)(123));
+
+  object.update();
+}
+#endif

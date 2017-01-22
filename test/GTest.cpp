@@ -71,6 +71,7 @@ struct interface {
 
 struct interface2 : interface {
   virtual int f1(double) = 0;
+  virtual void f2(int) = 0;
 };
 
 struct interface_dtor {
@@ -316,16 +317,6 @@ class passing_ref {
   passing_ref(interface*, arg&) {}
 };
 
-TEST(MakeTest, ShouldMakeComplexExampleUsingMakeType) {
-  using namespace testing;
-  auto csp = std::make_shared<GMock<interface>>();
-  auto sp = std::make_shared<GMock<interface2>>();
-  auto ptr = GMock<interface4>();
-  auto ref = GMock<interface_dtor>();
-
-  auto sut = make<complex_example>(csp, sp, &ptr, ref);
-}
-
 TEST(MakeTest, ShouldMakeSimpleExampleUsingMakeAndTie) {
   using namespace testing;
   struct c {
@@ -394,7 +385,7 @@ TEST(MakeTest, ShouldThrowThenRequestedMockIsNotFound) {
   std::tie(sut, mocks) = make<std::unique_ptr<example>, NiceGMock>(42);
 
   EXPECT_NO_THROW(mocks.mock<interface>());
-  EXPECT_THROW(mocks.mock<interface4>(), std::out_of_range);
+  EXPECT_THROW(mocks.mock<interface4>(), mock_exception<interface4>);
 }
 
 TEST(MakeTest, ShouldMakeComplexExampleUsingMakeAndTie) {
@@ -766,3 +757,40 @@ GTEST(class MakeWithMocks) {
     std::tie(sut, mocks) = testing::make<SUT, testing::NaggyGMock, StrictGMock<interface_dtor>, NiceGMock<interface>>();
   }
 }
+
+#if __has_include(<boost / di.hpp>)
+class di_example {
+ public:
+  di_example(const interface& i1, interface2& i2) : i1(i1), i2(i2) {}
+
+  void update() {
+    const auto i = i1.get(42);
+    i2.f2(i);
+  }
+
+ private:
+  const interface& i1;
+  interface2& i2;
+};
+
+GTEST(di_example) {
+  using namespace testing;
+  namespace di = boost::di;
+
+  SHOULD("create example") {
+    // clang-format off
+    const auto injector = di::make_injector(
+      di::bind<interface>.to(di::NiceGMock{mocks})
+    , di::bind<interface2>.to(di::StrictGMock{mocks})
+    );
+    // clang-format on
+
+    auto object = make<di_example>(injector);
+
+    EXPECT_CALL(mock<interface>(), (get)(_)).WillOnce(Return(123));
+    EXPECT_CALL(mock<interface2>(), (f2)(123));
+
+    object.update();
+  }
+}
+#endif
