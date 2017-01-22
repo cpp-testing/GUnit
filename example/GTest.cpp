@@ -31,32 +31,26 @@ class example {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-class GTest : public testing::GTest<example> {
- public:
-  GTest() {
-    using namespace testing;
-    std::tie(sut, mocks) = make<SUT, NaggyGMock>(42);
+GTEST(example) {
+  using namespace testing;
+  std::tie(sut, mocks) = make<SUT, NaggyGMock>(42);
+
+  SHOULD("make simple example") {
+    EXPECT_EQ(42, sut->get_data());
+
+    EXPECT_CALL(mock<interface>(), (foo)(42)).Times(1);
+    EXPECT_CALL(mock<interface>(), (bar)(_, "str"));
+
+    sut->update();
   }
-};
 
-TEST_F(GTest, ShouldMakeExample) {
-  using namespace testing;
-  EXPECT_EQ(42, sut->get_data());
+  SHOULD("override example") {
+    std::tie(sut, mocks) = make<SUT, NaggyGMock>(77);
+    EXPECT_EQ(77, sut->get_data());
 
-  EXPECT_CALL(mock<interface>(), (foo)(42)).Times(1);
-  EXPECT_CALL(mock<interface>(), (bar)(_, "str"));
+    EXPECT_CALL(mock<interface>(), (foo)(42)).Times(1);
+    EXPECT_CALL(mock<interface>(), (bar)(_, "str"));
 
-  sut->update();
-}
-
-TEST_F(GTest, ShouldOverrideExample) {
-  using namespace testing;
-
-  std::tie(sut, mocks) = make<SUT, NaggyGMock>(77);
-  EXPECT_EQ(77, sut->get_data());
-
-  EXPECT_CALL(mock<interface>(), (foo)(42)).Times(1);
-  EXPECT_CALL(mock<interface>(), (bar)(_, "str"));
-
-  sut->update();
+    sut->update();
+  }
 }

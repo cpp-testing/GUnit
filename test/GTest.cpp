@@ -625,113 +625,122 @@ TEST_F(UniquePtrAndNonDefaultConstructibleTest, ShouldMakeNExample) {
 }
 
 struct SameMockTest : testing::GTest<same_mock> {
-  void SetUp() override { std::tie(sut, mocks) = testing::make<SUT, testing::NaggyGMock>(); }
+  void SetUp() override {}
 };
 
-TEST_F(SameMockTest, ShouldPassTheSameMock) {
+GTEST(same_mock) {
   using namespace testing;
+  std::tie(sut, mocks) = testing::make<SUT, testing::NaggyGMock>();
 
-  EXPECT_TRUE(sut->csp.get() == sut->sp.get());
-  EXPECT_CALL(mock<interface>(), (get)(_)).WillOnce(Return(123));
-  EXPECT_CALL(mock<interface>(), (bar)(_, "str"));
+  SHOULD("pass the same mock") {
+    EXPECT_TRUE(sut->csp.get() == sut->sp.get());
+    EXPECT_CALL(mock<interface>(), (get)(_)).WillOnce(Return(123));
+    EXPECT_CALL(mock<interface>(), (bar)(_, "str"));
 
-  sut->update();
+    sut->update();
+  }
 }
 
-struct ReturnMockTest : testing::GTest<mexample> {
-  void SetUp() override { std::tie(sut, mocks) = testing::make<SUT, testing::NaggyGMock>(); }
-  testing::StrictGMock<interface> mockInterface;
-};
-
-TEST_F(ReturnMockTest, ShouldPassGMockType) {
+GTEST(mexample) {
   using namespace testing;
+  std::tie(sut, mocks) = testing::make<SUT, testing::NaggyGMock>();
+  StrictGMock<interface> mockInterface;
 
-  constexpr auto value = true;
-  EXPECT_CALL(mock<imock_return>(), (get)(value)).WillOnce(ReturnRef(mockInterface));
-  EXPECT_CALL(mockInterface, (foo)(42)).Times(1);
+  SHOULD("pass GMock type") {
+    constexpr auto value = true;
+    EXPECT_CALL(mock<imock_return>(), (get)(value)).WillOnce(ReturnRef(mockInterface));
+    EXPECT_CALL(mockInterface, (foo)(42)).Times(1);
 
-  sut->update(value);
+    sut->update(value);
+  }
 }
 
-struct ReturnMockSharedPtrTest : testing::GTest<mspexample> {
-  void SetUp() override { std::tie(sut, mocks) = testing::make<SUT, testing::NaggyGMock>(); }
+GTEST(mspexample) {
+  using namespace testing;
+  std::tie(sut, mocks) = testing::make<SUT, testing::NaggyGMock>();
   std::shared_ptr<testing::StrictGMock<interface>> mockInterface = std::make_shared<testing::StrictGMock<interface>>();
-};
 
-TEST_F(ReturnMockSharedPtrTest, ShouldPassGMockSharedPtrType) {
-  using namespace testing;
+  SHOULD("pass GMock shared ptr type") {
+    constexpr auto value = false;
+    EXPECT_CALL(mock<imock_return_sp>(), (get)(value)).WillOnce(Return(mockInterface));
+    EXPECT_CALL(*mockInterface, (foo)(42)).Times(1);
 
-  constexpr auto value = false;
-  EXPECT_CALL(mock<imock_return_sp>(), (get)(value)).WillOnce(Return(mockInterface));
-  EXPECT_CALL(*mockInterface, (foo)(42)).Times(1);
-
-  sut->update(value);
+    sut->update(value);
+  }
 }
 
-struct ReturnMockPtrTest : testing::GTest<mptrexample> {
-  void SetUp() override { std::tie(sut, mocks) = testing::make<SUT, testing::NaggyGMock>(); }
-};
-
-TEST_F(ReturnMockPtrTest, ShouldPassGMockPtrType) {
+GTEST(mptrexample) {
   using namespace testing;
-
+  std::tie(sut, mocks) = testing::make<SUT, testing::NaggyGMock>();
   testing::StrictGMock<interface> mockInterface;
-  constexpr auto value = false;
-  EXPECT_CALL(mock<imock_return_ptr>(), (get)(value)).WillOnce(Return(&mockInterface));
-  EXPECT_CALL(mockInterface, (foo)(42)).Times(1);
 
-  sut->update(value);
+  SHOULD("pass GMock ptr type") {
+    constexpr auto value = false;
+    EXPECT_CALL(mock<imock_return_ptr>(), (get)(value)).WillOnce(Return(&mockInterface));
+    EXPECT_CALL(mockInterface, (foo)(42)).Times(1);
+
+    sut->update(value);
+  }
 }
 
-struct LongestCtorTest : testing::GTest<longest_ctor> {
-  void SetUp() override { std::tie(sut, mocks) = testing::make<SUT, testing::NaggyGMock>(short{42}, 77.0); }
-};
-
-TEST_F(LongestCtorTest, ShouldTakeTheLongestCtor) {
+GTEST(longest_ctor) {
   using namespace testing;
+  std::tie(sut, mocks) = testing::make<SUT, testing::NaggyGMock>(short{42}, 77.0);
 
-  EXPECT_EQ(short{42}, sut->s);
-  EXPECT_EQ(77.0, sut->d);
-  EXPECT_TRUE(sut->i.get());
-  EXPECT_TRUE(sut->i2.get());
+  SHOULD("take the longest ctor") {
+    EXPECT_EQ(short{42}, sut->s);
+    EXPECT_EQ(77.0, sut->d);
+    EXPECT_TRUE(sut->i.get());
+    EXPECT_TRUE(sut->i2.get());
+  }
 }
 
-struct LongestInjectedCtorTest : testing::GTest<longest_ctor_force> {
-  void SetUp() override { std::tie(sut, mocks) = testing::make<SUT, testing::NaggyGMock>(short{42}, 77.0); }
-};
-
-TEST_F(LongestInjectedCtorTest, ShouldTakeTheInjectedLongestCtor) {
+GTEST(longest_ctor_force) {
   using namespace testing;
+  std::tie(sut, mocks) = testing::make<SUT, testing::NaggyGMock>(short{42}, 77.0);
 
-  EXPECT_EQ(short{42}, sut->s);
-  EXPECT_EQ(77.0, sut->d);
-  EXPECT_TRUE(sut->i.get());
-  EXPECT_FALSE(sut->i2.get());  // not initialized
+  SHOULD("take injected, longest ctor") {
+    EXPECT_EQ(short{42}, sut->s);
+    EXPECT_EQ(77.0, sut->d);
+    EXPECT_TRUE(sut->i.get());
+    EXPECT_FALSE(sut->i2.get());  // not initialized
+  }
 }
 
-struct ComplexStrictMocksWithOnceNiceTest : testing::GTest<complex_example> {};
-
-TEST_F(ComplexStrictMocksWithOnceNiceTest, ShouldMakeComplexExampleWithStrictMocks) {
+GTEST(complex_example) {
   using namespace testing;
 
-  std::tie(sut, mocks) = testing::make<SUT, testing::StrictGMock, NiceGMock<interface_dtor>>();
+  SHOULD("make complex example with strict mocks") {
+    std::tie(sut, mocks) = testing::make<SUT, testing::StrictGMock, NiceGMock<interface_dtor>>();
+    EXPECT_CALL(mock<interface>(), (get)(_)).WillOnce(Return(123));
+    EXPECT_CALL(mock<interface2>(), (f1)(77.0)).Times(1);
+    EXPECT_CALL(mock<interface4>(), (f2)(_)).Times(1);
+    // Missing interface_dtor.get expectation
 
-  EXPECT_CALL(mock<interface>(), (get)(_)).WillOnce(Return(123));
-  EXPECT_CALL(mock<interface2>(), (f1)(77.0)).Times(1);
-  EXPECT_CALL(mock<interface4>(), (f2)(_)).Times(1);
-  // Missing interface_dtor.get expectation
+    sut->update();
+  }
 
-  sut->update();
+  SHOULD("make complex example with nice mocks") {
+    std::tie(sut, mocks) = testing::make<SUT, testing::NiceGMock>();
+    EXPECT_CALL(mock<interface>(), (get)(_)).WillOnce(Return(123));
+    EXPECT_CALL(mock<interface2>(), (f1)(77.0)).Times(1);
+    EXPECT_CALL(mock<interface4>(), (f2)(_)).Times(1);
+    // Missing interface_dtor.get expectation
+
+    sut->update();
+  }
 }
 
-TEST(MakeWithMocksTest, ShouldMakeComplexExampleWithDefaultAndCustomMocks) {
-  using namespace testing;
-  using SUT = std::unique_ptr<complex_example>;
-  SUT sut;
-  mocks_t mocks;
+GTEST(class MakeWithMocks) {
+  SHOULD("make complex example with default and custom mocks") {
+    using namespace testing;
+    using SUT = std::unique_ptr<complex_example>;
+    SUT sut;
+    mocks_t mocks;
 
-  std::tie(sut, mocks) = testing::make<SUT, testing::StrictGMock, NiceGMock<interface_dtor>>();
-  std::tie(sut, mocks) = testing::make<SUT, testing::NiceGMock, StrictGMock<interface_dtor>>();
-  std::tie(sut, mocks) = testing::make<SUT, testing::NiceGMock, NaggyGMock<interface_dtor>>();
-  std::tie(sut, mocks) = testing::make<SUT, testing::NaggyGMock, StrictGMock<interface_dtor>, NiceGMock<interface>>();
+    std::tie(sut, mocks) = testing::make<SUT, testing::StrictGMock, NiceGMock<interface_dtor>>();
+    std::tie(sut, mocks) = testing::make<SUT, testing::NiceGMock, StrictGMock<interface_dtor>>();
+    std::tie(sut, mocks) = testing::make<SUT, testing::NiceGMock, NaggyGMock<interface_dtor>>();
+    std::tie(sut, mocks) = testing::make<SUT, testing::NaggyGMock, StrictGMock<interface_dtor>, NiceGMock<interface>>();
+  }
 }

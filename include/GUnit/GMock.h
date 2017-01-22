@@ -252,6 +252,8 @@ class vtable {
 
   void **vptr = nullptr;
 };
+
+static auto gmock_ready = true;
 }  // detail
 
 template <class T>
@@ -340,8 +342,12 @@ class StrictMock<GMock<T>> final : public GMock<T> {
  public:
   StrictMock(StrictMock &&) = default;
   StrictMock(const StrictMock &) = delete;
-  StrictMock() { Mock::FailUninterestingCalls(internal::ImplicitCast_<GMock<T> *>(this)); }
-  ~StrictMock() { Mock::UnregisterCallReaction(internal::ImplicitCast_<GMock<T> *>(this)); }
+  StrictMock() {
+    if (detail::gmock_ready) Mock::FailUninterestingCalls(internal::ImplicitCast_<GMock<T> *>(this));
+  }
+  ~StrictMock() {
+    if (detail::gmock_ready) Mock::UnregisterCallReaction(internal::ImplicitCast_<GMock<T> *>(this));
+  }
 };
 
 inline namespace v1 {
@@ -586,6 +592,7 @@ auto make(TArgs &&... args) {
 #undef EXPECT_CALL
 #define __GMOCK_EXPECT_CALL_0(obj, call) GMOCK_EXPECT_CALL_IMPL_(obj, call)
 #define __GMOCK_EXPECT_CALL_1(obj, call)                                                                                  \
+  if (::testing::detail::gmock_ready)                                                                                     \
   ((obj).gmock_call<__GMOCK_QNAME call>(__GMOCK_CAT(__GMOCK_OVERLOAD_CAST_IMPL_, __GMOCK_OVERLOAD_CALL call)(obj, call) & \
                                         std::decay_t<decltype(obj)>::type::__GMOCK_NAME call __GMOCK_CALL call))          \
       .InternalExpectedAt(__FILE__, __LINE__, #obj, #call)
@@ -594,6 +601,7 @@ auto make(TArgs &&... args) {
 #undef ON_CALL
 #define __GMOCK_ON_CALL_0(obj, call) GMOCK_ON_CALL_IMPL_(obj, call)
 #define __GMOCK_ON_CALL_1(obj, call)                                                                                      \
+  if (::testing::detail::gmock_ready)                                                                                     \
   ((obj).gmock_call<__GMOCK_QNAME call>(__GMOCK_CAT(__GMOCK_OVERLOAD_CAST_IMPL_, __GMOCK_OVERLOAD_CALL call)(obj, call) & \
                                         std::decay_t<decltype(obj)>::type::__GMOCK_NAME call __GMOCK_CALL call))          \
       .InternalDefaultActionSetAt(__FILE__, __LINE__, #obj, #call)

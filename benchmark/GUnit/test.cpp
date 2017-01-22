@@ -9,27 +9,27 @@
 #include <memory>
 #include "example.h"
 
-class BenchmarkTest : public testing::GTest<example> {
- public:
-  void SetUp() override { std::tie(sut, mocks) = testing::make<SUT, testing::NaggyGMock>(); }
-};
-
-TEST_F(BenchmarkTest, ShouldCallF1WhenF1ReturnsTrue) {
+GTEST(example) {
   using namespace testing;
+  std::tie(sut, mocks) = testing::make<SUT, testing::NaggyGMock>();
 
-  EXPECT_CALL(mock<interface1>(), (f1)(42)).WillOnce(Return(true));
-  EXPECT_CALL(mock<interface2>(), (f2_1)()).Times(1);
-  EXPECT_CALL(mock<interface3>(), (f3)(0, 1, 2)).Times(1);
+  SHOULD("call f2_1 when f1 returns true") {
+    using namespace testing;
 
-  sut->test();
-}
+    EXPECT_CALL(mock<interface1>(), (f1)(42)).WillOnce(Return(true));
+    EXPECT_CALL(mock<interface2>(), (f2_1)()).Times(1);
+    EXPECT_CALL(mock<interface3>(), (f3)(0, 1, 2)).Times(1);
 
-TEST_F(BenchmarkTest, ShouldCallF2WhenF1ReturnsFalse) {
-  using namespace testing;
+    sut->test();
+  }
 
-  EXPECT_CALL(mock<interface1>(), (f1)(42)).WillOnce(Return(false));
-  EXPECT_CALL(mock<interface2>(), (f2_2)()).Times(1);
-  EXPECT_CALL(mock<interface3>(), (f3)(0, 1, 2)).Times(1);
+  SHOULD("call f2_2 when f1 returns false") {
+    using namespace testing;
 
-  sut->test();
+    EXPECT_CALL(mock<interface1>(), (f1)(42)).WillOnce(Return(false));
+    EXPECT_CALL(mock<interface2>(), (f2_2)()).Times(1);
+    EXPECT_CALL(mock<interface3>(), (f3)(0, 1, 2)).Times(1);
+
+    sut->test();
+  }
 }

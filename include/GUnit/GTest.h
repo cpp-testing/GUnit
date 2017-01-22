@@ -7,8 +7,11 @@
 //
 #pragma once
 
+#include <fcntl.h>
 #include <gtest/gtest.h>
+#include <unistd.h>
 #include <memory>
+#include <string>
 #include <tuple>
 #include <type_traits>
 #include <unordered_map>
@@ -24,6 +27,16 @@
 namespace testing {
 inline namespace v1 {
 namespace detail {
+
+template <class T, class = decltype(sizeof(T))>
+std::true_type is_complete_impl(int);
+
+template <class T>
+std::false_type is_complete_impl(...);
+
+template <class T>
+using is_complete = decltype(is_complete_impl<T>(0));
+
 template <bool...>
 struct bool_list {};
 template <class>
@@ -129,6 +142,67 @@ struct wrapper {
   operator std::unique_ptr<T>() { return std::unique_ptr<T>(reinterpret_cast<T*>(mock.get())); }
   operator std::shared_ptr<T>() { return std::static_pointer_cast<T>(mock); }
   std::shared_ptr<void>& mock;
+};
+
+template <class T>
+class GTestFactoryImpl final : public internal::TestFactoryBase {
+  class TestImpl final : public T, public Test {
+   public:
+    void TestBody() override { T::test(); }
+  };
+
+ public:
+  Test* CreateTest() override { return new TestImpl{}; }
+};
+
+template <class T>
+class AutoRegister {
+  class ScopedStream {
+   public:
+    explicit ScopedStream(int fileNumber) : fileNumber(fileNumber) {
+      backup = dup(fileNumber);
+      restore = open("/dev/null", O_WRONLY);
+      dup2(restore, fileNumber);
+      close(restore);
+    }
+
+    ~ScopedStream() {
+      dup2(backup, fileNumber);
+      close(backup);
+    }
+
+   private:
+    int backup = 0;
+    int restore = 0;
+    int fileNumber = 0;
+  };
+
+  class ScopedVisibility {
+   public:
+    ScopedVisibility() { detail::gmock_ready = false; }
+
+    ~ScopedVisibility() { detail::gmock_ready = true; }
+
+   private:
+    ScopedStream stdout = ScopedStream{STDOUT_FILENO};
+    ScopedStream stderr = ScopedStream{STDERR_FILENO};
+    ScopedStream stdin = ScopedStream{STDIN_FILENO};
+  };
+
+ public:
+  AutoRegister() {
+    ScopedVisibility _;
+    T{}.test();
+  }
+};
+
+class Once {
+ public:
+  explicit Once(bool& once) : once(once) { once = true; }
+  ~Once() { once = false; }
+
+ private:
+  bool& once;
 };
 }  // detail
 
@@ -253,6 +327,24 @@ template <template <class> class TMock, class T, class... TArgs, std::size_t... 
 auto make_impl(detail::identity<T>, mocks_t& mocks, std::tuple<TArgs...>& args, std::index_sequence<Ns...>) {
   return T(resolve_t<Ns, detail::deref_t<T>, TMock, std::tuple<TArgs...>>{mocks, args}...);
 }
+
+template <class T, class = detail::is_complete<T>>
+class GTest {
+ protected:
+  using SUT = std::unique_ptr<T>;
+
+  template <class TMock>
+  decltype(auto) mock() {
+    return mocks.mock<TMock>();
+  }
+
+  mocks_t mocks;
+  SUT sut;  // has to be after mocks
+};
+
+template <class T>
+class GTest<T, std::false_type> {};
+
 }  // detail
 
 template <class T, template <class> class TMock, class... TMocks,
@@ -271,17 +363,34 @@ auto make(TArgs&&... args) {
 }
 
 template <class T>
-class GTest : public Test {
- protected:
-  using SUT = std::unique_ptr<T>;
+class GTest : public detail::GTest<T>, public Test {};
 
-  template <class TMock>
-  decltype(auto) mock() {
-    return mocks.mock<TMock>();
-  }
-
-  mocks_t mocks;
-  SUT sut;  // has to be after mocks
-};
 }  // v1
 }  // testing
+
+#define GTEST(TYPE)                                                           \
+  template <class>                                                            \
+  class GTest__;                                                              \
+  template <>                                                                 \
+  class GTest__<TYPE> : public ::testing::detail::GTest<TYPE> {               \
+    using TEST_TYPE = GTest__;                                                \
+    static constexpr auto TEST_NAME = #TYPE;                                  \
+                                                                              \
+   public:                                                                    \
+    void test();                                                              \
+  };                                                                          \
+  ::testing::detail::AutoRegister<GTest__<TYPE>> __GMOCK_CAT(ar, __LINE__){}; \
+  void GTest__<TYPE>::test()
+
+#define SHOULD(NAME)                                                                                                          \
+  static auto __GMOCK_CAT(once_, __LINE__) = true;                                                                            \
+  ::testing::detail::Once __GMOCK_CAT(once, __LINE__){__GMOCK_CAT(once_, __LINE__)};                                          \
+  const auto __GMOCK_CAT(test_case_name_, __LINE__) = std::string{"should "} + NAME;                                          \
+  if (__GMOCK_CAT(once_, __LINE__)) {                                                                                         \
+    ::testing::internal::MakeAndRegisterTestInfo(TEST_NAME, __GMOCK_CAT(test_case_name_, __LINE__).c_str(), nullptr, nullptr, \
+                                                 ::testing::internal::CodeLocation(__FILE__, __LINE__),                       \
+                                                 ::testing::internal::GetTestTypeId(), ::testing::Test::SetUpTestCase,        \
+                                                 ::testing::Test::TearDownTestCase,                                           \
+                                                 new ::testing::detail::GTestFactoryImpl<TEST_TYPE>{});                       \
+  } else if (__GMOCK_CAT(once_, __LINE__) ||                                                                                  \
+             __GMOCK_CAT(test_case_name_, __LINE__) == ::testing::UnitTest::GetInstance()->current_test_info()->name())
