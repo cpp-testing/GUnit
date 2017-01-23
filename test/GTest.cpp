@@ -794,12 +794,12 @@ GTEST(di_example) {
     );
     // clang-format on
 
-    auto object = make<di_example>(injector);
+    sut = make<SUT>(injector);
 
     EXPECT_CALL(mock<interface>(), (get)(_)).WillOnce(Return(123));
     EXPECT_CALL(mock<interface2>(), (f2)(123));
 
-    object.update();
+    sut->update();
   }
 }
 #endif

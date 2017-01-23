@@ -68,6 +68,8 @@ class GTestAutoRegister {
  public:
   GTestAutoRegister() {
     ScopedVisibility _;
+    static constexpr auto has_tests = std::is_same<decltype(T{}.test()), void>::value;
+    static_assert(not has_tests, "At least one SHOULD/test is required!");
     T{}.test();
   }
 };
@@ -94,32 +96,37 @@ class GTest {
 
 template <class T>
 class GTest<T, std::false_type> {};
-
 }  // detail
 
 template <class T>
 class GTest : public detail::GTest<T>, public Test {};
-
 }  // v1
 }  // testing
 
-#define GTEST(TYPE)                                                                \
-  template <class>                                                                 \
-  class GTest__;                                                                   \
-  template <>                                                                      \
-  class GTest__<TYPE> : public ::testing::detail::GTest<TYPE> {                    \
-    using TEST_TYPE = GTest__;                                                     \
-    static constexpr auto TEST_NAME = #TYPE;                                       \
-                                                                                   \
-   public:                                                                         \
-    void test();                                                                   \
-  };                                                                               \
-  ::testing::detail::GTestAutoRegister<GTest__<TYPE>> __GUNIT_CAT(ar, __LINE__){}; \
-  void GTest__<TYPE>::test()
+#if defined(__clang__)
+#pragma clang diagnostic ignored "-Wreturn-type"
+#elif defined(__GNUC__)
+#pragma GCC diagnostic ignored "-Wreturn-type"
+#endif
+
+#define GTEST(TYPE)                                                              \
+  template <class>                                                               \
+  class GTEST;                                                                   \
+  template <>                                                                    \
+  class GTEST<TYPE> : public ::testing::detail::GTest<TYPE> {                    \
+    using TEST_TYPE = GTEST;                                                     \
+    static constexpr auto TEST_NAME = #TYPE;                                     \
+                                                                                 \
+   public:                                                                       \
+    auto test();                                                                 \
+  };                                                                             \
+  ::testing::detail::GTestAutoRegister<GTEST<TYPE>> __GUNIT_CAT(ar, __LINE__){}; \
+  auto GTEST<TYPE>::test()
 
 #define SHOULD(NAME)                                                                                                          \
   static auto __GUNIT_CAT(once_, __LINE__) = true;                                                                            \
   const auto __GUNIT_CAT(test_case_name_, __LINE__) = std::string{"should "} + NAME;                                          \
+  if (false) return ::testing::detail::string<'S', 'H', 'O', 'U', 'L', 'D'>{};                                                \
   if (__GUNIT_CAT(once_, __LINE__)) {                                                                                         \
     __GUNIT_CAT(once_, __LINE__) = false;                                                                                     \
     ::testing::internal::MakeAndRegisterTestInfo(TEST_NAME, __GUNIT_CAT(test_case_name_, __LINE__).c_str(), nullptr, nullptr, \
