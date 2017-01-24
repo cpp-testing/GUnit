@@ -68,8 +68,8 @@ class GTestAutoRegister {
  public:
   GTestAutoRegister() {
     ScopedVisibility _;
-    static constexpr auto has_tests = std::is_same<decltype(T{}.test()), void>::value;
-    static_assert(not has_tests, "At least one SHOULD/test is required!");
+    //static constexpr auto has_tests = std::is_same<decltype(T{}.test()), void>::value;
+    //static_assert(not has_tests, "At least one SHOULD/test is required!");
     T{}.test();
   }
 };
@@ -126,7 +126,6 @@ class GTest : public detail::GTest<T>, public Test {};
 #define SHOULD(NAME)                                                                                                          \
   static auto __GUNIT_CAT(once_, __LINE__) = true;                                                                            \
   const auto __GUNIT_CAT(test_case_name_, __LINE__) = std::string{"should "} + NAME;                                          \
-  if (false) return ::testing::detail::string<'S', 'H', 'O', 'U', 'L', 'D'>{};                                                \
   if (__GUNIT_CAT(once_, __LINE__)) {                                                                                         \
     __GUNIT_CAT(once_, __LINE__) = false;                                                                                     \
     ::testing::internal::MakeAndRegisterTestInfo(TEST_NAME, __GUNIT_CAT(test_case_name_, __LINE__).c_str(), nullptr, nullptr, \
