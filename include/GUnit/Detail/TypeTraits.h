@@ -24,6 +24,8 @@ struct identity {
   using type = T;
 };
 
+struct none_t {};
+
 template <class T>
 using identity_t = typename identity<T>::type;
 

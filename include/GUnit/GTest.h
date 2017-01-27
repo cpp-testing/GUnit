@@ -98,7 +98,7 @@ template <class T>
 class GTest<T, std::false_type> {};
 }  // detail
 
-template <class T>
+template <class T = detail::none_t>
 class GTest : public detail::GTest<T>, public Test {};
 }  // v1
 }  // testing
