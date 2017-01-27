@@ -414,7 +414,6 @@ TEST_F(Test, ShouldOverrideSutAndMocks) {
   using namespace testing;
   std::tie(sut, mocks) = make<SUT, NaggyGMock>(123);
   EXPECT_EQ(123, sut->get_data());
-
   EXPECT_CALL(mock<interface>(), (foo)(42)).Times(1);
   EXPECT_CALL(mock<interface>(), (bar)(_, "str"));
 

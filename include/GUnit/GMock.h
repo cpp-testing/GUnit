@@ -400,18 +400,20 @@ inline auto ByRef(NiceGMock<T> &x) {
 
 #undef EXPECT_CALL
 #define __GMOCK_EXPECT_CALL_0(obj, call) GMOCK_EXPECT_CALL_IMPL_(obj, call)
-#define __GMOCK_EXPECT_CALL_1(obj, call)                                                                                  \
-  if (::testing::detail::gmock_ready)                                                                                     \
-  ((obj).gmock_call<__GMOCK_QNAME call>(__GUNIT_CAT(__GMOCK_OVERLOAD_CAST_IMPL_, __GMOCK_OVERLOAD_CALL call)(obj, call) & \
-                                        std::decay_t<decltype(obj)>::type::__GMOCK_NAME call __GMOCK_CALL call))          \
+#define __GMOCK_EXPECT_CALL_1(obj, call)                                                 \
+  if (::testing::detail::gmock_ready)                                                    \
+  ((obj).template gmock_call<__GMOCK_QNAME call>(                                        \
+       __GUNIT_CAT(__GMOCK_OVERLOAD_CAST_IMPL_, __GMOCK_OVERLOAD_CALL call)(obj, call) & \
+       std::decay_t<decltype(obj)>::type::__GMOCK_NAME call __GMOCK_CALL call))          \
       .InternalExpectedAt(__FILE__, __LINE__, #obj, #call)
 #define EXPECT_CALL(obj, call) __GUNIT_CAT(__GMOCK_EXPECT_CALL_, __GUNIT_IBP(call))(obj, call)
 
 #undef ON_CALL
 #define __GMOCK_ON_CALL_0(obj, call) GMOCK_ON_CALL_IMPL_(obj, call)
-#define __GMOCK_ON_CALL_1(obj, call)                                                                                      \
-  if (::testing::detail::gmock_ready)                                                                                     \
-  ((obj).gmock_call<__GMOCK_QNAME call>(__GUNIT_CAT(__GMOCK_OVERLOAD_CAST_IMPL_, __GMOCK_OVERLOAD_CALL call)(obj, call) & \
-                                        std::decay_t<decltype(obj)>::type::__GMOCK_NAME call __GMOCK_CALL call))          \
+#define __GMOCK_ON_CALL_1(obj, call)                                                     \
+  if (::testing::detail::gmock_ready)                                                    \
+  ((obj).template gmock_call<__GMOCK_QNAME call>(                                        \
+       __GUNIT_CAT(__GMOCK_OVERLOAD_CAST_IMPL_, __GMOCK_OVERLOAD_CALL call)(obj, call) & \
+       std::decay_t<decltype(obj)>::type::__GMOCK_NAME call __GMOCK_CALL call))          \
       .InternalDefaultActionSetAt(__FILE__, __LINE__, #obj, #call)
 #define ON_CALL(obj, call) __GUNIT_CAT(__GMOCK_ON_CALL_, __GUNIT_IBP(call))(obj, call)

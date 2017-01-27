@@ -68,8 +68,8 @@ class GTestAutoRegister {
  public:
   GTestAutoRegister() {
     ScopedVisibility _;
-    //static constexpr auto has_tests = std::is_same<decltype(T{}.test()), void>::value;
-    //static_assert(not has_tests, "At least one SHOULD/test is required!");
+    // static constexpr auto has_tests = std::is_same<decltype(T{}.test()), void>::value;
+    // static_assert(not has_tests, "At least one SHOULD/test is required!");
     T{}.test();
   }
 };

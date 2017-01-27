@@ -624,3 +624,28 @@ TEST(GMock, ShouldHandleON_CALLWithOverloadMethods) {
   ON_CALL(m, (f, int(int))(42)).WillByDefault(Return(87));
   EXPECT_EQ(87, static_cast<interface_overload_ret&>(m).f(42));
 }
+
+template <class I>
+class GMockT : public testing::Test {
+ protected:
+  testing::StrictGMock<I> m;
+
+  template <class T>
+  testing::StrictGMock<T>& mock() {
+    return m;
+  }
+
+  void SetUp() override {
+    using namespace testing;
+    EXPECT_CALL(mock<interface>(), (foo)(42)).Times(1);
+    EXPECT_CALL(mock<interface>(), (foo)(12)).Times(0);
+    EXPECT_CALL(mock<interface>(), (bar)(_, "str"));
+  }
+};
+
+using GMockTest = GMockT<interface>;
+
+TEST_F(GMockTest, ShouldHandleTemplatedClass) {
+  example sut{0, static_cast<interface&>(m)};
+  sut.update();
+}
