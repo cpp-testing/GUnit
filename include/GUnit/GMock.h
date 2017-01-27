@@ -235,6 +235,9 @@ class GMock {
     return gmock_call_impl<TName, R, TArgs...>(detail::offset(f), args...);
   }
 
+  template <class...>
+  void gmock_call(...);
+
   T &object() { return reinterpret_cast<T &>(*this); }
   const T &object() const { return reinterpret_cast<const T &>(*this); }
   explicit operator T &() { return object(); }
