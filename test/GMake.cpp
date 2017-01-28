@@ -98,6 +98,40 @@ TEST(GMake, ShouldMakeComplexExampleUsingMakeType) {
   auto ptr = GMock<interface4>();
   auto ref = GMock<interface_dtor>();
   auto sut = make<complex_example>(csp, sp, &ptr, ref);
+  (void)sut;
+}
+
+class up_example {
+ public:
+  up_example(std::unique_ptr<interface>&& i1, std::unique_ptr<interface2> i2)
+      : i1(std::move(i1)), i2(std::move(i2))
+  {}
+
+ private:
+  std::unique_ptr<interface> i1;
+  std::unique_ptr<interface2> i2;
+};
+
+TEST(GMake, ShouldMakeUniquePtrExampleUsingMake) {
+  using namespace testing;
+  auto up1 = std::make_unique<GMock<interface>>();
+  auto up2 = std::make_unique<GMock<interface2>>();
+  auto sut = make<up_example>(std::move(up1), std::move(up2));
+  (void)sut;
+}
+
+TEST(GMake, ShouldMakeUniquePtrInPlaceExampleUsingMake) {
+  using namespace testing;
+  make<up_example>(std::make_unique<GMock<interface>>(), std::make_unique<GMock<interface2>>());
+}
+
+TEST(GMake, ShouldMakeUsingAutoMocksInjection) {
+  using namespace testing;
+  mocks_t mocks;
+  std::unique_ptr<up_example> sut;
+  std::tie(sut, mocks) = make<std::unique_ptr<up_example>, StrictGMock>();
+  EXPECT_TRUE(sut.get());
+  EXPECT_EQ(2u, mocks.size());
 }
 
 #if __has_include(<boost / di.hpp>)

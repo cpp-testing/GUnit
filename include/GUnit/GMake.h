@@ -99,26 +99,6 @@ struct wrapper {
 };
 
 template <class T>
-decltype(auto) convert(T &&arg) {
-  return std::forward<T>(arg);
-}
-
-template <class T>
-decltype(auto) convert(std::shared_ptr<GMock<T>> &mock) {
-  return std::static_pointer_cast<T>(mock);
-}
-
-template <class T>
-decltype(auto) convert(std::shared_ptr<StrictGMock<T>> &mock) {
-  return std::static_pointer_cast<T>(mock);
-}
-
-template <class T>
-decltype(auto) convert(std::shared_ptr<NiceGMock<T>> &mock) {
-  return std::static_pointer_cast<T>(mock);
-}
-
-template <class T>
 decltype(auto) convert(GMock<T> *mock) {
   return &static_cast<T &>(*mock);
 }
@@ -146,6 +126,41 @@ decltype(auto) convert(StrictGMock<T> &mock) {
 template <class T>
 decltype(auto) convert(NiceGMock<T> &mock) {
   return static_cast<T &>(mock);
+}
+
+template <class T>
+decltype(auto) convert(T &&arg) {
+  return std::forward<T>(arg);
+}
+
+template <class T>
+decltype(auto) convert(std::unique_ptr<GMock<T>>&& mock) {
+  return std::move(mock);
+}
+
+template <class T>
+decltype(auto) convert(std::unique_ptr<StrictGMock<T>>&& mock) {
+  return std::move(mock);
+}
+
+template <class T>
+decltype(auto) convert(std::unique_ptr<NiceGMock<T>>&& mock) {
+  return std::move(mock);
+}
+
+template <class T>
+decltype(auto) convert(std::shared_ptr<GMock<T>> &mock) {
+  return std::static_pointer_cast<T>(mock);
+}
+
+template <class T>
+decltype(auto) convert(std::shared_ptr<StrictGMock<T>> &mock) {
+  return std::static_pointer_cast<T>(mock);
+}
+
+template <class T>
+decltype(auto) convert(std::shared_ptr<NiceGMock<T>> &mock) {
+  return std::static_pointer_cast<T>(mock);
 }
 
 template <class T, class... TArgs>
@@ -212,6 +227,11 @@ struct resolve_size {
   template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value)>
   operator T();
 
+#if defined(__GNUC__)
+  template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value)>
+  operator T &&() const;
+#endif
+
   template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value)>
   operator T &() const;
 
@@ -226,6 +246,11 @@ template <class TParent>
 struct resolve_creatable {
   template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value && detail::is_abstract<deref_t<T>>::value)>
   operator T();
+
+#if defined(__GNUC__)
+  template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value && detail::is_abstract<deref_t<T>>::value)>
+  operator T &&() const;
+#endif
 
   template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value && detail::is_abstract<deref_t<T>>::value)>
   operator T &() const;

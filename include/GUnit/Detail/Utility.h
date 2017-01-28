@@ -119,7 +119,7 @@ inline auto nm() {
   std::vector<std::string> result;
   std::stringstream cmd;
   cmd << "nm -C " << get_self_name();
-  auto fp{popen(cmd.str().c_str(), "r")};
+  auto fp = popen(cmd.str().c_str(), "r");
   if (fp) {
     char buf[16536];
     while (fgets(buf, sizeof(buf), fp)) {
