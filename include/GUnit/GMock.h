@@ -224,9 +224,6 @@ class GMock {
     return gmock_call_impl<TName, R, TArgs...>(detail::offset(f), args...);
   }
 
-  template <class...>
-  void gmock_call(...);
-
   T &object() { return reinterpret_cast<T &>(*this); }
   const T &object() const { return reinterpret_cast<const T &>(*this); }
   explicit operator T &() { return object(); }
@@ -390,7 +387,12 @@ inline auto ByRef(NiceGMock<T> &x) {
        __GUNIT_CAT(__GMOCK_OVERLOAD_CAST_IMPL_, __GMOCK_OVERLOAD_CALL call)(obj, call) & \
        std::decay_t<decltype(obj)>::type::__GMOCK_NAME call __GMOCK_CALL call))          \
       .InternalExpectedAt(__FILE__, __LINE__, #obj, #call)
+
+#if defined(GUNIT_INVOKE_SYNTAX)
+#define EXPECT_CALL(obj, f, ...) __GMOCK_EXPECT_CALL_1(obj, __GUNIT_IF(__GUNIT_IBP(f))(f, (f))(__VA_ARGS__))
+#else
 #define EXPECT_CALL(obj, call) __GUNIT_CAT(__GMOCK_EXPECT_CALL_, __GUNIT_IBP(call))(obj, call)
+#endif
 
 #undef ON_CALL
 #define __GMOCK_ON_CALL_0(obj, call) GMOCK_ON_CALL_IMPL_(obj, call)
@@ -400,4 +402,10 @@ inline auto ByRef(NiceGMock<T> &x) {
        __GUNIT_CAT(__GMOCK_OVERLOAD_CAST_IMPL_, __GMOCK_OVERLOAD_CALL call)(obj, call) & \
        std::decay_t<decltype(obj)>::type::__GMOCK_NAME call __GMOCK_CALL call))          \
       .InternalDefaultActionSetAt(__FILE__, __LINE__, #obj, #call)
+
+#if defined(GUNIT_INVOKE_SYNTAX)
+#define ON_CALL(obj, f, ...) __GMOCK_ON_CALL_1(obj, __GUNIT_IF(__GUNIT_IBP(f))(f, (f))(__VA_ARGS__))
+#else
 #define ON_CALL(obj, call) __GUNIT_CAT(__GMOCK_ON_CALL_, __GUNIT_IBP(call))(obj, call)
+#endif
+

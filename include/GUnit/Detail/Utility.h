@@ -103,7 +103,7 @@ inline auto get_self_name() {
   std::string res;
 
   res.resize(16);
-  int rlin_size = ::readlink("/proc/self/exe", &res[0], res.size() - 1);
+  auto rlin_size = ::readlink("/proc/self/exe", &res[0], res.size() - 1);
   while (rlin_size == static_cast<int>(res.size() - 1)) {
     res.resize(res.size() * 4);
     rlin_size = ::readlink("/proc/self/exe", &res[0], res.size() - 1);

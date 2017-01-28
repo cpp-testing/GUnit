@@ -52,6 +52,7 @@ endif()
 
 test(test/GMake)
 test(test/GMock)
+test(test/GMockSyntax)
 test(test/GTest)
 test(example/GMock)
 test(example/GTest)
