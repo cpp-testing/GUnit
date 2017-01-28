@@ -171,12 +171,6 @@ class GMock {
   detail::vtable<T> vtable;
   detail::byte _[sizeof(T)] = {0};
 
-  template <char... Chrs>
-  static void assert_name_size(detail::string<Chrs...>) {
-    static constexpr char str[] = {Chrs...};
-    static_assert(!str[sizeof...(Chrs)-2], "assert_name_size!");
-  }
-
   void expected() {}
   void *not_expected() {
     auto *ptr = [this] {
@@ -190,7 +184,6 @@ class GMock {
 
   template <class TName, class R, class... TArgs>
   decltype(auto) gmock_call_impl(int offset, const detail::identity_t<Matcher<TArgs>> &... args) {
-    assert_name_size(TName{});
     vtable.set(offset, detail::union_cast<void *>(&GMock::template original_call<TName, R, TArgs...>));
 
     const auto it = fs.find(TName::c_str());
@@ -375,7 +368,7 @@ inline auto ByRef(NiceGMock<T> &x) {
 #pragma GCC pop_options
 #endif
 
-#define __GMOCK_QNAME(...) ::testing::detail::string<__GUNIT_STR_IMPL_32(#__VA_ARGS__, 0), 0> __GUNIT_IGNORE
+#define __GMOCK_QNAME(...) decltype(__GUNIT_CAT(#__VA_ARGS__, _s)) __GUNIT_IGNORE
 #define __GMOCK_FUNCTION(a, b) b __GUNIT_IGNORE
 #define __GMOCK_NAME(...) __GUNIT_CAT(__GMOCK_NAME_, __GUNIT_SIZE(__VA_ARGS__))(__VA_ARGS__)
 #define __GMOCK_NAME_1(a) a __GUNIT_IGNORE
@@ -392,6 +385,7 @@ inline auto ByRef(NiceGMock<T> &x) {
 #undef EXPECT_CALL
 #define __GMOCK_EXPECT_CALL_0(obj, call) GMOCK_EXPECT_CALL_IMPL_(obj, call)
 #define __GMOCK_EXPECT_CALL_1(obj, call)                                                 \
+  using namespace ::testing::detail;                                                     \
   ((obj).template gmock_call<__GMOCK_QNAME call>(                                        \
        __GUNIT_CAT(__GMOCK_OVERLOAD_CAST_IMPL_, __GMOCK_OVERLOAD_CALL call)(obj, call) & \
        std::decay_t<decltype(obj)>::type::__GMOCK_NAME call __GMOCK_CALL call))          \
@@ -401,6 +395,7 @@ inline auto ByRef(NiceGMock<T> &x) {
 #undef ON_CALL
 #define __GMOCK_ON_CALL_0(obj, call) GMOCK_ON_CALL_IMPL_(obj, call)
 #define __GMOCK_ON_CALL_1(obj, call)                                                     \
+  using namespace ::testing::detail;                                                     \
   ((obj).template gmock_call<__GMOCK_QNAME call>(                                        \
        __GUNIT_CAT(__GMOCK_OVERLOAD_CAST_IMPL_, __GMOCK_OVERLOAD_CALL call)(obj, call) & \
        std::decay_t<decltype(obj)>::type::__GMOCK_NAME call __GMOCK_CALL call))          \

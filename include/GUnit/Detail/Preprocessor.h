@@ -34,13 +34,3 @@
 #define __GUNIT_IIF_0(t, ...) __VA_ARGS__
 #define __GUNIT_IIF_1(t, ...) t
 #define __GUNIT_IF(c) __GUNIT_IIF(c)
-#define __GUNIT_STR_IMPL_1(str, i) (sizeof(str) > (i) ? str[(i)] : 0)
-#define __GUNIT_STR_IMPL_4(str, i) \
-  __GUNIT_STR_IMPL_1(str, i + 0)   \
-  , __GUNIT_STR_IMPL_1(str, i + 1), __GUNIT_STR_IMPL_1(str, i + 2), __GUNIT_STR_IMPL_1(str, i + 3)
-#define __GUNIT_STR_IMPL_16(str, i) \
-  __GUNIT_STR_IMPL_4(str, i + 0)    \
-  , __GUNIT_STR_IMPL_4(str, i + 4), __GUNIT_STR_IMPL_4(str, i + 8), __GUNIT_STR_IMPL_4(str, i + 12)
-#define __GUNIT_STR_IMPL_32(str, i) \
-  __GUNIT_STR_IMPL_16(str, i + 0)   \
-  , __GUNIT_STR_IMPL_16(str, i + 16), __GUNIT_STR_IMPL_16(str, i + 32)

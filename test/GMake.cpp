@@ -103,9 +103,7 @@ TEST(GMake, ShouldMakeComplexExampleUsingMakeType) {
 
 class up_example {
  public:
-  up_example(std::unique_ptr<interface>&& i1, std::unique_ptr<interface2> i2)
-      : i1(std::move(i1)), i2(std::move(i2))
-  {}
+  up_example(std::unique_ptr<interface>&& i1, std::unique_ptr<interface2> i2) : i1(std::move(i1)), i2(std::move(i2)) {}
 
  private:
   std::unique_ptr<interface> i1;

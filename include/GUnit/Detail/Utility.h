@@ -32,7 +32,7 @@ struct string {
 #endif
 
 template <class T, T... Chrs>
-auto operator""_s() {
+constexpr auto operator""_s() {
   return string<Chrs...>{};
 }
 

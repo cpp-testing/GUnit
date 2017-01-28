@@ -134,17 +134,17 @@ decltype(auto) convert(T &&arg) {
 }
 
 template <class T>
-decltype(auto) convert(std::unique_ptr<GMock<T>>&& mock) {
+decltype(auto) convert(std::unique_ptr<GMock<T>> &&mock) {
   return std::move(mock);
 }
 
 template <class T>
-decltype(auto) convert(std::unique_ptr<StrictGMock<T>>&& mock) {
+decltype(auto) convert(std::unique_ptr<StrictGMock<T>> &&mock) {
   return std::move(mock);
 }
 
 template <class T>
-decltype(auto) convert(std::unique_ptr<NiceGMock<T>>&& mock) {
+decltype(auto) convert(std::unique_ptr<NiceGMock<T>> &&mock) {
   return std::move(mock);
 }
 
