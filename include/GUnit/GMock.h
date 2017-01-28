@@ -26,7 +26,6 @@
 namespace testing {
 inline namespace v1 {
 namespace detail {
-static auto gmock_ready = true;
 
 // clang-format off
 /**
@@ -180,16 +179,13 @@ class GMock {
 
   void expected() {}
   void *not_expected() {
-    if (detail::gmock_ready) {
-      auto *ptr = [this] {
-        fs[__PRETTY_FUNCTION__] = std::make_unique<FunctionMocker<void *()>>();
-        return static_cast<FunctionMocker<void *()> *>(fs[__PRETTY_FUNCTION__].get());
-      }();
-      const auto call_stack = detail::call_stack();
-      ptr->SetOwnerAndName(this, call_stack.c_str());
-      return ptr->Invoke();
-    }
-    return nullptr;
+    auto *ptr = [this] {
+      fs[__PRETTY_FUNCTION__] = std::make_unique<FunctionMocker<void *()>>();
+      return static_cast<FunctionMocker<void *()> *>(fs[__PRETTY_FUNCTION__].get());
+    }();
+    const auto call_stack = detail::call_stack();
+    ptr->SetOwnerAndName(this, call_stack.c_str());
+    return ptr->Invoke();
   }
 
   template <class TName, class R, class... TArgs>
@@ -253,12 +249,8 @@ class NiceMock<GMock<T>> final : public GMock<T> {
  public:
   NiceMock(NiceMock &&) = default;
   NiceMock(const NiceMock &) = delete;
-  NiceMock() {
-    if (detail::gmock_ready) Mock::AllowUninterestingCalls(internal::ImplicitCast_<GMock<T> *>(this));
-  }
-  ~NiceMock() {
-    if (detail::gmock_ready) Mock::UnregisterCallReaction(internal::ImplicitCast_<GMock<T> *>(this));
-  }
+  NiceMock() { Mock::AllowUninterestingCalls(internal::ImplicitCast_<GMock<T> *>(this)); }
+  ~NiceMock() { Mock::UnregisterCallReaction(internal::ImplicitCast_<GMock<T> *>(this)); }
 };
 
 template <class T>
@@ -266,12 +258,8 @@ class StrictMock<GMock<T>> final : public GMock<T> {
  public:
   StrictMock(StrictMock &&) = default;
   StrictMock(const StrictMock &) = delete;
-  StrictMock() {
-    if (detail::gmock_ready) Mock::FailUninterestingCalls(internal::ImplicitCast_<GMock<T> *>(this));
-  }
-  ~StrictMock() {
-    if (detail::gmock_ready) Mock::UnregisterCallReaction(internal::ImplicitCast_<GMock<T> *>(this));
-  }
+  StrictMock() { Mock::FailUninterestingCalls(internal::ImplicitCast_<GMock<T> *>(this)); }
+  ~StrictMock() { Mock::UnregisterCallReaction(internal::ImplicitCast_<GMock<T> *>(this)); }
 };
 
 inline namespace v1 {
@@ -404,7 +392,6 @@ inline auto ByRef(NiceGMock<T> &x) {
 #undef EXPECT_CALL
 #define __GMOCK_EXPECT_CALL_0(obj, call) GMOCK_EXPECT_CALL_IMPL_(obj, call)
 #define __GMOCK_EXPECT_CALL_1(obj, call)                                                 \
-  if (::testing::detail::gmock_ready)                                                    \
   ((obj).template gmock_call<__GMOCK_QNAME call>(                                        \
        __GUNIT_CAT(__GMOCK_OVERLOAD_CAST_IMPL_, __GMOCK_OVERLOAD_CALL call)(obj, call) & \
        std::decay_t<decltype(obj)>::type::__GMOCK_NAME call __GMOCK_CALL call))          \
@@ -414,7 +401,6 @@ inline auto ByRef(NiceGMock<T> &x) {
 #undef ON_CALL
 #define __GMOCK_ON_CALL_0(obj, call) GMOCK_ON_CALL_IMPL_(obj, call)
 #define __GMOCK_ON_CALL_1(obj, call)                                                     \
-  if (::testing::detail::gmock_ready)                                                    \
   ((obj).template gmock_call<__GMOCK_QNAME call>(                                        \
        __GUNIT_CAT(__GMOCK_OVERLOAD_CAST_IMPL_, __GMOCK_OVERLOAD_CALL call)(obj, call) & \
        std::decay_t<decltype(obj)>::type::__GMOCK_NAME call __GMOCK_CALL call))          \

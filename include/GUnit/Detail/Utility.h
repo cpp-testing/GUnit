@@ -9,7 +9,11 @@
 
 #include <cxxabi.h>
 #include <execinfo.h>
+#include <unistd.h>
+#include <cstdio>
+#include <cstring>
 #include <sstream>
+#include <vector>
 
 namespace testing {
 inline namespace v1 {
@@ -22,6 +26,30 @@ struct string {
     return str;
   }
 };
+
+#if defined(__clang__)
+#pragma clang diagnostic ignored "-Wgnu-string-literal-operator-template"
+#endif
+
+template <class T, T... Chrs>
+auto operator""_s() {
+  return string<Chrs...>{};
+}
+
+template <class, std::size_t N, std::size_t... Ns>
+auto get_type_name_impl(const char *ptr, std::index_sequence<Ns...>) {
+  static const char str[] = {ptr[N + Ns]..., 0};
+  return str;
+}
+
+template <class T>
+const char *get_type_name() {
+#if defined(__clang__)
+  return get_type_name_impl<T, 54>(__PRETTY_FUNCTION__, std::make_index_sequence<sizeof(__PRETTY_FUNCTION__) - 54 - 2>{});
+#elif defined(__GNUC__)
+  return get_type_name_impl<T, 59>(__PRETTY_FUNCTION__, std::make_index_sequence<sizeof(__PRETTY_FUNCTION__) - 59 - 2>{});
+#endif
+}
 
 template <class TDst, class TSrc>
 inline TDst union_cast(TSrc src) {
@@ -69,6 +97,40 @@ inline std::string call_stack() {
     result << "\n\t\t   ";
   }
   return result.str();
+}
+
+inline auto get_self_name() {
+  std::string res;
+
+  res.resize(16);
+  int rlin_size = ::readlink("/proc/self/exe", &res[0], res.size() - 1);
+  while (rlin_size == static_cast<int>(res.size() - 1)) {
+    res.resize(res.size() * 4);
+    rlin_size = ::readlink("/proc/self/exe", &res[0], res.size() - 1);
+  }
+  if (rlin_size == -1) {
+    return std::string{};
+  }
+  res.resize(rlin_size);
+  return res;
+}
+
+inline auto nm() {
+  std::vector<std::string> result;
+  std::stringstream cmd;
+  cmd << "nm -C " << get_self_name();
+  auto fp{popen(cmd.str().c_str(), "r")};
+  if (fp) {
+    char buf[16536];
+    while (fgets(buf, sizeof(buf), fp)) {
+      if (!strncmp(&buf[17], "V void testing::v1::detail::SHOULD_REGISTER_GTEST", 49)) {
+        result.push_back(&buf[17 + 49 + 1]);
+      }
+    }
+  }
+  pclose(fp);
+
+  return result;
 }
 
 }  // detail
