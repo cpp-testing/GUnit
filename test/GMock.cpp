@@ -673,9 +673,7 @@ TEST(GMock, ShouldHandlePolymorphicAndPureType) {
 }
 
 struct polymorphic_inherit_type : polymorphic_and_pure_type {
-  virtual void foo1()  { }
   bool foo2(int) override { return false; }
-  int bar() const  { return 77; }
   int bar2() { return 42; }
   virtual void foo3(double) const = 0;
 };
