@@ -47,25 +47,26 @@ class GTestAutoRegister {
 
   auto parse(const std::string& line) {
     TestInfo ti;
+    std::string token;
+
+    const auto parseString = [&](std::string& result) {
+      std::istringstream stream(token);
+      while (std::getline(stream, token, ',')) {
+        const auto begin = token.find(')');
+        result += static_cast<char>(std::atoi(token.substr(begin + 1).c_str()));
+      }
+    };
+
     std::istringstream stream(line);
     std::getline(stream, ti.type, ',');
 
-    std::string token;
     std::getline(stream, token, '<');
     std::getline(stream, token, '>');
 
-    std::istringstream nameStream(token);
-    while (std::getline(nameStream, token, ',')) {
-      const auto begin = token.find(')');
-      ti.name += static_cast<char>(std::atoi(token.substr(begin + 1).c_str()));
-    }
+    parseString(ti.name);
     std::getline(stream, token, ',');
 
-    std::istringstream fileStream(token);
-    while (std::getline(fileStream, token, ',')) {
-      const auto begin = token.find(')');
-      ti.file += static_cast<char>(std::atoi(token.substr(begin + 1).c_str()));
-    }
+    parseString(ti.file);
     std::getline(stream, token, ',');
 
     std::getline(stream, token, ',');
@@ -73,11 +74,8 @@ class GTestAutoRegister {
 
     std::getline(stream, token, '<');
     std::getline(stream, token, '>');
-    std::istringstream shouldStream(token);
-    while (std::getline(shouldStream, token, ',')) {
-      const auto begin = token.find(')');
-      ti.should += static_cast<char>(std::atoi(token.substr(begin + 1).c_str()));
-    }
+
+    parseString(ti.should);
 
     return ti;
   }
