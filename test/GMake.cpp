@@ -160,6 +160,30 @@ TEST(GMake, ShouldMakePolymorphicTypeUsingAutoMocksInjection) {
   sut->i3->bar();
 }
 
+struct by_value {
+  by_value(int) {}
+};
+
+TEST(GMake, ShouldMakeAndTryByValueIfRefIsNotProvided) {
+  using namespace testing;
+  mocks_t mocks;
+  std::unique_ptr<by_value> sut;
+  int i = 42;
+  std::tie(sut, mocks) = make<std::unique_ptr<by_value>, StrictGMock>(i);
+  EXPECT_TRUE(sut.get());
+  EXPECT_EQ(0u, mocks.size());
+}
+
+TEST(GMake, ShouldMakeAndTryByValueConstIfRefIsNotProvided) {
+  using namespace testing;
+  mocks_t mocks;
+  std::unique_ptr<by_value> sut;
+  const int i = 42;
+  std::tie(sut, mocks) = make<std::unique_ptr<by_value>, StrictGMock>(i);
+  EXPECT_TRUE(sut.get());
+  EXPECT_EQ(0u, mocks.size());
+}
+
 #if __has_include(<boost / di.hpp>)
 TEST(GMake, ShouldCreateUsingInjector) {
   using namespace testing;

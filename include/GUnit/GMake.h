@@ -221,6 +221,8 @@ class mocks_t : public std::unordered_map<std::size_t, std::shared_ptr<void>> {
 namespace detail {
 template <class>
 struct required_type_not_found {};
+template <class>
+struct required_type_is_ambigious {};
 
 template <class TParent>
 struct resolve_size {
@@ -286,30 +288,51 @@ class resolve {
 
   template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value && !std::is_polymorphic<deref_t<T>>::value)>
   operator T() {
-    return get<T>(std::integral_constant<bool, contains<T, TArgs>::value>{});
+    return get(detail::type<T>{}, std::integral_constant<bool, contains<T, TArgs>::value>{});
   }
 
   template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value && !std::is_polymorphic<deref_t<T>>::value &&
                                     contains<T &, TArgs>::value)>
   operator T &() const {
-    return const_cast<resolve *>(this)->get<T &>(std::true_type{});
+    return const_cast<resolve *>(this)->get(detail::type<T &>{}, std::true_type{});
   }
 
   template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value && !std::is_polymorphic<deref_t<T>>::value &&
                                     contains<const T &, TArgs>::value)>
   operator const T &() const {
-    return const_cast<resolve *>(this)->get<const T &>(std::true_type{});
+    return const_cast<resolve *>(this)->get(detail::type<const T &>{}, std::true_type{});
   }
 
  private:
   template <class T>
-  decltype(auto) get(std::true_type) {
+  decltype(auto) get_impl(std::true_type, std::false_type) {
+    return std::get<T &>(args);
+  }
+
+  template <class T>
+  decltype(auto) get_impl(std::false_type, std::true_type) {
+    return std::get<const T &>(args);
+  }
+
+  template <class T>
+  decltype(auto) get_impl(std::true_type, std::true_type) {
+    return required_type_is_ambigious<T>();
+  }
+
+  template <class T>
+  decltype(auto) get_impl(std::false_type, std::false_type) {
+    return required_type_not_found<T>();
+  }
+
+  template <class T>
+  decltype(auto) get(detail::type<T>, std::true_type) {
     return std::get<T>(args);
   }
 
   template <class T>
-  decltype(auto) get(std::false_type) {
-    return required_type_not_found<T>();
+  decltype(auto) get(detail::type<T>, std::false_type) {
+    return get_impl<T>(std::integral_constant<bool, contains<T &, TArgs>::value>{},
+                       std::integral_constant<bool, contains<const T &, TArgs>::value>{});
   }
 
   template <class T>
