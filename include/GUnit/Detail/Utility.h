@@ -20,6 +20,16 @@ namespace testing {
 inline namespace v1 {
 namespace detail {
 
+template <class TDst, class TSrc>
+inline TDst union_cast(TSrc src) {
+  union {
+    TSrc src;
+    TDst dst;
+  } u;
+  u.src = src;
+  return u.dst;
+}
+
 template <char... Chrs>
 struct string {
   static auto c_str() {
@@ -55,16 +65,6 @@ const char *get_type_name() {
 #elif defined(__GNUC__)
   return get_type_name_impl<T, 59>(__PRETTY_FUNCTION__, std::make_index_sequence<sizeof(__PRETTY_FUNCTION__) - 59 - 2>{});
 #endif
-}
-
-template <class TDst, class TSrc>
-inline TDst union_cast(TSrc src) {
-  union {
-    TSrc src;
-    TDst dst;
-  } u;
-  u.src = src;
-  return u.dst;
 }
 
 inline auto basename(std::string const &path) { return path.substr(path.find_last_of("/\\") + 1); }
@@ -133,10 +133,10 @@ inline auto symbols(const std::string &symbol) {
   cmd << "nm -C " << get_self_name();
   auto fp = popen(cmd.str().c_str(), "r");
   if (fp) {
-    char buf[16536];
+    char buf[8192];
     while (fgets(buf, sizeof(buf), fp)) {
-      if (!strncmp(&buf[17], ("V " + symbol).c_str(), symbol.length())) {
-        result.push_back(&buf[17 + symbol.length() + 1]);
+      if (!strncmp(&buf[17], ("V " + symbol).c_str(), symbol.length() - 2)) {
+        result.push_back(&buf[17 + symbol.length() + 2 + 1]);
       }
     }
   }
@@ -151,7 +151,7 @@ inline std::pair<std::string, unsigned long long> addr2line(void *addr) {
   std::string data;
   auto fp = popen(cmd.str().c_str(), "r");
   if (fp) {
-    char buf[16536];
+    char buf[8192];
     while (fgets(buf, sizeof(buf), fp)) {
       data += buf;
     }
