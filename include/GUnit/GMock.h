@@ -183,6 +183,7 @@ class GMock {
           line.erase(0, line.find_first_not_of(" \n\r\t"));
           line.erase(line.find_last_not_of(" \n\r\t") + 1);
           result << line;
+          break;
         }
       }
       result << "\n\t       At: [" << detail::basename(al.first) << ":" << al.second << "]";
