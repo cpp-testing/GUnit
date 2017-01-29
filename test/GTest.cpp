@@ -766,6 +766,14 @@ GTEST(class MakeWithMocks) {
   }
 }
 
+GTEST(class ExampleTest, "[Example]") {
+  SHOULD("expect true") { EXPECT_TRUE(true); }
+}
+
+GTEST(class ExampleTest, "[OtherExample]") {
+  SHOULD("expect false") { EXPECT_FALSE(false); }
+}
+
 #if __has_include(<boost / di.hpp>)
 class di_example {
  public:

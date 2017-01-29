@@ -41,7 +41,7 @@ TEST(GMock, ShouldSupportInvokeSyntaxWithExpectCall) {
   EXPECT_CALL(*m, foo, 42).Times(1);
   EXPECT_CALL(*m, foo, 12).Times(0);
   EXPECT_CALL(*m, bar, _, "str");
-  EXPECT_CALL(*m, empty,);
+  EXPECT_CALL(*m, empty, );
 
   example sut{0, static_cast<interface&>(*m)};
   sut.update();

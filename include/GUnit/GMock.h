@@ -408,4 +408,3 @@ inline auto ByRef(NiceGMock<T> &x) {
 #else
 #define ON_CALL(obj, call) __GUNIT_CAT(__GMOCK_ON_CALL_, __GUNIT_IBP(call))(obj, call)
 #endif
-

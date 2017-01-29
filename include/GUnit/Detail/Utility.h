@@ -25,6 +25,11 @@ struct string {
     static constexpr char str[] = {Chrs..., 0};
     return str;
   }
+
+  template <char... Chrs_>
+  constexpr auto operator+(string<Chrs_...>) {
+    return string<Chrs..., Chrs_...>{};
+  }
 };
 
 #if defined(__clang__)

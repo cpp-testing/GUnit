@@ -39,9 +39,10 @@ template <class T>
 class GTestAutoRegister {
   struct TestInfo {
     std::string type;
+    std::string name;
     std::string file;
     unsigned long long line;
-    std::string name;
+    std::string should;
   };
 
   auto parse(const std::string& line) {
@@ -52,6 +53,13 @@ class GTestAutoRegister {
     std::string token;
     std::getline(stream, token, '<');
     std::getline(stream, token, '>');
+
+    std::istringstream nameStream(token);
+    while (std::getline(nameStream, token, ',')) {
+      const auto begin = token.find(')');
+      ti.name += static_cast<char>(std::atoi(token.substr(begin + 1).c_str()));
+    }
+    std::getline(stream, token, ',');
 
     std::istringstream fileStream(token);
     while (std::getline(fileStream, token, ',')) {
@@ -65,10 +73,10 @@ class GTestAutoRegister {
 
     std::getline(stream, token, '<');
     std::getline(stream, token, '>');
-    std::istringstream nameStream(token);
-    while (std::getline(nameStream, token, ',')) {
+    std::istringstream shouldStream(token);
+    while (std::getline(shouldStream, token, ',')) {
       const auto begin = token.find(')');
-      ti.name += static_cast<char>(std::atoi(token.substr(begin + 1).c_str()));
+      ti.should += static_cast<char>(std::atoi(token.substr(begin + 1).c_str()));
     }
 
     return ti;
@@ -78,16 +86,15 @@ class GTestAutoRegister {
   GTestAutoRegister() {
     for (const auto& testInfo : getSymbols()) {
       const auto test = parse(testInfo);
-      if (get_type_name<typename T::TEST_TYPE>() == test.type) {
+      if (get_type_name<typename T::TEST_TYPE>() == test.type && T::TEST_NAME::c_str() == test.name) {
         ::testing::internal::MakeAndRegisterTestInfo(
-            test.type.c_str(), (std::string{"should "} + test.name).c_str(), nullptr, nullptr,
+            (test.type + test.name).c_str(), (std::string{"should "} + test.should).c_str(), nullptr, nullptr,
             ::testing::internal::CodeLocation(test.file.c_str(), test.line), ::testing::internal::GetTestTypeId(),
             ::testing::Test::SetUpTestCase, ::testing::Test::TearDownTestCase, new ::testing::detail::GTestFactoryImpl<T>{});
       }
     }
   }
 };
-
 template <class T, class = detail::is_complete<T>>
 class GTest {
  protected:
@@ -108,35 +115,55 @@ class GTest {
   SUT sut;  // has to be after mocks
 };
 
-template <class T, class File, unsigned long long Line, class Name>
+template <class T>
+class GTest<T, std::false_type> {};
+
+template <class T, class Name, class File, unsigned long long Line, class Should>
 void SHOULD_REGISTER_GTEST() {
   static auto once = true;
   once = false;
   (void)once;
 }
-
-template <class T>
-class GTest<T, std::false_type> {};
 }  // detail
 
 template <class T = detail::none_t>
 class GTest : public detail::GTest<T>, public Test {};
-
 }  // v1
 }  // testing
 
-#define GTEST(TYPE)                                                              \
-  template <class>                                                               \
+#define GTEST(...) __GUNIT_CAT(GTEST_IMPL_, __GUNIT_SIZE(__VA_ARGS__))(__VA_ARGS__)
+
+#define GTEST_IMPL_1(TYPE)                                                       \
+  template <class...>                                                            \
   struct GTEST;                                                                  \
   template <>                                                                    \
   struct GTEST<TYPE> : ::testing::detail::GTest<TYPE> {                          \
     using TEST_TYPE = TYPE;                                                      \
+    using TEST_NAME = ::testing::detail::string<>;                               \
     void test();                                                                 \
   };                                                                             \
   ::testing::detail::GTestAutoRegister<GTEST<TYPE>> __GUNIT_CAT(ar, __LINE__){}; \
   void GTEST<TYPE>::test()
 
-#define SHOULD(NAME)                                                                                                  \
-  using namespace ::testing::detail;                                                                                  \
-  SHOULD_REGISTER_GTEST<TEST_TYPE, decltype(__GUNIT_CAT(__FILE__, _s)), __LINE__, decltype(__GUNIT_CAT(NAME, _s))>(); \
+#define GTEST_IMPL_2(TYPE, NAME)                                                                                         \
+  auto __GUNIT_CAT(GTESET_IMPL_TEST_NAME, __LINE__)() {                                                                  \
+    using namespace ::testing::detail;                                                                                   \
+    return __GUNIT_CAT(NAME, _s);                                                                                        \
+  }                                                                                                                      \
+  template <class...>                                                                                                    \
+  struct GTEST;                                                                                                          \
+  template <>                                                                                                            \
+  struct GTEST<TYPE, decltype(__GUNIT_CAT(GTESET_IMPL_TEST_NAME, __LINE__))> : ::testing::detail::GTest<TYPE> {          \
+    using TEST_TYPE = TYPE;                                                                                              \
+    using TEST_NAME = decltype(__GUNIT_CAT(GTESET_IMPL_TEST_NAME, __LINE__)());                                          \
+    void test();                                                                                                         \
+  };                                                                                                                     \
+  ::testing::detail::GTestAutoRegister<GTEST<TYPE, decltype(__GUNIT_CAT(GTESET_IMPL_TEST_NAME, __LINE__))>> __GUNIT_CAT( \
+      ar, __LINE__){};                                                                                                   \
+  void GTEST<TYPE, decltype(__GUNIT_CAT(GTESET_IMPL_TEST_NAME, __LINE__))>::test()
+
+#define SHOULD(NAME)                                                                         \
+  using namespace ::testing::detail;                                                         \
+  SHOULD_REGISTER_GTEST<TEST_TYPE, TEST_NAME, decltype(__GUNIT_CAT(__FILE__, _s)), __LINE__, \
+                        decltype(__GUNIT_CAT(NAME, _s))>();                                  \
   if (std::string{"should "} + NAME == ::testing::UnitTest::GetInstance()->current_test_info()->name())
