@@ -31,7 +31,7 @@ class GTestFactoryImpl final : public internal::TestFactoryBase {
 };
 
 inline auto& getSymbols() {
-  static auto output = nm();
+  static auto output = symbols("void testing::v1::detail::SHOULD_REGISTER_GTEST");
   return output;
 }
 

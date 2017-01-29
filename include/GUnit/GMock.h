@@ -8,6 +8,7 @@
 #pragma once
 
 #include <gmock/gmock.h>
+#include <fstream>
 #include <memory>
 #include <string>
 #include <typeinfo>
@@ -171,13 +172,33 @@ class GMock {
   detail::vtable<T> vtable;
   detail::byte _[sizeof(T)] = {0};
 
+  static auto not_expected_call(const std::pair<std::string, unsigned long long> &al) {
+    std::stringstream result;
+    if (al.first != "") {
+      std::ifstream input(al.first);
+      const auto index = al.second;
+      auto i = 0u;
+      for (std::string line; getline(input, line);) {
+        if (++i == index) {
+          line.erase(0, line.find_first_not_of(" \n\r\t"));
+          line.erase(line.find_last_not_of(" \n\r\t") + 1);
+          result << line;
+        }
+      }
+      result << "\n\t       At: [" << detail::basename(al.first) << ":" << al.second << "]";
+    }
+    return result.str();
+  }
+
   void expected() {}
   void *not_expected() {
+    const auto addr = (volatile int *)__builtin_return_address(0) - 1;
+    const auto al = detail::addr2line((void *)addr);
     auto *ptr = [this] {
       fs[__PRETTY_FUNCTION__] = std::make_unique<FunctionMocker<void *()>>();
       return static_cast<FunctionMocker<void *()> *>(fs[__PRETTY_FUNCTION__].get());
     }();
-    const auto call_stack = detail::call_stack();
+    const auto call_stack = al.first == "" || al.first == "??" ? detail::call_stack("\n\t\t   ") : not_expected_call(al);
     ptr->SetOwnerAndName(this, call_stack.c_str());
     return ptr->Invoke();
   }

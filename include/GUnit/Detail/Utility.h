@@ -10,6 +10,7 @@
 #include <cxxabi.h>
 #include <execinfo.h>
 #include <unistd.h>
+#include <algorithm>
 #include <cstdio>
 #include <cstring>
 #include <sstream>
@@ -66,6 +67,8 @@ inline TDst union_cast(TSrc src) {
   return u.dst;
 }
 
+inline auto basename(std::string const &path) { return path.substr(path.find_last_of("/\\") + 1); }
+
 inline std::string demangle(const std::string &mangled) {
   const auto demangled = abi::__cxa_demangle(mangled.c_str(), 0, 0, 0);
   if (demangled) {
@@ -75,7 +78,7 @@ inline std::string demangle(const std::string &mangled) {
   return {};
 }
 
-inline std::string call_stack() {
+inline std::string call_stack(const std::string &newline) {
   static constexpr auto GUNIT_SHOW_STACK_SIZE = 3;
   static constexpr auto CALL_STACK_SIZE = 64;
   void *bt[CALL_STACK_SIZE];
@@ -99,14 +102,13 @@ inline std::string call_stack() {
     } else {
       result << symbol;
     }
-    result << "\n\t\t   ";
+    result << newline;
   }
   return result.str();
 }
 
-inline auto get_self_name() {
+inline std::string get_self_name_impl() {
   std::string res;
-
   res.resize(16);
   auto rlin_size = ::readlink("/proc/self/exe", &res[0], res.size() - 1);
   while (rlin_size == static_cast<int>(res.size() - 1)) {
@@ -114,13 +116,18 @@ inline auto get_self_name() {
     rlin_size = ::readlink("/proc/self/exe", &res[0], res.size() - 1);
   }
   if (rlin_size == -1) {
-    return std::string{};
+    return res;
   }
   res.resize(rlin_size);
   return res;
 }
 
-inline auto nm() {
+inline std::string &get_self_name() {
+  static std::string self = get_self_name_impl();
+  return self;
+}
+
+inline auto symbols(const std::string &symbol) {
   std::vector<std::string> result;
   std::stringstream cmd;
   cmd << "nm -C " << get_self_name();
@@ -128,14 +135,36 @@ inline auto nm() {
   if (fp) {
     char buf[16536];
     while (fgets(buf, sizeof(buf), fp)) {
-      if (!strncmp(&buf[17], "V void testing::v1::detail::SHOULD_REGISTER_GTEST", 49)) {
-        result.push_back(&buf[17 + 49 + 1]);
+      if (!strncmp(&buf[17], ("V " + symbol).c_str(), symbol.length())) {
+        result.push_back(&buf[17 + symbol.length() + 1]);
       }
     }
   }
   pclose(fp);
-
   return result;
+}
+
+inline std::pair<std::string, unsigned long long> addr2line(void *addr) {
+  std::stringstream cmd;
+  cmd << "addr2line -Cpe " << get_self_name() << " " << addr;
+
+  std::string data;
+  auto fp = popen(cmd.str().c_str(), "r");
+  if (fp) {
+    char buf[16536];
+    while (fgets(buf, sizeof(buf), fp)) {
+      data += buf;
+    }
+  } else {
+    return {"", 0};
+  }
+  pclose(fp);
+
+  data.erase(std::remove(data.begin(), data.end(), '\n'), data.end());
+  const auto space = data.find(" ");
+  std::string res2 = data.substr(0, space);
+  const auto colon = res2.find(":");
+  return {res2.substr(0, colon), std::atoi(res2.substr(colon + 1).c_str())};
 }
 
 }  // detail

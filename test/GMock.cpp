@@ -159,7 +159,7 @@ class throw_example {
 struct ipolymorphic {
   virtual ~ipolymorphic() = default;
   virtual void f1() = 0;
-  void f2() {} // ignore
+  void f2() {}  // ignore
   virtual void f3() {}
   virtual void f4() const = 0;
 };
@@ -638,7 +638,7 @@ TEST(GMock, ShouldHandleON_CALLWithOverloadMethods) {
 }
 
 struct polymorphic_type {
-  virtual void foo1()  { }
+  virtual void foo1() {}
   virtual bool foo2(int) { return true; }
   virtual ~polymorphic_type() = default;
 };
@@ -654,7 +654,7 @@ TEST(GMock, ShouldHandlePolymorphicType) {
 }
 
 struct polymorphic_and_pure_type {
-  virtual void foo1()  { }
+  virtual void foo1() {}
   virtual bool foo2(int) { return true; }
   virtual int bar() const = 0;
   virtual ~polymorphic_and_pure_type() = default;

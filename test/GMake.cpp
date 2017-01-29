@@ -37,7 +37,7 @@ struct interface_dtor {
 };
 
 struct polymorphic_type {
-  virtual void foo1()  { }
+  virtual void foo1() {}
   virtual bool foo2(int) { return true; }
   virtual int bar() const = 0;
   virtual ~polymorphic_type() = default;
@@ -119,8 +119,7 @@ class up_example {
 
 struct polymorphic_example {
   polymorphic_example(std::shared_ptr<interface> i1, const std::shared_ptr<interface2>& i2, polymorphic_type* i3)
-    : i1(i1), i2(i2), i3(i3)
-  { }
+      : i1(i1), i2(i2), i3(i3) {}
 
   std::shared_ptr<interface> i1;
   std::shared_ptr<interface2> i2;
