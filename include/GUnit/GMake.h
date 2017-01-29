@@ -244,18 +244,18 @@ using resolve_size_t = resolve_size<T>;
 
 template <class TParent>
 struct resolve_creatable {
-  template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value && detail::is_abstract<deref_t<T>>::value)>
+  template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value && std::is_polymorphic<deref_t<T>>::value)>
   operator T();
 
 #if defined(__GNUC__)
-  template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value && detail::is_abstract<deref_t<T>>::value)>
+  template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value && std::is_polymorphic<deref_t<T>>::value)>
   operator T &&() const;
 #endif
 
-  template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value && detail::is_abstract<deref_t<T>>::value)>
+  template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value && std::is_polymorphic<deref_t<T>>::value)>
   operator T &() const;
 
-  template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value && detail::is_abstract<deref_t<T>>::value)>
+  template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value && std::is_polymorphic<deref_t<T>>::value)>
   operator const T &() const;
 };
 
@@ -267,35 +267,35 @@ class resolve {
  public:
   resolve(mocks_t &mocks, TArgs &args) : mocks(mocks), args(args) {}
 
-  template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value && detail::is_abstract<deref_t<T>>::value)>
+  template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value && std::is_polymorphic<deref_t<T>>::value)>
   operator T() {
     return mock<T>();
   }
 
-  template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value && detail::is_abstract<deref_t<T>>::value &&
+  template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value && std::is_polymorphic<deref_t<T>>::value &&
                                     !is_shared_ptr<T>::value)>
   operator T &() const {
     return mock<T>();
   }
 
-  template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value && detail::is_abstract<deref_t<T>>::value &&
+  template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value && std::is_polymorphic<deref_t<T>>::value &&
                                     !is_shared_ptr<T>::value)>
   operator const T &() const {
     return mock<T>();
   }
 
-  template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value && !detail::is_abstract<deref_t<T>>::value)>
+  template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value && !std::is_polymorphic<deref_t<T>>::value)>
   operator T() {
     return get<T>(std::integral_constant<bool, contains<T, TArgs>::value>{});
   }
 
-  template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value && !detail::is_abstract<deref_t<T>>::value &&
+  template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value && !std::is_polymorphic<deref_t<T>>::value &&
                                     contains<T &, TArgs>::value)>
   operator T &() const {
     return const_cast<resolve *>(this)->get<T &>(std::true_type{});
   }
 
-  template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value && !detail::is_abstract<deref_t<T>>::value &&
+  template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value && !std::is_polymorphic<deref_t<T>>::value &&
                                     contains<const T &, TArgs>::value)>
   operator const T &() const {
     return const_cast<resolve *>(this)->get<const T &>(std::true_type{});

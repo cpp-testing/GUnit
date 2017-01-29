@@ -79,9 +79,6 @@ struct function_type<T, R(TArgs...) const> {
 template <class T, class U>
 using function_type_t = typename function_type<T, U>::type;
 
-template <class T>  // wknd for xcode8
-using is_abstract = std::integral_constant<bool, __is_abstract(T)>;
-
 template <class, class>
 struct contains;
 

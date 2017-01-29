@@ -165,7 +165,7 @@ class vtable {
 template <class T>
 class GMock {
   static_assert(detail::is_complete<T>::value, "T has to be a complete type");
-  static_assert(detail::is_abstract<T>::value, "T has to be an abstract type");
+  static_assert(std::is_polymorphic<T>::value, "T has to be a polymorphic type");
   static_assert(std::has_virtual_destructor<T>::value, "T has to have a virtual destructor");
 
   detail::vtable<T> vtable;

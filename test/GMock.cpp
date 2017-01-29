@@ -156,11 +156,23 @@ class throw_example {
   bool trigger = false;
 };
 
+struct ipolymorphic {
+  virtual ~ipolymorphic() = default;
+  virtual void f1() = 0;
+  void f2() {} // ignore
+  virtual void f3() {}
+  virtual void f4() const = 0;
+};
+
 TEST(GMock, ShouldReturnVirtualFunctionOffset) {
   using namespace testing;
   EXPECT_EQ(2u, detail::offset(&interface::get));
   EXPECT_EQ(3u, detail::offset(&interface::foo));
   EXPECT_EQ(4u, detail::offset(&interface::bar));
+
+  EXPECT_EQ(2u, detail::offset(&ipolymorphic::f1));
+  EXPECT_EQ(3u, detail::offset(&ipolymorphic::f3));
+  EXPECT_EQ(4u, detail::offset(&ipolymorphic::f4));
 }
 
 TEST(GMock, ShouldReturnVirtualOverloadedFunctionOffset) {
@@ -623,6 +635,64 @@ TEST(GMock, ShouldHandleON_CALLWithOverloadMethods) {
   NiceGMock<interface_overload_ret> m;
   ON_CALL(m, (f, int(int))(42)).WillByDefault(Return(87));
   EXPECT_EQ(87, static_cast<interface_overload_ret&>(m).f(42));
+}
+
+struct polymorphic_type {
+  virtual void foo1()  { }
+  virtual bool foo2(int) { return true; }
+  virtual ~polymorphic_type() = default;
+};
+
+TEST(GMock, ShouldHandlePolymorphicType) {
+  using namespace testing;
+  StrictGMock<polymorphic_type> m;
+  EXPECT_CALL(m, (foo1)());
+  EXPECT_CALL(m, (foo2)(42)).WillOnce(Return(true));
+
+  m.object().foo1();
+  EXPECT_TRUE(m.object().foo2(42));
+}
+
+struct polymorphic_and_pure_type {
+  virtual void foo1()  { }
+  virtual bool foo2(int) { return true; }
+  virtual int bar() const = 0;
+  virtual ~polymorphic_and_pure_type() = default;
+};
+
+TEST(GMock, ShouldHandlePolymorphicAndPureType) {
+  using namespace testing;
+  StrictGMock<polymorphic_and_pure_type> m;
+  EXPECT_CALL(m, (foo1)());
+  EXPECT_CALL(m, (foo2)(42)).WillOnce(Return(true));
+  EXPECT_CALL(m, (bar)()).WillOnce(Return(123));
+
+  m.object().foo1();
+  EXPECT_TRUE(m.object().foo2(42));
+  EXPECT_EQ(123, m.object().bar());
+}
+
+struct polymorphic_inherit_type : polymorphic_and_pure_type {
+  virtual void foo1()  { }
+  bool foo2(int) override { return false; }
+  int bar() const  { return 77; }
+  int bar2() { return 42; }
+  virtual void foo3(double) const = 0;
+};
+
+TEST(GMock, ShouldHandlePolymorphicAndPureInheritType) {
+  using namespace testing;
+  StrictGMock<polymorphic_inherit_type> m;
+  EXPECT_CALL(m, (foo1)());
+  EXPECT_CALL(m, (foo2)(42)).WillOnce(Return(true));
+  EXPECT_CALL(m, (bar)()).WillOnce(Return(123));
+  EXPECT_CALL(m, (foo3)(87.0)).Times(2);
+
+  m.object().foo1();
+  EXPECT_TRUE(m.object().foo2(42));
+  EXPECT_EQ(123, m.object().bar());
+  m.object().foo3(87.0);
+  m.object().foo3(87.0);
 }
 
 template <class I>

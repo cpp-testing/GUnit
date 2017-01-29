@@ -36,6 +36,13 @@ struct interface_dtor {
   virtual ~interface_dtor() {}
 };
 
+struct polymorphic_type {
+  virtual void foo1()  { }
+  virtual bool foo2(int) { return true; }
+  virtual int bar() const = 0;
+  virtual ~polymorphic_type() = default;
+};
+
 class example {
  public:
   example(const interface& i1, interface2& i2) : i1(i1), i2(i2) {}
@@ -110,6 +117,16 @@ class up_example {
   std::unique_ptr<interface2> i2;
 };
 
+struct polymorphic_example {
+  polymorphic_example(std::shared_ptr<interface> i1, const std::shared_ptr<interface2>& i2, polymorphic_type* i3)
+    : i1(i1), i2(i2), i3(i3)
+  { }
+
+  std::shared_ptr<interface> i1;
+  std::shared_ptr<interface2> i2;
+  polymorphic_type* i3 = nullptr;
+};
+
 TEST(GMake, ShouldMakeUniquePtrExampleUsingMake) {
   using namespace testing;
   auto up1 = std::make_unique<GMock<interface>>();
@@ -130,6 +147,18 @@ TEST(GMake, ShouldMakeUsingAutoMocksInjection) {
   std::tie(sut, mocks) = make<std::unique_ptr<up_example>, StrictGMock>();
   EXPECT_TRUE(sut.get());
   EXPECT_EQ(2u, mocks.size());
+}
+
+TEST(GMake, ShouldMakePolymorphicTypeUsingAutoMocksInjection) {
+  using namespace testing;
+  mocks_t mocks;
+  std::unique_ptr<polymorphic_example> sut;
+  std::tie(sut, mocks) = make<std::unique_ptr<polymorphic_example>, StrictGMock>();
+  EXPECT_TRUE(sut.get());
+  EXPECT_EQ(3u, mocks.size());
+
+  EXPECT_CALL(mocks.mock<polymorphic_type>(), (bar)());
+  sut->i3->bar();
 }
 
 #if __has_include(<boost / di.hpp>)
