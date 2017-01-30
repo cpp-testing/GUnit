@@ -387,7 +387,7 @@ inline auto ByRef(NiceGMock<T> &x) {
 #pragma GCC pop_options
 #endif
 
-#define __GMOCK_QNAME(...) decltype(__GUNIT_CAT(#__VA_ARGS__, _s)) __GUNIT_IGNORE
+#define __GMOCK_QNAME(...) decltype(__GUNIT_CAT(#__VA_ARGS__, _gtest_string)) __GUNIT_IGNORE
 #define __GMOCK_FUNCTION(a, b) b __GUNIT_IGNORE
 #define __GMOCK_NAME(...) __GUNIT_CAT(__GMOCK_NAME_, __GUNIT_SIZE(__VA_ARGS__))(__VA_ARGS__)
 #define __GMOCK_NAME_1(a) a __GUNIT_IGNORE
@@ -404,7 +404,6 @@ inline auto ByRef(NiceGMock<T> &x) {
 #undef EXPECT_CALL
 #define __GMOCK_EXPECT_CALL_0(obj, call) GMOCK_EXPECT_CALL_IMPL_(obj, call)
 #define __GMOCK_EXPECT_CALL_1(obj, call)                                                 \
-  using namespace ::testing::detail;                                                     \
   ((obj).template gmock_call<__GMOCK_QNAME call>(                                        \
        __GUNIT_CAT(__GMOCK_OVERLOAD_CAST_IMPL_, __GMOCK_OVERLOAD_CALL call)(obj, call) & \
        std::decay_t<decltype(obj)>::type::__GMOCK_NAME call __GMOCK_CALL call))          \
@@ -419,7 +418,6 @@ inline auto ByRef(NiceGMock<T> &x) {
 #undef ON_CALL
 #define __GMOCK_ON_CALL_0(obj, call) GMOCK_ON_CALL_IMPL_(obj, call)
 #define __GMOCK_ON_CALL_1(obj, call)                                                     \
-  using namespace ::testing::detail;                                                     \
   ((obj).template gmock_call<__GMOCK_QNAME call>(                                        \
        __GUNIT_CAT(__GMOCK_OVERLOAD_CAST_IMPL_, __GMOCK_OVERLOAD_CALL call)(obj, call) & \
        std::decay_t<decltype(obj)>::type::__GMOCK_NAME call __GMOCK_CALL call))          \
@@ -430,3 +428,5 @@ inline auto ByRef(NiceGMock<T> &x) {
 #else
 #define ON_CALL(obj, call) __GUNIT_CAT(__GMOCK_ON_CALL_, __GUNIT_IBP(call))(obj, call)
 #endif
+
+using namespace ::testing::detail::operators;

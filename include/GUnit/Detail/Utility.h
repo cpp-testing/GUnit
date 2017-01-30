@@ -16,6 +16,10 @@
 #include <sstream>
 #include <vector>
 
+#if !defined(GUNIT_SHOW_STACK_SIZE)
+#define GUNIT_SHOW_STACK_SIZE 3
+#endif
+
 namespace testing {
 inline namespace v1 {
 namespace detail {
@@ -43,14 +47,18 @@ struct string {
   }
 };
 
+namespace operators {
+
 #if defined(__clang__)
 #pragma clang diagnostic ignored "-Wgnu-string-literal-operator-template"
 #endif
 
 template <class T, T... Chrs>
-constexpr auto operator""_s() {
+constexpr auto operator""_gtest_string() {
   return string<Chrs...>{};
 }
+
+}  // operators
 
 template <class, std::size_t N, std::size_t... Ns>
 auto get_type_name_impl(const char *ptr, std::index_sequence<Ns...>) {
@@ -78,16 +86,15 @@ inline std::string demangle(const std::string &mangled) {
   return {};
 }
 
-inline std::string call_stack(const std::string &newline) {
-  static constexpr auto GUNIT_SHOW_STACK_SIZE = 3;
-  static constexpr auto CALL_STACK_SIZE = 64;
-  void *bt[CALL_STACK_SIZE];
+inline std::string call_stack(const std::string &newline, int stack_size = GUNIT_SHOW_STACK_SIZE) {
+  static constexpr auto MAX_CALL_STACK_SIZE = 64;
+  void *bt[MAX_CALL_STACK_SIZE];
   const auto frames = backtrace(bt, sizeof(bt) / sizeof(bt[0]));
   const auto symbols = backtrace_symbols(bt, frames);
   std::shared_ptr<char *> free{symbols, std::free};
   std::stringstream result;
 
-  for (auto i = 1; i < (frames > GUNIT_SHOW_STACK_SIZE ? GUNIT_SHOW_STACK_SIZE : frames); ++i) {
+  for (auto i = 1; i < (frames > stack_size ? stack_size : frames); ++i) {
     const auto symbol = std::string{symbols[i]};
 
     const auto name_begin = symbol.find("(");
