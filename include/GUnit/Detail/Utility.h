@@ -16,6 +16,12 @@
 #include <sstream>
 #include <vector>
 
+#if defined(__APPLE__)
+#include <libproc.h>
+#elif defined(__linux__)
+extern const char *__progname_full;
+#endif
+
 #if !defined(GUNIT_SHOW_STACK_SIZE)
 #define GUNIT_SHOW_STACK_SIZE 3
 #endif
@@ -114,30 +120,20 @@ inline std::string call_stack(const std::string &newline, int stack_size = GUNIT
   return result.str();
 }
 
-inline std::string get_self_name_impl() {
-  std::string res;
-  res.resize(16);
-  auto rlin_size = ::readlink("/proc/self/exe", &res[0], res.size() - 1);
-  while (rlin_size == static_cast<int>(res.size() - 1)) {
-    res.resize(res.size() * 4);
-    rlin_size = ::readlink("/proc/self/exe", &res[0], res.size() - 1);
-  }
-  if (rlin_size == -1) {
-    return res;
-  }
-  res.resize(rlin_size);
-  return res;
-}
-
-inline std::string &get_self_name() {
-  static std::string self = get_self_name_impl();
+inline auto &progname() {
+#if defined(__linux__)
+  static auto self = __progname_full;
+#elif defined(__APPLE__)
+  static char self[PROC_PIDPATHINFO_MAXSIZE] = {};
+  proc_pidpath(getpid(), self, sizeof(self));
+#endif
   return self;
 }
 
 inline auto symbols(const std::string &symbol) {
   std::vector<std::string> result;
   std::stringstream cmd;
-  cmd << "nm -C " << get_self_name();
+  cmd << "nm -C " << progname();
   auto fp = popen(cmd.str().c_str(), "r");
   if (fp) {
     char buf[8192];
@@ -153,12 +149,12 @@ inline auto symbols(const std::string &symbol) {
 
 inline std::pair<std::string, unsigned long long> addr2line(void *addr) {
   std::stringstream cmd;
-  cmd << "addr2line -Cpe " << get_self_name() << " " << addr;
+  cmd << "addr2line -Cpe " << progname() << " " << addr;
 
   std::string data;
   auto fp = popen(cmd.str().c_str(), "r");
   if (fp) {
-    char buf[8192];
+    char buf[64];
     while (fgets(buf, sizeof(buf), fp)) {
       data += buf;
     }
