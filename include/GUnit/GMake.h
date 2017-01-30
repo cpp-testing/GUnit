@@ -269,70 +269,66 @@ class resolve {
  public:
   resolve(mocks_t &mocks, TArgs &args) : mocks(mocks), args(args) {}
 
-  template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value && std::is_polymorphic<deref_t<T>>::value)>
+  template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value && std::is_polymorphic<deref_t<T>>::value &&
+                                    !contains<T, TArgs>::value)>
   operator T() {
     return mock<T>();
   }
 
   template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value && std::is_polymorphic<deref_t<T>>::value &&
-                                    !is_shared_ptr<T>::value)>
+                                    !is_shared_ptr<T>::value && !contains<T &, TArgs>::value)>
   operator T &() const {
     return mock<T>();
   }
 
   template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value && std::is_polymorphic<deref_t<T>>::value &&
-                                    !is_shared_ptr<T>::value)>
+                                    !is_shared_ptr<T>::value && contains<const T &, TArgs>::value)>
   operator const T &() const {
     return mock<T>();
   }
 
-  template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value && !std::is_polymorphic<deref_t<T>>::value)>
+  template <class T,
+            GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value &&
+                           (contains<T, TArgs>::value || contains<T &, TArgs>::value || contains<const T &, TArgs>::value))>
   operator T() {
-    return get(detail::type<T>{}, std::integral_constant<bool, contains<T, TArgs>::value>{});
+    return get(detail::type<T>{}, typename contains<T, TArgs>::type{}, typename contains<T &, TArgs>::type{},
+               typename contains<const T &, TArgs>::type{});
   }
 
-  template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value && !std::is_polymorphic<deref_t<T>>::value &&
-                                    contains<T &, TArgs>::value)>
+  template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value && contains<T &, TArgs>::value)>
   operator T &() const {
-    return const_cast<resolve *>(this)->get(detail::type<T &>{}, std::true_type{});
+    return const_cast<resolve *>(this)->get(detail::type<T &>{});
   }
 
-  template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value && !std::is_polymorphic<deref_t<T>>::value &&
-                                    contains<const T &, TArgs>::value)>
+  template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value && contains<const T &, TArgs>::value)>
   operator const T &() const {
-    return const_cast<resolve *>(this)->get(detail::type<const T &>{}, std::true_type{});
+    return const_cast<resolve *>(this)->get(detail::type<const T &>{});
   }
 
  private:
   template <class T>
-  decltype(auto) get_impl(std::true_type, std::false_type) {
-    return std::get<T &>(args);
-  }
-
-  template <class T>
-  decltype(auto) get_impl(std::false_type, std::true_type) {
-    return std::get<const T &>(args);
-  }
-
-  template <class T>
-  decltype(auto) get_impl(std::true_type, std::true_type) {
-    return required_type_is_ambigious<T>();
-  }
-
-  template <class T>
-  decltype(auto) get_impl(std::false_type, std::false_type) {
-    return required_type_not_found<T>();
-  }
-
-  template <class T>
-  decltype(auto) get(detail::type<T>, std::true_type) {
+  decltype(auto) get(detail::type<T>, std::true_type = {}, ...) {
     return std::get<T>(args);
   }
 
   template <class T>
-  decltype(auto) get(detail::type<T>, std::false_type) {
-    return get_impl<T>(std::integral_constant<bool, contains<T &, TArgs>::value>{},
-                       std::integral_constant<bool, contains<const T &, TArgs>::value>{});
+  decltype(auto) get(detail::type<T>, std::false_type, std::false_type, std::false_type) {
+    return required_type_not_found<T>();
+  }
+
+  template <class T>
+  decltype(auto) get(detail::type<T>, std::false_type, std::true_type, std::false_type) {
+    return std::get<T &>(args);
+  }
+
+  template <class T>
+  decltype(auto) get(detail::type<T>, std::false_type, std::false_type, std::true_type) {
+    return std::get<const T &>(args);
+  }
+
+  template <class T>
+  decltype(auto) get(detail::type<T>, std::false_type, std::true_type, std::true_type) {
+    return required_type_is_ambigious<T>();
   }
 
   template <class T>
@@ -360,10 +356,10 @@ template <class T>
 struct ctor_size<T, std::index_sequence<>> : std::integral_constant<std::size_t, 0> {};
 
 template <class T, std::size_t... Ns>
-struct ctor_size<T, std::index_sequence<Ns...>> : std::conditional_t<std::is_constructible<T, resolve_size_t<Ns, T>...>::value,
-                                                                     std::integral_constant<std::size_t, sizeof...(Ns)>,
-                                                                     ctor_size<T, std::make_index_sequence<sizeof...(Ns)-1>>> {
-};
+struct ctor_size<T, std::index_sequence<Ns...>>
+    : std::conditional_t<std::is_constructible<T, resolve_size_t<Ns, T>...>::value,
+                         std::integral_constant<std::size_t, sizeof...(Ns)>,
+                         ctor_size<T, std::make_index_sequence<sizeof...(Ns) - 1>>> {};
 
 template <template <class> class TMock, class T, class... TArgs, std::size_t... Ns>
 auto make_impl(detail::identity<std::unique_ptr<T>>, mocks_t &mocks, std::tuple<TArgs...> &args, std::index_sequence<Ns...>) {
