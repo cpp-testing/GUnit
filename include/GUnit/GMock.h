@@ -161,6 +161,14 @@ class vtable {
 
   void **vptr = nullptr;
 };
+
+using CallReactionType = internal::CallReaction (*)(const void *);
+template <CallReactionType Ptr>
+struct GetAccess {
+  friend CallReactionType GetCallReaction() { return Ptr; }
+};
+CallReactionType GetCallReaction();
+template struct GetAccess<&Mock::GetReactionOnUninterestingCalls>;
 }  // detail
 
 template <class T>
@@ -172,35 +180,28 @@ class GMock {
   detail::vtable<T> vtable;
   detail::byte _[sizeof(T)] = {0};
 
-  static auto not_expected_call(const std::pair<std::string, unsigned long long> &al) {
-    std::stringstream result;
-    if (al.first != "") {
-      std::ifstream input(al.first);
-      const auto index = al.second;
-      auto i = 0u;
-      for (std::string line; getline(input, line);) {
-        if (++i == index) {
-          line.erase(0, line.find_first_not_of(" \n\r\t"));
-          line.erase(line.find_last_not_of(" \n\r\t") + 1);
-          result << line;
-          break;
-        }
-      }
-      result << "\n\t       At: [" << detail::basename(al.first) << ":" << al.second << "]";
-    }
-    return result.str();
-  }
-
   void expected() {}
   void *not_expected() {
     const auto addr = (volatile int *)__builtin_return_address(0) - 1;
-    const auto al = detail::addr2line((void *)addr);
     auto *ptr = [this] {
       fs[__PRETTY_FUNCTION__] = std::make_unique<FunctionMocker<void *()>>();
       return static_cast<FunctionMocker<void *()> *>(fs[__PRETTY_FUNCTION__].get());
     }();
-    const auto call_stack = al.first == "" || al.first == "??" ? detail::call_stack("\n\t\t   ") : not_expected_call(al);
-    ptr->SetOwnerAndName(this, call_stack.c_str());
+
+    if (internal::CallReaction::kAllow == detail::GetCallReaction()(internal::ImplicitCast_<GMock<T> *>(this))) {
+      ptr->SetOwnerAndName(this, __PRETTY_FUNCTION__);
+    } else {
+      const auto info = [](const std::string &file, int line) {
+        std::ifstream input(file);
+        std::string buf;
+        for (auto i = 0; i < line; ++i) getline(input, buf);
+        detail::trim(buf);
+        return buf + "\n\t       At: [" + detail::basename(file) + ":" + std::to_string(line) + "]";
+      };
+      const auto al = detail::addr2line((void *)addr);
+      msgs.emplace_back(al.first == "" || al.first == "??" ? detail::call_stack("\n\t\t   ") : info(al.first, al.second));
+      ptr->SetOwnerAndName(this, msgs.back().c_str());
+    }
     return ptr->Invoke();
   }
 
@@ -253,6 +254,7 @@ class GMock {
 
  private:
   std::unordered_map<std::string, std::unique_ptr<internal::UntypedFunctionMockerBase>> fs;
+  std::vector<std::string> msgs;
 };
 }  // v1
 

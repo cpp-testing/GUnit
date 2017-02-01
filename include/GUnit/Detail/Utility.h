@@ -81,7 +81,12 @@ const char *get_type_name() {
 #endif
 }
 
-inline auto basename(std::string const &path) { return path.substr(path.find_last_of("/\\") + 1); }
+inline auto basename(const std::string &path) { return path.substr(path.find_last_of("/\\") + 1); }
+
+inline void trim(std::string &txt) {
+  txt.erase(0, txt.find_first_not_of(" \n\r\t"));
+  txt.erase(txt.find_last_not_of(" \n\r\t") + 1);
+}
 
 inline std::string demangle(const std::string &mangled) {
   const auto demangled = abi::__cxa_demangle(mangled.c_str(), 0, 0, 0);
@@ -130,16 +135,17 @@ inline auto &progname() {
   return self;
 }
 
+template <class TParser>
 inline auto symbols(const std::string &symbol) {
-  std::vector<std::string> result;
+  std::vector<typename TParser::type> result;
   std::stringstream cmd;
-  cmd << "nm -C " << progname();
+  cmd << "nm -gpCP " << progname();
   auto fp = popen(cmd.str().c_str(), "r");
   if (fp) {
-    char buf[8192];
+    char buf[8192] = {};
     while (fgets(buf, sizeof(buf), fp)) {
-      if (!strncmp(&buf[17], ("V " + symbol).c_str(), symbol.length() - 2)) {
-        result.push_back(&buf[17 + symbol.length() + 2 + 1]);
+      if (!strncmp(buf, symbol.c_str(), symbol.length())) {
+        result.emplace_back(TParser::parse(&buf[symbol.length() + 1]));
       }
     }
   }
@@ -154,7 +160,7 @@ inline std::pair<std::string, unsigned long long> addr2line(void *addr) {
   std::string data;
   auto fp = popen(cmd.str().c_str(), "r");
   if (fp) {
-    char buf[64];
+    char buf[64] = {};
     while (fgets(buf, sizeof(buf), fp)) {
       data += buf;
     }

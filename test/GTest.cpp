@@ -542,7 +542,7 @@ struct ComplexStrictMocksTest : testing::GTest<complex_example> {};
 TEST_F(ComplexStrictMocksTest, ShouldMakeComplexExampleWithStrictMocks) {
   using namespace testing;
 
-  std::tie(sut, mocks) = testing::make<SUT, testing::NiceGMock>();
+  std::tie(sut, mocks) = testing::make<SUT, testing::StrictGMock>();
 
   EXPECT_CALL(mock<interface>(), (get)(_)).WillOnce(Return(123));
   EXPECT_CALL(mock<interface2>(), (f1)(77.0)).Times(1);
