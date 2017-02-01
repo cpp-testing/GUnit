@@ -47,6 +47,15 @@ struct is_shared_ptr_impl<std::shared_ptr<T>> : std::true_type {};
 template <class T>
 using is_shared_ptr = typename is_shared_ptr_impl<std::remove_cv_t<T>>::type;
 
+template <class T, class U, class>
+struct is_complete_base_of_impl : std::is_base_of<T, U> {};
+
+template <class T, class U>
+struct is_complete_base_of_impl<T, U, std::false_type> : std::false_type {};
+
+template <class T, class U>
+using is_complete_base_of = typename is_complete_base_of_impl<T, U, typename is_complete<U>::type>::type;
+
 template <bool...>
 struct bool_list {};
 

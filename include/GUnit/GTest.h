@@ -21,7 +21,7 @@ namespace detail {
 
 template <class T>
 class GTestFactoryImpl final : public internal::TestFactoryBase {
-  class TestImpl final : public T, public Test {
+  class TestImpl final : public T {
    public:
     void TestBody() override { T::test(); }
   };
@@ -106,8 +106,8 @@ class GTestAutoRegister {
   }
 };
 
-template <class T, class = detail::is_complete<T>>
-class GTest {
+template <class T, class = detail::is_complete<T>, class = detail::is_complete_base_of<Test, T>>
+class GTest : public Test {
  protected:
   using SUT = std::unique_ptr<T>;
 
@@ -126,8 +126,8 @@ class GTest {
   SUT sut;  // has to be after mocks
 };
 
-template <class T>
-class GTest<T, std::false_type> {
+template <class T, class TAny>
+class GTest<T, std::false_type, TAny> : public Test {
   template <class TMock>
   decltype(auto) mock() {
     return mocks.mock<TMock>();
@@ -135,6 +135,9 @@ class GTest<T, std::false_type> {
 
   mocks_t mocks;
 };
+
+template <class T>
+class GTest<T, std::true_type, std::true_type> : public T {};
 
 template <class T, class Name, class File, int Line, class Should>
 void SHOULD_REGISTER_GTEST() {
@@ -145,7 +148,8 @@ void SHOULD_REGISTER_GTEST() {
 }  // detail
 
 template <class T = detail::none_t>
-class GTest : public detail::GTest<T>, public Test {};
+class GTest : public detail::GTest<T> {};
+
 }  // v1
 }  // testing
 

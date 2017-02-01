@@ -752,6 +752,32 @@ GTEST(is_default_constructible) {
   }
 }
 
+GTEST(example, "[should create sut with a mock]") {
+  using namespace testing;
+  ASSERT_TRUE(nullptr == sut.get());
+  EXPECT_EQ(0u, mocks.size());
+
+  SHOULD("override sut and pass polymorphic type") {
+    StrictGMock<interface> i;
+    std::tie(sut, mocks) = make<SUT, StrictGMock>(42, i.object());
+
+    EXPECT_THROW(mock<interface>(), mock_exception<interface>);
+    EXPECT_CALL(i, (foo)(42));
+    EXPECT_CALL(i, (bar)(_, "str"));
+
+    sut->update();
+  }
+
+  SHOULD("override sut and create a mock type") {
+    std::tie(sut, mocks) = make<SUT, StrictGMock>(42);
+
+    EXPECT_CALL(mock<interface>(), (foo)(42));
+    EXPECT_CALL(mock<interface>(), (bar)(_, "str"));
+
+    sut->update();
+  }
+}
+
 GTEST(class MakeWithMocks) {
   SHOULD("make complex example with default and custom mocks") {
     using namespace testing;
@@ -772,6 +798,22 @@ GTEST(class ExampleTest, "[Example]") {
 
 GTEST(class ExampleTest, "[OtherExample]") {
   SHOULD("expect false") { EXPECT_FALSE(false); }
+}
+
+class MyTest : public testing::Test {
+ protected:
+  void SetUp() override { setUpCall = true; }
+  void TearDown() override { tearDownCall = true; }
+
+  bool setUpCall = false;
+  bool tearDownCall = false;
+};
+
+GTEST(MyTest, "[Custom Test]") {
+  SHOULD("inherit from MyTest and call setup, teardown") {
+    EXPECT_TRUE(setUpCall);
+    EXPECT_FALSE(tearDownCall);
+  }
 }
 
 #if __has_include(<boost / di.hpp>)
