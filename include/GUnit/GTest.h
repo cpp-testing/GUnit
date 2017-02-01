@@ -89,24 +89,45 @@ class GTestAutoRegister {
   void MakeAndRegisterTestInfo(const TestCaseInfo& ti,
                                detail::type<TestInfo*(const char*, const char*, const char*, const char*, const void*,
                                                       void (*)(), void (*)(), internal::TestFactoryBase*)>) {
-    internal::MakeAndRegisterTestInfo((ti.type + ti.name).c_str(), (std::string{"should "} + ti.should).c_str(), nullptr,
-                                      nullptr, internal::GetTestTypeId(), Test::SetUpTestCase, Test::TearDownTestCase,
-                                      new detail::GTestFactoryImpl<T>{});
+    if (ti.should.empty()) {
+      internal::MakeAndRegisterTestInfo(ti.type.c_str(), ti.name.c_str(), nullptr, nullptr, internal::GetTestTypeId(),
+                                        Test::SetUpTestCase, Test::TearDownTestCase, new detail::GTestFactoryImpl<T>{});
+    } else {
+      internal::MakeAndRegisterTestInfo((ti.type + ti.name).c_str(), (std::string{"should "} + ti.should).c_str(), nullptr,
+                                        nullptr, internal::GetTestTypeId(), Test::SetUpTestCase, Test::TearDownTestCase,
+                                        new detail::GTestFactoryImpl<T>{});
+    }
   }
 
   template <class... Ts>
   void MakeAndRegisterTestInfo(const TestCaseInfo& ti, detail::type<TestInfo*(Ts...)>) {
-    internal::MakeAndRegisterTestInfo((ti.type + ti.name).c_str(), (std::string{"should "} + ti.should).c_str(), nullptr,
-                                      nullptr, {ti.file.c_str(), ti.line}, internal::GetTestTypeId(), Test::SetUpTestCase,
-                                      Test::TearDownTestCase, new detail::GTestFactoryImpl<T>{});
+    if (ti.should.empty()) {
+      internal::MakeAndRegisterTestInfo(ti.type.c_str(), ti.name.c_str(), nullptr, nullptr, {ti.file.c_str(), ti.line},
+                                        internal::GetTestTypeId(), Test::SetUpTestCase, Test::TearDownTestCase,
+                                        new detail::GTestFactoryImpl<T>{});
+    } else {
+      internal::MakeAndRegisterTestInfo((ti.type + ti.name).c_str(), (std::string{"should "} + ti.should).c_str(), nullptr,
+                                        nullptr, {ti.file.c_str(), ti.line}, internal::GetTestTypeId(), Test::SetUpTestCase,
+                                        Test::TearDownTestCase, new detail::GTestFactoryImpl<T>{});
+    }
+  }
+
+  bool RegisterShouldSections() {
+    auto registered = false;
+    for (const auto& ti : tests()) {
+      if (get_type_name<typename T::TEST_TYPE>() == ti.type && T::TEST_NAME::c_str() == ti.name) {
+        MakeAndRegisterTestInfo(ti, detail::type<decltype(::testing::internal::MakeAndRegisterTestInfo)>{});
+        registered = true;
+      }
+    }
+    return registered;
   }
 
  public:
   GTestAutoRegister() {
-    for (const auto& ti : tests()) {
-      if (get_type_name<typename T::TEST_TYPE>() == ti.type && T::TEST_NAME::c_str() == ti.name) {
-        MakeAndRegisterTestInfo(ti, detail::type<decltype(::testing::internal::MakeAndRegisterTestInfo)>{});
-      }
+    if (!RegisterShouldSections()) {
+      MakeAndRegisterTestInfo({get_type_name<typename T::TEST_TYPE>(), T::TEST_NAME::c_str(), T::TEST_FILE, T::TEST_LINE, {}},
+                              detail::type<decltype(::testing::internal::MakeAndRegisterTestInfo)>{});
     }
   }
 };
@@ -163,6 +184,8 @@ class GTest : public detail::GTest<T> {};
   struct GTEST<TYPE> : ::testing::detail::GTest<TYPE> {                          \
     using TEST_TYPE = TYPE;                                                      \
     using TEST_NAME = ::testing::detail::string<>;                               \
+    static constexpr auto TEST_FILE = __FILE__;                                  \
+    static constexpr auto TEST_LINE = __LINE__;                                  \
     void test();                                                                 \
   };                                                                             \
   ::testing::detail::GTestAutoRegister<GTEST<TYPE>> __GUNIT_CAT(ar, __LINE__){}; \
@@ -176,6 +199,8 @@ class GTest : public detail::GTest<T> {};
   struct GTEST<TYPE, decltype(__GUNIT_CAT(GTESET_IMPL_TEST_NAME, __LINE__))> : ::testing::detail::GTest<TYPE> {          \
     using TEST_TYPE = TYPE;                                                                                              \
     using TEST_NAME = decltype(__GUNIT_CAT(GTESET_IMPL_TEST_NAME, __LINE__)());                                          \
+    static constexpr auto TEST_FILE = __FILE__;                                                                          \
+    static constexpr auto TEST_LINE = __LINE__;                                                                          \
     void test();                                                                                                         \
   };                                                                                                                     \
   ::testing::detail::GTestAutoRegister<GTEST<TYPE, decltype(__GUNIT_CAT(GTESET_IMPL_TEST_NAME, __LINE__))>> __GUNIT_CAT( \

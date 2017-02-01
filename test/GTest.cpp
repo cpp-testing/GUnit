@@ -816,6 +816,8 @@ GTEST(MyTest, "[Custom Test]") {
   }
 }
 
+GTEST(class TestWithoutShould, "Should Register the test case itself") { EXPECT_TRUE(true); }
+
 #if __has_include(<boost / di.hpp>)
 class di_example {
  public:
