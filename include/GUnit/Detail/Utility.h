@@ -54,6 +54,14 @@ struct string {
   }
 };
 
+template <class TStr, std::size_t N, char... Chrs>
+struct make_string : make_string<TStr, N - 1, TStr().chrs[N - 1], Chrs...> {};
+
+template <class TStr, char... Chrs>
+struct make_string<TStr, 0, Chrs...> {
+  using type = string<Chrs...>;
+};
+
 namespace operators {
 
 #if defined(__clang__)

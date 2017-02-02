@@ -32,6 +32,18 @@ TEST(Utility, ShouldAdd2Strings) {
   }
 }
 
+TEST(Utility, ShouldMakeString) {
+  using namespace operators;
+  static_assert(std::is_same<string<>, decltype(""_gtest_string)>::value, "");
+  static_assert(std::is_same<string<'a', 'b', 'c'>, decltype("abc"_gtest_string)>::value, "");
+
+  struct String {
+    const char* chrs = "abcd";
+  };
+
+  static_assert(std::is_same<string<'a', 'b', 'c', 'd', 0>, decltype(make_string<String, sizeof("abcd")>::type())>::value, "");
+}
+
 struct n {};
 
 TEST(Utility, ShouldGetTypeName) {

@@ -790,7 +790,7 @@ GTEST(example, "[should create sut with a mock]") {
   }
 }
 
-GTEST(class MakeWithMocks) {
+GTEST("Make with mocks") {
   SHOULD("make complex example with default and custom mocks") {
     using namespace testing;
     using SUT = std::unique_ptr<complex_example>;
@@ -804,11 +804,11 @@ GTEST(class MakeWithMocks) {
   }
 }
 
-GTEST(class ExampleTest, "[Example]") {
+GTEST("Example Test", "[Example]") {
   SHOULD("expect true") { EXPECT_TRUE(true); }
 }
 
-GTEST(class ExampleTest, "[OtherExample]") {
+GTEST("Example Test", "[OtherExample]") {
   SHOULD("expect false") { EXPECT_FALSE(false); }
 }
 
@@ -828,7 +828,7 @@ GTEST(MyTest, "[Custom Test]") {
   }
 }
 
-GTEST(class TestWithoutShould, "Should Register the test case itself") { EXPECT_TRUE(true); }
+GTEST("Test without should", "Should Register the test case itself") { EXPECT_TRUE(true); }
 
 #if __has_include(<boost / di.hpp>)
 class di_example {
