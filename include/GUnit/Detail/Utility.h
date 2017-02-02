@@ -140,7 +140,13 @@ template <class TParser>
 inline auto symbols(const std::string &symbol) {
   std::vector<typename TParser::type> result;
   std::stringstream cmd;
-  cmd << "nm -gpCP " << progname();
+  cmd << "nm ";
+#if defined(__linux__)
+  cmd << "-gpCP";
+#elif defined(__APPLE__)
+  cmd << "-gpjP";
+#endif
+  cmd << " " << progname();
   auto fp = popen(cmd.str().c_str(), "r");
   if (fp) {
     char buf[8192] = {};

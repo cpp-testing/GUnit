@@ -98,11 +98,16 @@ TEST(Utility, ShouldReturnSymbols) {
 
 TEST(Utility, ShouldReturnFileAndLine) {
   const auto al = addr2line(__builtin_return_address(0));
+#if defined(__APPLE__)  // addr2line is not installed by default
+  EXPECT_TRUE(std::string{}, al.first);
+  EXPECT_TRUE(0 == al.second);
+#else
 #if defined(NDEBUG)
   EXPECT_TRUE(al.first == "??" || al.first == "");
 #else
   EXPECT_THAT(al.first, testing::MatchesRegex(".*gtest.*"));
   EXPECT_TRUE(al.second > 0);
+#endif
 #endif
 }
 }
