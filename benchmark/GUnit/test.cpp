@@ -6,16 +6,13 @@
 // http://www.boost.org/LICENSE_1_0.txt)
 //
 #include <GUnit.h>
-#include <memory>
 #include "example.h"
 
 GTEST(example) {
   using namespace testing;
-  std::tie(sut, mocks) = testing::make<SUT, testing::NaggyGMock>();
+  std::tie(sut, mocks) = testing::make<SUT, testing::NaggyGMock>();  // optional
 
   SHOULD("call f2_1 when f1 returns true") {
-    using namespace testing;
-
     EXPECT_CALL(mock<interface1>(), (f1)(42)).WillOnce(Return(true));
     EXPECT_CALL(mock<interface2>(), (f2_1)()).Times(1);
     EXPECT_CALL(mock<interface3>(), (f3)(0, 1, 2)).Times(1);
@@ -24,8 +21,6 @@ GTEST(example) {
   }
 
   SHOULD("call f2_2 when f1 returns false") {
-    using namespace testing;
-
     EXPECT_CALL(mock<interface1>(), (f1)(42)).WillOnce(Return(false));
     EXPECT_CALL(mock<interface2>(), (f2_2)()).Times(1);
     EXPECT_CALL(mock<interface3>(), (f3)(0, 1, 2)).Times(1);
