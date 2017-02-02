@@ -14,8 +14,8 @@
 #include <cstdio>
 #include <cstring>
 #include <memory>
+#include <set>
 #include <sstream>
-#include <vector>
 
 #if defined(__APPLE__)
 #include <libproc.h>
@@ -138,21 +138,18 @@ inline auto &progname() {
 
 template <class TParser>
 inline auto symbols(const std::string &symbol) {
-  std::vector<typename TParser::type> result;
+  std::set<typename TParser::type> result;
   std::stringstream cmd;
-  cmd << "nm ";
-#if defined(__linux__)
-  cmd << "-gpCP";
-#elif defined(__APPLE__)
-  cmd << "-gpjP";
-#endif
-  cmd << " " << progname();
+  cmd << "nm -gpP " << progname();
   auto fp = popen(cmd.str().c_str(), "r");
   if (fp) {
     char buf[8192] = {};
     while (fgets(buf, sizeof(buf), fp)) {
       if (!strncmp(buf, symbol.c_str(), symbol.length())) {
-        result.emplace_back(TParser::parse(&buf[symbol.length() + 1]));
+        auto i = symbol.length() + 1;
+        while (buf[i] != ' ' && buf[i]) ++i;
+        buf[i] = 0;
+        result.emplace(TParser::parse(demangle(buf)));
       }
     }
   }

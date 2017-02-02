@@ -87,12 +87,11 @@ TEST(Utility, ShouldReturnCallStack) {
 }
 
 TEST(Utility, ShouldReturnSymbols) {
-  (void)typeid(this).name();
   struct Parser {
     using type = std::string;
     static auto parse(const std::string& line) { return line; }
   };
-  const auto& parsed = symbols<Parser>("typeinfo name for testing::v1::detail::Utility_ShouldReturnSymbols_Test");
+  const auto& parsed = symbols<Parser>("_ZTIN7testing2v16detail32Utility_ShouldReturnSymbols_TestE");
   ASSERT_TRUE(parsed.size() >= 1);
 }
 
