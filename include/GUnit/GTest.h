@@ -15,6 +15,10 @@
 #include "GUnit/GMake.h"
 #include "GUnit/GMock.h"
 
+#if !defined(GUNIT_SHOULD_PREFIX)
+#define GUNIT_SHOULD_PREFIX "should "
+#endif
+
 namespace testing {
 inline namespace v1 {
 namespace detail {
@@ -95,9 +99,9 @@ class GTestAutoRegister {
       internal::MakeAndRegisterTestInfo(ti.type.c_str(), ti.name.c_str(), nullptr, nullptr, internal::GetTestTypeId(),
                                         Test::SetUpTestCase, Test::TearDownTestCase, new detail::GTestFactoryImpl<T>{});
     } else {
-      internal::MakeAndRegisterTestInfo((ti.type + ti.name).c_str(), (std::string{"should "} + ti.should).c_str(), nullptr,
-                                        nullptr, internal::GetTestTypeId(), Test::SetUpTestCase, Test::TearDownTestCase,
-                                        new detail::GTestFactoryImpl<T>{});
+      internal::MakeAndRegisterTestInfo((ti.type + ti.name).c_str(), (std::string{GUNIT_SHOULD_PREFIX} + ti.should).c_str(),
+                                        nullptr, nullptr, internal::GetTestTypeId(), Test::SetUpTestCase,
+                                        Test::TearDownTestCase, new detail::GTestFactoryImpl<T>{});
     }
   }
 
@@ -108,9 +112,9 @@ class GTestAutoRegister {
                                         internal::GetTestTypeId(), Test::SetUpTestCase, Test::TearDownTestCase,
                                         new detail::GTestFactoryImpl<T>{});
     } else {
-      internal::MakeAndRegisterTestInfo((ti.type + ti.name).c_str(), (std::string{"should "} + ti.should).c_str(), nullptr,
-                                        nullptr, {ti.file.c_str(), ti.line}, internal::GetTestTypeId(), Test::SetUpTestCase,
-                                        Test::TearDownTestCase, new detail::GTestFactoryImpl<T>{});
+      internal::MakeAndRegisterTestInfo((ti.type + ti.name).c_str(), (std::string{GUNIT_SHOULD_PREFIX} + ti.should).c_str(),
+                                        nullptr, nullptr, {ti.file.c_str(), ti.line}, internal::GetTestTypeId(),
+                                        Test::SetUpTestCase, Test::TearDownTestCase, new detail::GTestFactoryImpl<T>{});
     }
   }
 
@@ -216,4 +220,4 @@ class GTest : public detail::GTest<T> {};
 #define SHOULD(NAME)                                                                                                           \
   if (::testing::detail::SHOULD_REGISTER_GTEST<TEST_TYPE, TEST_NAME, decltype(__GUNIT_CAT(__FILE__, _gtest_string)), __LINE__, \
                                                decltype(__GUNIT_CAT(NAME, _gtest_string))>() &&                                \
-      std::string{"should "} + NAME == ::testing::UnitTest::GetInstance()->current_test_info()->name())
+      std::string{GUNIT_SHOULD_PREFIX} + NAME == ::testing::UnitTest::GetInstance()->current_test_info()->name())
