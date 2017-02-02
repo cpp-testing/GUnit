@@ -30,6 +30,17 @@ TEST(GTest, ShouldReturnTrueWhenTupleContainsType) {
   static_assert(contains<int, std::tuple<int, double, int>>::value, "");
 }
 
+TEST(GTest, ShouldParseGivenString) {
+  using namespace testing::detail;
+  Parser<TestCaseInfo> parser;
+  const auto ti = parser.parse("type, string<(char)97, (char)98>, string<(char)98>, 42ul, string<(char)99, (char)100>");
+  EXPECT_EQ(std::string{"type"}, ti.type);
+  EXPECT_EQ(std::string{"ab"}, ti.name);
+  EXPECT_EQ(std::string{"b"}, ti.file);
+  EXPECT_EQ(42, ti.line);
+  EXPECT_EQ(std::string{"cd"}, ti.should);
+}
+
 TEST(GTest, ShouldReturnCtorSize) {
   using namespace testing::detail;
 

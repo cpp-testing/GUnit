@@ -46,20 +46,19 @@ struct Parser {
   static auto parse(const std::string& line) {
     T ti;
     std::string token;
+    std::istringstream stream(line);
 
     const auto parseString = [&](std::string& result) {
-      std::istringstream stream(token);
-      while (std::getline(stream, token, ',')) {
+      std::getline(stream, token, '<');
+      std::getline(stream, token, '>');
+      std::istringstream istream(token);
+      while (std::getline(istream, token, ',')) {
         const auto begin = token.find(')');
         result += static_cast<char>(std::atoi(token.substr(begin + 1).c_str()));
       }
     };
 
-    std::istringstream stream(line);
     std::getline(stream, ti.type, ',');
-
-    std::getline(stream, token, '<');
-    std::getline(stream, token, '>');
 
     parseString(ti.name);
     std::getline(stream, token, ',');
@@ -69,9 +68,6 @@ struct Parser {
 
     std::getline(stream, token, ',');
     ti.line = std::atoi(token.c_str());
-
-    std::getline(stream, token, '<');
-    std::getline(stream, token, '>');
 
     parseString(ti.should);
 
@@ -112,7 +108,7 @@ class GTestAutoRegister {
     }
   }
 
-  bool RegisterShouldSections() {
+  bool RegisterShouldTestCase() {
     auto registered = false;
     for (const auto& ti : tests()) {
       if (get_type_name<typename T::TEST_TYPE>() == ti.type && T::TEST_NAME::c_str() == ti.name) {
@@ -125,7 +121,7 @@ class GTestAutoRegister {
 
  public:
   GTestAutoRegister() {
-    if (!RegisterShouldSections()) {
+    if (!RegisterShouldTestCase()) {
       MakeAndRegisterTestInfo({get_type_name<typename T::TEST_TYPE>(), T::TEST_NAME::c_str(), T::TEST_FILE, T::TEST_LINE, {}},
                               detail::type<decltype(::testing::internal::MakeAndRegisterTestInfo)>{});
     }
