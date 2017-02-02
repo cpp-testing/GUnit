@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <cstdio>
 #include <cstring>
+#include <memory>
 #include <sstream>
 #include <vector>
 
@@ -153,7 +154,7 @@ inline auto symbols(const std::string &symbol) {
   return result;
 }
 
-inline std::pair<std::string, unsigned long long> addr2line(void *addr) {
+inline std::pair<std::string, int> addr2line(void *addr) {
   std::stringstream cmd;
   cmd << "addr2line -Cpe " << progname() << " " << addr;
 
