@@ -33,7 +33,7 @@ TEST(TypeTraits, ShouldReturnTrueIfIsBaseOf) {
   struct a : b {};
   EXPECT_TRUE((is_complete_base_of<b, a>::value));
   EXPECT_FALSE((is_complete_base_of<int, double>::value));
-  EXPECT_FALSE((is_complete_base_of<class a, class b>::value));
+  EXPECT_FALSE((is_complete_base_of<class d, class e>::value));
 }
 
 TEST(TypeTraits, ShouldReturnUniqueTypeId) {

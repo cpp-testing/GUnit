@@ -92,14 +92,18 @@ TEST(Utility, ShouldReturnSymbols) {
     using type = std::string;
     static auto parse(const std::string& line) { return line; }
   };
-  const auto& parsed = symbols<Parser>("typeinfo name for testing::v1::detail::Utility_ShouldReturnSymbols_Test*");
-  ASSERT_EQ(1u, parsed.size());
+  const auto& parsed = symbols<Parser>("typeinfo name for testing::v1::detail::Utility_ShouldReturnSymbols_Test");
+  ASSERT_TRUE(parsed.size() >= 1);
 }
 
 TEST(Utility, ShouldReturnFileAndLine) {
   const auto al = addr2line(__builtin_return_address(0));
+#if defined(NDEBUG)
+  EXPECT_TRUE(al.first == "??" || al.first == "");
+#else
   EXPECT_THAT(al.first, testing::MatchesRegex(".*gtest.*"));
   EXPECT_TRUE(al.second > 0);
+#endif
 }
 }
 }
