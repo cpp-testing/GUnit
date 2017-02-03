@@ -23,17 +23,6 @@ namespace testing {
 inline namespace v1 {
 namespace detail {
 
-template <class T>
-class GTestFactoryImpl final : public internal::TestFactoryBase {
-  class TestImpl final : public T {
-   public:
-    void TestBody() override { T::test(); }
-  };
-
- public:
-  Test* CreateTest() override { return new TestImpl{}; }
-};
-
 struct TestCaseInfo {
   std::string symbol;
   std::string type;
@@ -97,11 +86,11 @@ class GTestAutoRegister {
                                                       void (*)(), void (*)(), internal::TestFactoryBase*)>) {
     if (ti.should.empty()) {
       internal::MakeAndRegisterTestInfo(ti.type.c_str(), ti.name.c_str(), nullptr, nullptr, internal::GetTestTypeId(),
-                                        Test::SetUpTestCase, Test::TearDownTestCase, new detail::GTestFactoryImpl<T>{});
+                                        Test::SetUpTestCase, Test::TearDownTestCase, new internal::TestFactoryImpl<T>{});
     } else {
       internal::MakeAndRegisterTestInfo((ti.type + ti.name).c_str(), (std::string{GUNIT_SHOULD_PREFIX} + ti.should).c_str(),
                                         nullptr, nullptr, internal::GetTestTypeId(), Test::SetUpTestCase,
-                                        Test::TearDownTestCase, new detail::GTestFactoryImpl<T>{});
+                                        Test::TearDownTestCase, new internal::TestFactoryImpl<T>{});
     }
   }
 
@@ -110,11 +99,11 @@ class GTestAutoRegister {
     if (ti.should.empty()) {
       internal::MakeAndRegisterTestInfo(ti.type.c_str(), ti.name.c_str(), nullptr, nullptr, {ti.file.c_str(), ti.line},
                                         internal::GetTestTypeId(), Test::SetUpTestCase, Test::TearDownTestCase,
-                                        new detail::GTestFactoryImpl<T>{});
+                                        new internal::TestFactoryImpl<T>{});
     } else {
       internal::MakeAndRegisterTestInfo((ti.type + ti.name).c_str(), (std::string{GUNIT_SHOULD_PREFIX} + ti.should).c_str(),
                                         nullptr, nullptr, {ti.file.c_str(), ti.line}, internal::GetTestTypeId(),
-                                        Test::SetUpTestCase, Test::TearDownTestCase, new detail::GTestFactoryImpl<T>{});
+                                        Test::SetUpTestCase, Test::TearDownTestCase, new internal::TestFactoryImpl<T>{});
     }
   }
 
@@ -197,9 +186,7 @@ class GTest : public detail::GTest<T> {};
 }  // v1
 }  // testing
 
-#define GTEST(...) __GUNIT_CAT(GTEST_IMPL_, __GUNIT_SIZE(__VA_ARGS__))(__VA_ARGS__)
-
-#define GTEST_IMPL_1(TYPE)                                                                                                \
+#define __GTEST_IMPL(TYPE, NAME)                                                                                          \
   struct __GUNIT_CAT(GTEST_STRING_, __LINE__) {                                                                           \
     const char* chrs = #TYPE;                                                                                             \
   };                                                                                                                      \
@@ -210,41 +197,23 @@ class GTest : public detail::GTest<T> {};
   template <class...>                                                                                                     \
   struct GTEST;                                                                                                           \
   template <>                                                                                                             \
-  struct GTEST<__GUNIT_CAT(GTEST_TYPE_, __LINE__)> : ::testing::detail::GTest<__GUNIT_CAT(GTEST_TYPE_, __LINE__)> {       \
+  struct GTEST<__GUNIT_CAT(GTEST_TYPE_, __LINE__), NAME> : ::testing::detail::GTest<__GUNIT_CAT(GTEST_TYPE_, __LINE__)> { \
     using TEST_TYPE = __GUNIT_CAT(GTEST_TYPE_, __LINE__);                                                                 \
-    using TEST_NAME = ::testing::detail::string<>;                                                                        \
+    using TEST_NAME = NAME;                                                                                               \
                                                                                                                           \
     static constexpr auto TEST_FILE = __FILE__;                                                                           \
     static constexpr auto TEST_LINE = __LINE__;                                                                           \
-    void test();                                                                                                          \
+    void TestBody();                                                                                                      \
   };                                                                                                                      \
-  ::testing::detail::GTestAutoRegister<GTEST<__GUNIT_CAT(GTEST_TYPE_, __LINE__)>> __GUNIT_CAT(ar, __LINE__){};            \
-  void GTEST<__GUNIT_CAT(GTEST_TYPE_, __LINE__)>::test()
+  ::testing::detail::GTestAutoRegister<GTEST<__GUNIT_CAT(GTEST_TYPE_, __LINE__), NAME>> __GUNIT_CAT(ar, __LINE__){};      \
+  void GTEST<__GUNIT_CAT(GTEST_TYPE_, __LINE__), NAME>::TestBody()
 
-#define GTEST_IMPL_2(TYPE, NAME)                                                                                          \
-  struct __GUNIT_CAT(GTEST_STRING_, __LINE__) {                                                                           \
-    const char* chrs = #TYPE;                                                                                             \
-  };                                                                                                                      \
-  using __GUNIT_CAT(GTEST_TYPE_, __LINE__) =                                                                              \
-      std::conditional_t<#TYPE[(0)] == '"', decltype(::testing::detail::make_string<__GUNIT_CAT(GTEST_STRING_, __LINE__), \
-                                                                                    sizeof(#TYPE)>::type()),              \
-                         __typeof__(TYPE)>;                                                                               \
-  auto __GUNIT_CAT(GTEST_TEST_NAME, __LINE__)() { return __GUNIT_CAT(NAME, _gtest_string); }                              \
-  template <class...>                                                                                                     \
-  struct GTEST;                                                                                                           \
-  template <>                                                                                                             \
-  struct GTEST<__GUNIT_CAT(GTEST_TYPE_, __LINE__), decltype(__GUNIT_CAT(GTEST_TEST_NAME, __LINE__))>                      \
-      : ::testing::detail::GTest<__GUNIT_CAT(GTEST_TYPE_, __LINE__)> {                                                    \
-    using TEST_TYPE = __GUNIT_CAT(GTEST_TYPE_, __LINE__);                                                                 \
-    using TEST_NAME = decltype(__GUNIT_CAT(GTEST_TEST_NAME, __LINE__)());                                                 \
-    static constexpr auto TEST_FILE = __FILE__;                                                                           \
-    static constexpr auto TEST_LINE = __LINE__;                                                                           \
-    void test();                                                                                                          \
-  };                                                                                                                      \
-  ::testing::detail::GTestAutoRegister<                                                                                   \
-      GTEST<__GUNIT_CAT(GTEST_TYPE_, __LINE__), decltype(__GUNIT_CAT(GTEST_TEST_NAME, __LINE__))>>                        \
-      __GUNIT_CAT(ar, __LINE__){};                                                                                        \
-  void GTEST<__GUNIT_CAT(GTEST_TYPE_, __LINE__), decltype(__GUNIT_CAT(GTEST_TEST_NAME, __LINE__))>::test()
+#define __GTEST_IMPL_1(TYPE) __GTEST_IMPL(TYPE, ::testing::detail::string<>)
+#define __GTEST_IMPL_2(TYPE, NAME)                                                           \
+  auto __GUNIT_CAT(GTEST_TEST_NAME, __LINE__)() { return __GUNIT_CAT(NAME, _gtest_string); } \
+  __GTEST_IMPL(TYPE, decltype(__GUNIT_CAT(GTEST_TEST_NAME, __LINE__)()))
+
+#define GTEST(...) __GUNIT_CAT(__GTEST_IMPL_, __GUNIT_SIZE(__VA_ARGS__))(__VA_ARGS__)
 
 #define SHOULD(NAME)                                                                                                           \
   if (::testing::detail::SHOULD_REGISTER_GTEST<TEST_TYPE, TEST_NAME, decltype(__GUNIT_CAT(__FILE__, _gtest_string)), __LINE__, \
