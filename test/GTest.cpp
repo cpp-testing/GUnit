@@ -830,6 +830,11 @@ GTEST(MyTest, "[Custom Test]") {
 
 GTEST("Test without should", "Should Register the test case itself") { EXPECT_TRUE(true); }
 
+GTEST("ParamTest", "[Info]", testing::Values(1, 2, 3)) {
+SHOULD("be true") { EXPECT_TRUE(true); }
+SHOULD("be false") { EXPECT_TRUE(false); }
+}
+
 #if __has_include(<boost / di.hpp>)
 class di_example {
  public:

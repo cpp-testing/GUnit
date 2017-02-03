@@ -62,7 +62,7 @@ struct bool_list {};
 template <class>
 struct always : std::true_type {};
 
-template <class T>
+template <class...>
 struct type {
   static void id() {}
 };

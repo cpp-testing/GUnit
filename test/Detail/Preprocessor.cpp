@@ -11,6 +11,9 @@
 TEST(Preprocessor, ShouldReturnSize) {
   EXPECT_EQ(1, (__GUNIT_SIZE(a)));
   EXPECT_EQ(2, (__GUNIT_SIZE(a, b)));
+  EXPECT_EQ(3, (__GUNIT_SIZE(a, b, c)));
+  EXPECT_EQ(10, (__GUNIT_SIZE(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10)));
+  EXPECT_EQ(11, (__GUNIT_SIZE(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11)));
 }
 
 TEST(Preprocessor, ShouldReturnTrueIfIsAParen) {

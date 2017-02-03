@@ -31,6 +31,15 @@ namespace testing {
 inline namespace v1 {
 namespace detail {
 
+template <template <class...> class, class>
+struct apply;
+template <template <class...> class T, template <class...> class U, class... Ts>
+struct apply<T, U<Ts...>> {
+  using type = T<Ts...>;
+};
+template <template <class...> class T, class D>
+using apply_t = typename apply<T, D>::type;
+
 template <class TDst, class TSrc>
 inline TDst union_cast(TSrc src) {
   union {

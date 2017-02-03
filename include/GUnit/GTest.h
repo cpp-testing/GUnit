@@ -123,7 +123,21 @@ class GTestAutoRegister {
     auto registered = false;
     for (const auto& ti : tests()) {
       if (GetTypeName(detail::type<typename T::TEST_TYPE>{}) == ti.type && T::TEST_NAME::c_str() == ti.name) {
-        MakeAndRegisterTestInfo(ti, detail::type<decltype(::testing::internal::MakeAndRegisterTestInfo)>{});
+        MakeAndRegisterTestInfo(ti, detail::type<decltype(internal::MakeAndRegisterTestInfo)>{});
+        registered = true;
+      }
+    }
+    return registered;
+  }
+
+  bool RegisterShouldParamTestCase() {
+    auto registered = false;
+    for (const auto& ti : tests()) {
+      if (GetTypeName(detail::type<typename T::TEST_TYPE>{}) == ti.type && T::TEST_NAME::c_str() == ti.name) {
+        UnitTest::GetInstance()
+            ->parameterized_test_registry()
+            .GetTestCasePatternHolder<T>(ti.type.c_str(), {ti.file, ti.line})
+            ->AddTestPattern(ti.type.c_str(), ti.should.c_str(), new internal::TestMetaFactory<T>());
         registered = true;
       }
     }
@@ -135,20 +149,36 @@ class GTestAutoRegister {
     if (!RegisterShouldTestCase()) {
       MakeAndRegisterTestInfo(
           {{}, GetTypeName(detail::type<typename T::TEST_TYPE>{}), T::TEST_NAME::c_str(), T::TEST_FILE, T::TEST_LINE, {}},
-          detail::type<decltype(::testing::internal::MakeAndRegisterTestInfo)>{});
+          detail::type<decltype(internal::MakeAndRegisterTestInfo)>{});
     }
+  }
+
+  template <class TEval, class TGenerateNames>
+  explicit GTestAutoRegister(const TEval& eval, const TGenerateNames& genNames) {
+    if (!RegisterShouldParamTestCase()) {
+      UnitTest::GetInstance()
+          ->parameterized_test_registry()
+          .GetTestCasePatternHolder<T>(GetTypeName(detail::type<typename T::TEST_TYPE>{}), {T::TEST_FILE, T::TEST_LINE})
+          ->AddTestPattern(GetTypeName(detail::type<typename T::TEST_TYPE>{}),
+                           GetTypeName(detail::type<typename T::TEST_TYPE>{}), new internal::TestMetaFactory<T>());
+    }
+
+    UnitTest::GetInstance()
+        ->parameterized_test_registry()
+        .GetTestCasePatternHolder<T>(GetTypeName(detail::type<typename T::TEST_TYPE>{}), {T::TEST_FILE, T::TEST_LINE})
+        ->AddTestCaseInstantiation(T::TEST_NAME::c_str(), eval, genNames,
+                                   T::TEST_FILE, T::TEST_LINE);
   }
 };
 
-template <class T, class = detail::is_complete<T>, class = detail::is_complete_base_of<Test, T>>
-class GTest : public Test {
- protected:
-  using SUT = std::unique_ptr<T>;
-
+template <class T, class TParamType, class = detail::is_complete<T>, class = detail::is_complete_base_of<Test, T>>
+class GTest : public std::conditional_t<std::is_same<TParamType, void>::value, Test, TestWithParam<TParamType>> {
   explicit GTest(std::false_type) {}
   explicit GTest(std::true_type) { std::tie(sut, mocks) = make<SUT, StrictGMock>(); }
 
  public:
+  using SUT = std::unique_ptr<T>;
+
   GTest() : GTest(is_creatable<T>{}) {}
 
   template <class TMock>
@@ -160,8 +190,9 @@ class GTest : public Test {
   SUT sut;  // has to be after mocks
 };
 
-template <class T, class TAny>
-class GTest<T, std::false_type, TAny> : public Test {
+template <class T, class TParamType, class TAny>
+class GTest<T, TParamType, std::false_type, TAny> : public Test {
+ public:
   template <class TMock>
   decltype(auto) mock() {
     return mocks.mock<TMock>();
@@ -170,8 +201,9 @@ class GTest<T, std::false_type, TAny> : public Test {
   mocks_t mocks;
 };
 
-template <class T>
-class GTest<T, std::true_type, std::true_type> : public T {};
+template <class T, class TParamType>
+class GTest<T, TParamType, std::true_type, std::true_type> : public T {
+};
 
 template <class T, class Name, class File, int Line, class Should>
 bool SHOULD_REGISTER_GTEST() {
@@ -180,13 +212,13 @@ bool SHOULD_REGISTER_GTEST() {
 }
 }  // detail
 
-template <class T = detail::none_t>
-class GTest : public detail::GTest<T> {};
+template <class T = detail::none_t, class TParamType = void>
+class GTest : public detail::GTest<T, TParamType> {};
 
 }  // v1
 }  // testing
 
-#define __GTEST_IMPL(TYPE, NAME)                                                                                          \
+#define __GTEST_IMPL(TYPE, NAME, PARAMS, ...)                                                                                  \
   struct __GUNIT_CAT(GTEST_STRING_, __LINE__) {                                                                           \
     const char* chrs = #TYPE;                                                                                             \
   };                                                                                                                      \
@@ -197,7 +229,9 @@ class GTest : public detail::GTest<T> {};
   template <class...>                                                                                                     \
   struct GTEST;                                                                                                           \
   template <>                                                                                                             \
-  struct GTEST<__GUNIT_CAT(GTEST_TYPE_, __LINE__), NAME> : ::testing::detail::GTest<__GUNIT_CAT(GTEST_TYPE_, __LINE__)> { \
+  struct GTEST<__GUNIT_CAT(GTEST_TYPE_, __LINE__), NAME>                                                                  \
+      : ::testing::detail::GTest<__GUNIT_CAT(GTEST_TYPE_, __LINE__),                                                      \
+                                 ::testing::detail::apply_t<std::common_type_t, decltype(PARAMS)>> {                      \
     using TEST_TYPE = __GUNIT_CAT(GTEST_TYPE_, __LINE__);                                                                 \
     using TEST_NAME = NAME;                                                                                               \
                                                                                                                           \
@@ -205,13 +239,22 @@ class GTest : public detail::GTest<T> {};
     static constexpr auto TEST_LINE = __LINE__;                                                                           \
     void TestBody();                                                                                                      \
   };                                                                                                                      \
-  ::testing::detail::GTestAutoRegister<GTEST<__GUNIT_CAT(GTEST_TYPE_, __LINE__), NAME>> __GUNIT_CAT(ar, __LINE__){};      \
+  ::testing::detail::GTestAutoRegister<GTEST<__GUNIT_CAT(GTEST_TYPE_, __LINE__), NAME>> __GUNIT_CAT(    \
+      ar, __LINE__){__VA_ARGS__};                                                                                              \
   void GTEST<__GUNIT_CAT(GTEST_TYPE_, __LINE__), NAME>::TestBody()
 
-#define __GTEST_IMPL_1(TYPE) __GTEST_IMPL(TYPE, ::testing::detail::string<>)
+#define __GTEST_IMPL_1(TYPE) __GTEST_IMPL(TYPE, ::testing::detail::string<>, ::testing::detail::type<void>{}, )
 #define __GTEST_IMPL_2(TYPE, NAME)                                                           \
   auto __GUNIT_CAT(GTEST_TEST_NAME, __LINE__)() { return __GUNIT_CAT(NAME, _gtest_string); } \
-  __GTEST_IMPL(TYPE, decltype(__GUNIT_CAT(GTEST_TEST_NAME, __LINE__)()))
+  __GTEST_IMPL(TYPE, decltype(__GUNIT_CAT(GTEST_TEST_NAME, __LINE__)()), ::testing::detail::type<void>{}, )
+
+#define __GTEST_IMPL_3(TYPE, NAME, PARAMS)                                                   \
+  auto __GUNIT_CAT(GTEST_TEST_NAME, __LINE__)() { return __GUNIT_CAT(NAME, _gtest_string); } \
+  static ::testing::internal::ParamGenerator<::testing::detail::apply_t<std::common_type_t, decltype(PARAMS)>> __GUNIT_CAT(GTEST_EVAL, __LINE__)() { return PARAMS; } \
+  static std::string __GUNIT_CAT(GTEST_GENERATE_NAMES, __LINE__)(const ::testing::TestParamInfo<::testing::detail::apply_t<std::common_type_t, decltype(PARAMS)>>& info) { \
+    return ::testing::internal::GetParamNameGen<::testing::detail::apply_t<std::common_type_t, decltype(PARAMS)>>()(info); \
+  } \
+  __GTEST_IMPL(TYPE, decltype(__GUNIT_CAT(GTEST_TEST_NAME, __LINE__)()), PARAMS, &__GUNIT_CAT(GTEST_EVAL, __LINE__), &__GUNIT_CAT(GTEST_GENERATE_NAMES, __LINE__))
 
 #define GTEST(...) __GUNIT_CAT(__GTEST_IMPL_, __GUNIT_SIZE(__VA_ARGS__))(__VA_ARGS__)
 

@@ -11,8 +11,8 @@
 #define __GUNIT_IGNORE(...)
 #define __GUNIT_PRIMITIVE_CAT(arg, ...) arg##__VA_ARGS__
 #define __GUNIT_CAT(arg, ...) __GUNIT_PRIMITIVE_CAT(arg, __VA_ARGS__)
-#define __GUNIT_SIZE(...) __GUNIT_CAT(__GUNIT_VARIADIC_SIZE(__VA_ARGS__, 2, 1, ), )
-#define __GUNIT_VARIADIC_SIZE(e0, e1, size, ...) size
+#define __GUNIT_SIZE(...) __GUNIT_CAT(__GUNIT_VARIADIC_SIZE(__VA_ARGS__, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, ), )
+#define __GUNIT_VARIADIC_SIZE(e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, size, ...) size
 #define __GUNIT_IBP_SPLIT(i, ...) __GUNIT_PRIMITIVE_CAT(__GUNIT_IBP_SPLIT_, i)(__VA_ARGS__)
 #define __GUNIT_IBP_SPLIT_0(a, ...) a
 #define __GUNIT_IBP_SPLIT_1(a, ...) __VA_ARGS__
