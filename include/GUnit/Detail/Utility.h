@@ -16,6 +16,7 @@
 #include <memory>
 #include <set>
 #include <sstream>
+#include "GUnit/Detail/TypeTraits.h"
 
 #if defined(__APPLE__)
 #include <libproc.h>
@@ -39,6 +40,19 @@ struct apply<T, U<Ts...>> {
 };
 template <template <class...> class T, class D>
 using apply_t = typename apply<T, D>::type;
+
+template <class T>
+struct is_valid_impl {
+  template <class... Ts>
+  auto operator()(Ts &&...) const {
+    return is_callable<T(Ts...)>{};
+  }
+};
+
+template <class T>
+auto is_valid(T) {
+  return is_valid_impl<T>{};
+}
 
 template <class TDst, class TSrc>
 inline TDst union_cast(TSrc src) {

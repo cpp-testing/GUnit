@@ -19,6 +19,9 @@ namespace detail {
 
 using byte = unsigned char;
 
+template <class...>
+using void_t = void;
+
 template <class T>
 struct identity {
   using type = T;
@@ -55,6 +58,12 @@ struct is_complete_base_of_impl<T, U, std::false_type> : std::false_type {};
 
 template <class T, class U>
 using is_complete_base_of = typename is_complete_base_of_impl<T, U, typename is_complete<U>::type>::type;
+
+template <class, class = void>
+struct is_callable : std::false_type {};
+
+template <class T, class... TArgs>
+struct is_callable<T(TArgs...), void_t<decltype(std::declval<T>()(std::declval<TArgs>()...))>> : std::true_type {};
 
 template <bool...>
 struct bool_list {};

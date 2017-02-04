@@ -36,6 +36,21 @@ TEST(TypeTraits, ShouldReturnTrueIfIsBaseOf) {
   EXPECT_FALSE((is_complete_base_of<class d, class e>::value));
 }
 
+TEST(TypeTraits, ShouldReturnTrueIfIsCallable) {
+  struct a {
+    void operator()(int) {}
+  };
+
+  struct b {
+    void operator()() const {}
+  };
+
+  EXPECT_TRUE(is_callable<a(int)>::value);
+  EXPECT_FALSE(is_callable<a()>::value);
+  EXPECT_TRUE(is_callable<b()>::value);
+  EXPECT_FALSE(is_callable<b(int, double)>::value);
+}
+
 TEST(TypeTraits, ShouldReturnUniqueTypeId) {
   struct a {};
   struct b {};

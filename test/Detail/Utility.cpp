@@ -44,6 +44,16 @@ TEST(Utility, ShouldMakeString) {
   static_assert(std::is_same<string<'a', 'b', 'c', 'd', 0>, decltype(make_string<String, sizeof("abcd")>::type())>::value, "");
 }
 
+TEST(Utility, ShouldReturnTrueIfIsValid) {
+  auto has_f = is_valid([](auto&& x) -> decltype(x.f()) {});
+  struct a {
+    void f() {}
+  };
+  struct b{};
+  EXPECT_TRUE(has_f(a{}));
+  EXPECT_FALSE(has_f(b{}));
+}
+
 struct n {};
 
 TEST(Utility, ShouldGetTypeName) {
