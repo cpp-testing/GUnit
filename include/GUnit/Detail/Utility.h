@@ -54,6 +54,33 @@ auto is_valid(T) {
   return is_valid_impl<T>{};
 }
 
+template <class C, class FT, class FF>
+struct constexpr_if_impl {
+  C c;
+  FT ft;
+  FF ff;
+
+  template <class T>
+  decltype(auto) operator()(T &&t) {
+    return call(c(std::forward<T>(t)), std::forward<T>(t));
+  }
+
+  template <class T>
+  decltype(auto) call(std::true_type, T &&t) {
+    return ft(std::forward<T>(t));
+  }
+
+  template <class T>
+  decltype(auto) call(std::false_type, T &&t) {
+    return ff(std::forward<T>(t));
+  }
+};
+
+template <class C, class FT, class FF>
+decltype(auto) constexpr_if(C &&c, FT &&ft, FF &&ff) {
+  return constexpr_if_impl<C, FT, FF>{std::forward<C>(c), std::forward<FT>(ft), std::forward<FF>(ff)};
+}
+
 template <class TDst, class TSrc>
 inline TDst union_cast(TSrc src) {
   union {

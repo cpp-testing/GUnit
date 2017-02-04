@@ -49,9 +49,23 @@ TEST(Utility, ShouldReturnTrueIfIsValid) {
   struct a {
     void f() {}
   };
-  struct b{};
+  struct b {};
   EXPECT_TRUE(has_f(a{}));
   EXPECT_FALSE(has_f(b{}));
+}
+
+TEST(Utility, ShouldCall) {
+  struct a {
+    double foo() { return 77.0; };
+  };
+
+  EXPECT_EQ(77.0, (constexpr_if(is_valid([](auto&& x) -> decltype(x.foo()) {}), [](auto&& x) { return x.foo(); },
+                                [](auto&&) { return 42; })(a{})));
+
+  struct b {};
+
+  EXPECT_EQ(42, (constexpr_if(is_valid([](auto&& x) -> decltype(x.foo()) {}), [](auto&& x) { return x.foo(); },
+                              [](auto&&) { return 42; })(b{})));
 }
 
 struct n {};
