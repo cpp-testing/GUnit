@@ -34,12 +34,72 @@ TEST(GTest, ShouldParseGivenStringAndProduceTestCaseInfo) {
   using namespace testing::detail;
   TestCaseInfoParser parser;
   const auto ti = parser.parse(
-      "bool SHOULD_REGISTER_GTEST<type, string<(char)97, (char)98>, string<(char)98>, 42ul, string<(char)99, (char)100> >");
-  EXPECT_EQ(std::string{"type"}, ti.type);
+      "bool SHOULD_REGISTER_GTEST<testing::v1::detail::string<(char)97, (char)98>, testing::v1::detail::string<(char)98>, "
+      "42ul, testing::v1::detail::string<(char)99, (char)100>, type >()::shouldRegister");
   EXPECT_EQ(std::string{"ab"}, ti.name);
   EXPECT_EQ(std::string{"b"}, ti.file);
   EXPECT_EQ(42, ti.line);
   EXPECT_EQ(std::string{"cd"}, ti.should);
+  EXPECT_EQ(std::string{"type"}, ti.type);
+}
+
+TEST(GTest, ShouldParseGivenStringWithTemplateTypeAndProduceTestCaseInfo) {
+  using namespace testing::detail;
+  TestCaseInfoParser parser;
+  const auto ti = parser.parse(
+      "bool SHOULD_REGISTER_GTEST<testing::v1::detail::string<(char)97, (char)98>, testing::v1::detail::string<(char)98>, "
+      "42ul, testing::v1::detail::string<(char)99, (char)100>, n::type<int, other<float, double>, short> >()::shouldRegister");
+  EXPECT_EQ(std::string{"ab"}, ti.name);
+  EXPECT_EQ(std::string{"b"}, ti.file);
+  EXPECT_EQ(42, ti.line);
+  EXPECT_EQ(std::string{"cd"}, ti.should);
+  EXPECT_EQ(std::string{"n::type<int, other<float, double>, short>"}, ti.type);
+}
+
+TEST(GTest, ShouldParseGivenStringWithStringAsTypeAndProduceTestCaseInfo) {
+  using namespace testing::detail;
+  TestCaseInfoParser parser;
+  const auto ti = parser.parse(
+      "bool SHOULD_REGISTER_GTEST<testing::detail::string<(char)97, (char)98>, testing::detail::string<(char)98>, 42ul, "
+      "testing::detail::string<(char)99, (char)100>, testing::detail::string<(char)97, (char)99> >()::shouldRegister");
+  EXPECT_EQ(std::string{"ab"}, ti.name);
+  EXPECT_EQ(std::string{"b"}, ti.file);
+  EXPECT_EQ(42, ti.line);
+  EXPECT_EQ(std::string{"cd"}, ti.should);
+  EXPECT_EQ(std::string{"ac"}, ti.type);
+}
+
+TEST(GTest, ShouldParseGivenEmptyStringAndProduceTestCaseInfo) {
+  using namespace testing::detail;
+  TestCaseInfoParser parser;
+  const auto ti = parser.parse(
+      "bool SHOULD_REGISTER_GTEST<testing::detail::string<>, testing::detail::string<(char)98>, 42ul, "
+      "testing::detail::string<(char)99, (char)100>, testing::detail::string<(char)97, (char)99> >()::shouldRegister");
+  EXPECT_EQ(std::string{}, ti.name);
+  EXPECT_EQ(std::string{"b"}, ti.file);
+  EXPECT_EQ(42, ti.line);
+  EXPECT_EQ(std::string{"cd"}, ti.should);
+  EXPECT_EQ(std::string{"ac"}, ti.type);
+}
+
+TEST(GTest, ShouldParseComplexStringAndProduceTestCaseInfo) {
+  using namespace testing::detail;
+  TestCaseInfoParser parser;
+  const auto ti = parser.parse(
+      "bool testing::v1::detail::SHOULD_REGISTER_GTEST<testing::v1::detail::string<>, testing::v1::detail::string<(char)47, "
+      "(char)104, (char)111, (char)109, (char)101, (char)47, (char)107, (char)114, (char)105, (char)115, (char)47, (char)80, "
+      "(char)114, (char)111, (char)106, (char)101, (char)99, (char)116, (char)115, (char)47, (char)71, (char)85, (char)110, "
+      "(char)105, (char)116, (char)47, (char)116, (char)101, (char)115, (char)116, (char)47, (char)71, (char)84, (char)101, "
+      "(char)115, (char)116, (char)46, (char)99, (char)112, (char)112>, 797, testing::v1::detail::string<(char)99, (char)114, "
+      "(char)101, (char)97, (char)116, (char)101, (char)32, (char)97, (char)32, (char)100, (char)101, (char)102, (char)97, "
+      "(char)117, (char)108, (char)116, (char)32, (char)99, (char)111, (char)110, (char)115, (char)116, (char)114, (char)117, "
+      "(char)99, (char)116, (char)105, (char)98, (char)108, (char)101, (char)32, (char)116, (char)121, (char)112, (char)101>, "
+      "is_default_constructible>()::shouldRegister");
+  EXPECT_EQ(std::string{}, ti.name);
+  EXPECT_EQ(std::string{"/home/kris/Projects/GUnit/test/GTest.cpp"}, ti.file);
+  EXPECT_EQ(797, ti.line);
+  EXPECT_EQ(std::string{"create a default constructible type"}, ti.should);
+  EXPECT_EQ(std::string{"is_default_constructible"}, ti.type);
 }
 
 TEST(GTest, ShouldReturnCtorSize) {
@@ -831,8 +891,12 @@ GTEST(MyTest, "[Custom Test]") {
 GTEST("Test without should", "Should Register the test case itself") { EXPECT_TRUE(true); }
 
 GTEST("ParamTest", "[Info]", testing::Values(1, 2, 3)) {
-SHOULD("be true") { EXPECT_TRUE(true); }
-SHOULD("be false") { EXPECT_TRUE(false); }
+  SHOULD("be true") { EXPECT_TRUE(true); }
+  SHOULD("be false") { EXPECT_FALSE(false); }
+  SHOULD("another test") {
+    EXPECT_TRUE(true);
+    EXPECT_FALSE(false);
+  }
 }
 
 #if __has_include(<boost / di.hpp>)
