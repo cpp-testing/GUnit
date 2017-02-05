@@ -121,7 +121,7 @@ class GTestAutoRegister {
   template <char Quote, char... Chrs>
   static auto GetTypeName(detail::type<string<Quote, Chrs...>>) {
     static char str[] = {Chrs...};
-    str[sizeof...(Chrs) - 2] = 0;  // last quote
+    str[sizeof...(Chrs)-2] = 0;  // last quote
     return str;
   }
 

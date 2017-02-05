@@ -21,6 +21,7 @@
 #pragma clang optimize off
 #pragma clang diagnostic ignored "-Wgnu-zero-variadic-macro-arguments"
 #elif defined(__GNUC__)
+#pragma GCC system_header
 #pragma GCC push_options
 #pragma GCC optimize("O0")
 #endif
