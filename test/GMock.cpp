@@ -750,6 +750,10 @@ TEST(GMock, ShouldSupportInvokeSyntaxWithOnCall) {
   EXPECT_EQ(42, static_cast<interface&>(m).get(0));
 }
 
+#if defined(__GNUC__)
+#pragma GCC diagnostic ignored "-Wpedantic" // "-Wgnu-zero-variadic-macro-arguments"
+#endif
+
 TEST(GMock, ShouldSupportEmptyMethods) {
   using namespace testing;
   StrictGMock<interface3> m;
