@@ -891,11 +891,28 @@ GTEST(MyTest, "[Custom Test]") {
 GTEST("Test without should", "Should Register the test case itself") { EXPECT_TRUE(true); }
 
 GTEST("ParamTest", "[Info]", testing::Values(1, 2, 3)) {
-  SHOULD("be true") { EXPECT_TRUE(true); }
+  SHOULD("be true") { EXPECT_TRUE(GetParam() >= 1 && GetParam() <= 3); }
   SHOULD("be false") { EXPECT_FALSE(false); }
   SHOULD("another test") {
     EXPECT_TRUE(true);
     EXPECT_FALSE(false);
+  }
+}
+
+GTEST(example, "[Values]", testing::Values(1, 2, 3)) {
+  using namespace testing;
+  ASSERT_TRUE(nullptr == sut.get());
+  EXPECT_EQ(0u, mocks.size());
+
+  SHOULD("override sut with given param") {
+    std::tie(sut, mocks) = make<SUT, StrictGMock>(GetParam());
+
+    EXPECT_INVOKE(mock<interface>(), foo, 42);
+    EXPECT_INVOKE(mock<interface>(), bar, _, "str");
+
+    sut->update();
+
+    EXPECT_EQ(GetParam(), sut->get_data());
   }
 }
 
