@@ -19,6 +19,7 @@
 
 #if defined(__clang__)
 #pragma clang optimize off
+#pragma clang diagnostic ignored "-Wgnu-zero-variadic-macro-arguments"
 #elif defined(__GNUC__)
 #pragma GCC push_options
 #pragma GCC optimize("O0")
@@ -404,6 +405,7 @@ inline auto ByRef(NiceGMock<T> &x) {
 #define __GMOCK_CALL(...) __GMOCK_INTERNAL
 
 #undef EXPECT_CALL
+#define EXPECT_CALL(obj, call) __GUNIT_CAT(__GMOCK_EXPECT_CALL_, __GUNIT_IBP(call))(obj, call, call)
 #define __GMOCK_EXPECT_CALL_0(obj, _, call) GMOCK_EXPECT_CALL_IMPL_(obj, call)
 #define __GMOCK_EXPECT_CALL_1(obj, qcall, call)                                          \
   ((obj).template gmock_call<__GMOCK_QNAME call>(                                        \
@@ -411,24 +413,18 @@ inline auto ByRef(NiceGMock<T> &x) {
        std::decay_t<decltype(obj)>::type::__GMOCK_NAME call __GMOCK_CALL call))          \
       .InternalExpectedAt(__FILE__, __LINE__, #obj, #qcall)
 
-#if defined(GUNIT_GMOCK_UNIVERSAL_SYNTAX)
-#define EXPECT_CALL(obj, f, ...) __GUNIT_CAT(EXPECT_CALL_IMPL_, __GUNIT_IBP(f))(obj, f, __VA_ARGS__)
-
-#define EXPECT_CALL_IMPL_1(obj, f, ...) __GMOCK_EXPECT_CALL_1(obj, f(__VA_ARGS__), f(__VA_ARGS__))
-
-#define EXPECT_CALL_IMPL_0(obj, f, ...)                                                                                  \
+#define EXPECT_INVOKE(obj, f, ...) __GUNIT_CAT(__GMOCK_EXPECT_INVOKE_IMPL_, __GUNIT_IBP(f))(obj, f, __VA_ARGS__)
+#define __GMOCK_EXPECT_INVOKE_IMPL_0(obj, f, ...)                                                                        \
   ::testing::detail::constexpr_if(::testing::detail::is_valid([](auto &&x) -> decltype(x.f(__VA_ARGS__)) {}),            \
                                   [](auto &&x) -> decltype(auto) { return GMOCK_EXPECT_CALL_IMPL_(x, f(__VA_ARGS__)); }, \
                                   [](auto &&x) -> decltype(auto) {                                                       \
                                     return __GMOCK_EXPECT_CALL_1(x, f(__VA_ARGS__),                                      \
                                                                  __GUNIT_IF(__GUNIT_IBP(f))(f, (f))(__VA_ARGS__));       \
                                   })(obj)
-
-#else
-#define EXPECT_CALL(obj, call) __GUNIT_CAT(__GMOCK_EXPECT_CALL_, __GUNIT_IBP(call))(obj, call, call)
-#endif
+#define __GMOCK_EXPECT_INVOKE_IMPL_1(obj, f, ...) __GMOCK_EXPECT_CALL_1(obj, f(__VA_ARGS__), f(__VA_ARGS__))
 
 #undef ON_CALL
+#define ON_CALL(obj, call) __GUNIT_CAT(__GMOCK_ON_CALL_, __GUNIT_IBP(call))(obj, call, call)
 #define __GMOCK_ON_CALL_0(obj, _, call) GMOCK_ON_CALL_IMPL_(obj, call)
 #define __GMOCK_ON_CALL_1(obj, qcall, call)                                              \
   ((obj).template gmock_call<__GMOCK_QNAME call>(                                        \
@@ -436,20 +432,14 @@ inline auto ByRef(NiceGMock<T> &x) {
        std::decay_t<decltype(obj)>::type::__GMOCK_NAME call __GMOCK_CALL call))          \
       .InternalDefaultActionSetAt(__FILE__, __LINE__, #obj, #qcall)
 
-#if defined(GUNIT_GMOCK_UNIVERSAL_SYNTAX)
-#define ON_CALL(obj, f, ...) __GUNIT_CAT(ON_CALL_IMPL_, __GUNIT_IBP(f))(obj, f, __VA_ARGS__)
-
-#define ON_CALL_IMPL_1(obj, f, ...) __GMOCK_ON_CALL_1(obj, f(__VA_ARGS__), f(__VA_ARGS__))
-
-#define ON_CALL_IMPL_0(obj, f, ...)                                                                                  \
+#define ON_INVOKE(obj, f, ...) __GUNIT_CAT(__GMOCK_ON_INVOKE_IMPL_, __GUNIT_IBP(f))(obj, f, __VA_ARGS__)
+#define __GMOCK_ON_INVOKE_IMPL_0(obj, f, ...)                                                                        \
   ::testing::detail::constexpr_if(::testing::detail::is_valid([](auto &&x) -> decltype(x.f(__VA_ARGS__)) {}),        \
                                   [](auto &&x) -> decltype(auto) { return GMOCK_ON_CALL_IMPL_(x, f(__VA_ARGS__)); }, \
                                   [](auto &&x) -> decltype(auto) {                                                   \
                                     return __GMOCK_ON_CALL_1(x, f(__VA_ARGS__),                                      \
                                                              __GUNIT_IF(__GUNIT_IBP(f))(f, (f))(__VA_ARGS__));       \
                                   })(obj)
-#else
-#define ON_CALL(obj, call) __GUNIT_CAT(__GMOCK_ON_CALL_, __GUNIT_IBP(call))(obj, call, call)
-#endif
+#define __GMOCK_ON_INVOKE_IMPL_1(obj, f, ...) __GMOCK_ON_CALL_1(obj, f(__VA_ARGS__), f(__VA_ARGS__))
 
 using namespace ::testing::detail::operators;

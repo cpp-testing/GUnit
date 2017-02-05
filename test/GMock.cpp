@@ -719,3 +719,53 @@ TEST_F(GMockTest, ShouldHandleTemplatedClass) {
   example sut{0, static_cast<interface&>(m)};
   sut.update();
 }
+
+TEST(GMock, ShouldSupportInvokeSyntaxWithExpectCall) {
+  using namespace testing;
+  auto m = std::make_unique<GMock<interface>>();
+
+  EXPECT_INVOKE(*m, foo, 42).Times(1);
+  EXPECT_INVOKE(*m, foo, 12).Times(0);
+  EXPECT_INVOKE(*m, bar, _, "str");
+
+  example sut{0, static_cast<interface&>(*m)};
+  sut.update();
+}
+
+TEST(GMock, ShouldSupportInvokeSyntaxWithOverloadedCall) {
+  using namespace testing;
+  GMock<interface> mock;
+
+  EXPECT_INVOKE(mock, (overload, void(int)), 42);
+  mock.object().overload(42);
+
+  EXPECT_INVOKE(mock, (overload, void(double)), 77.0);
+  mock.object().overload(77.0);
+}
+
+TEST(GMock, ShouldSupportInvokeSyntaxWithOnCall) {
+  using namespace testing;
+  NiceGMock<interface> m;
+  ON_INVOKE(m, get, _).WillByDefault(Return(42));
+  EXPECT_EQ(42, static_cast<interface&>(m).get(0));
+}
+
+TEST(GMock, ShouldSupportEmptyMethods) {
+  using namespace testing;
+  StrictGMock<interface3> m;
+  EXPECT_INVOKE(m, empty).Times(1);
+  static_cast<interface3&>(m).empty();
+}
+
+TEST(GMock, ShouldSupportGoogleMocksWithInvokeSyntax) {
+  using namespace testing;
+  gmock_interface gm;
+  GMock<interface> m;
+
+  EXPECT_INVOKE(m, get, 42).WillOnce(Return(87));
+  EXPECT_INVOKE(gm, f, 87).Times(1);
+
+  auto sut = gmock_example{gm, &static_cast<interface&>(m)};
+
+  sut.test();
+}
