@@ -117,9 +117,10 @@ TEST(Utility, ShouldReturnDemangledName) {
 TEST(Utility, ShouldReturnProgFullPath) { EXPECT_EQ(internal::GetArgvs()[0], progname()); }
 
 TEST(Utility, ShouldReturnCallStack) {
-  EXPECT_EQ(std::string{}, call_stack("\n", 0));
-  EXPECT_EQ(std::string{}, call_stack("\n", 1));
-  EXPECT_THAT(call_stack("\n", 2), testing::MatchesRegex(".*Utility_ShouldReturnCallStack_Test.*"));
+  EXPECT_EQ(std::string{}, call_stack("\n", 0, 0));
+  EXPECT_EQ(std::string{}, call_stack("\n", 1, 0));
+  EXPECT_THAT(call_stack("\n", 1, 1), testing::MatchesRegex(".*Utility_ShouldReturnCallStack_Test.*"));
+  EXPECT_THAT(call_stack("\n", 1, 2), testing::MatchesRegex(".*Utility_ShouldReturnCallStack_Test.*"));
 }
 
 TEST(Utility, ShouldReturnSymbols) {

@@ -25,7 +25,7 @@ extern const char *__progname_full;
 #endif
 
 #if !defined(GUNIT_SHOW_STACK_SIZE)
-#define GUNIT_SHOW_STACK_SIZE 3
+#define GUNIT_SHOW_STACK_SIZE 1
 #endif
 
 namespace testing {
@@ -156,22 +156,25 @@ inline std::string demangle(const std::string &mangled) {
   return {};
 }
 
-inline std::string call_stack(const std::string &newline, int stack_size = GUNIT_SHOW_STACK_SIZE) {
+inline std::string call_stack(const std::string &newline, int stack_begin = 1, int stack_size = GUNIT_SHOW_STACK_SIZE) {
   static constexpr auto MAX_CALL_STACK_SIZE = 64;
   void *bt[MAX_CALL_STACK_SIZE];
   const auto frames = backtrace(bt, sizeof(bt) / sizeof(bt[0]));
   const auto symbols = backtrace_symbols(bt, frames);
   std::shared_ptr<char *> free{symbols, std::free};
   std::stringstream result;
+  stack_size += stack_begin;
 
-  for (auto i = 1; i < (frames > stack_size ? stack_size : frames); ++i) {
+  for (auto i = stack_begin; i < (frames > stack_size ? stack_size : frames); ++i) {
     const auto symbol = std::string{symbols[i]};
-
     const auto name_begin = symbol.find("(");
     const auto name_end = symbol.find("+");
     const auto address_begin = symbol.find("[");
     const auto address_end = symbol.find("]");
 
+    if (i > stack_begin) {
+      result << newline;
+    }
     if (name_begin != std::string::npos && name_end != std::string::npos && address_begin != std::string::npos &&
         address_end != std::string::npos) {
       result << demangle(symbol.substr(name_begin + 1, name_end - name_begin - 1)) << " "
@@ -179,7 +182,6 @@ inline std::string call_stack(const std::string &newline, int stack_size = GUNIT
     } else {
       result << symbol;
     }
-    result << newline;
   }
   return result.str();
 }

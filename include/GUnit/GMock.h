@@ -229,7 +229,7 @@ class GMock {
         return buf + "\n\t       At: [" + detail::basename(file) + ":" + std::to_string(line) + "]";
       };
       const auto al = detail::addr2line((void *)addr);
-      msgs.emplace_back(al.first == "" || al.first == "??" ? detail::call_stack("\n\t\t   ") : info(al.first, al.second));
+      msgs.emplace_back(info(al.first, al.second) + "\n\t     From: " + detail::call_stack("\n\t\t   ", 2));
       ptr->SetOwnerAndName(this, msgs.back().c_str());
     }
     return ptr->Invoke();
