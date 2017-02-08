@@ -770,6 +770,43 @@ TEST(GMock, ShouldSupportGoogleMocksWithInvokeSyntax) {
   sut.test();
 }
 
+struct polymorphic_ctor {
+  polymorphic_ctor(int) {}
+  virtual void f1() {}
+  virtual void f2() = 0;
+  virtual ~polymorphic_ctor() = default;
+};
+
+TEST(GMock, ShouldSupportPolymorphicTypeWithCtor) {
+  using namespace testing;
+  StrictGMock<polymorphic_ctor> mock;
+  EXPECT_INVOKE(mock, f1);
+  EXPECT_INVOKE(mock, f2);
+
+  mock.object().f1();
+  mock.object().f2();
+}
+
+TEST(GMock, ShouldReturnExpectationFromExpectCall) {
+  using namespace testing;
+  StrictGMock<polymorphic_ctor> mock;
+  Expectation e1 = EXPECT_CALL(mock, (f1)());
+  EXPECT_CALL(mock, (f2)()).After(e1);
+
+  mock.object().f1();
+  mock.object().f2();
+}
+
+TEST(GMock, ShouldReturnExpectationFromExpectInvoke) {
+  using namespace testing;
+  StrictGMock<polymorphic_ctor> mock;
+  Expectation e1 = EXPECT_INVOKE(mock, f1);
+  EXPECT_INVOKE(mock, f2).After(e1);
+
+  mock.object().f1();
+  mock.object().f2();
+}
+
 struct interface11 {
   virtual void f11(int p1, int p2, int p3, int p4, int p5, int p6, int p7, int p8, int p9, int p10, int p11) = 0;
   virtual void f15(int p1, int p2, int p3, int p4, int p5, int p6, int p7, int p8, int p9, int p10, int p11, int p12, int p13,
