@@ -27,6 +27,34 @@
 #endif
 
 namespace testing {
+namespace internal {
+template <class R, class... TArgs>
+class FunctionMocker<R(TArgs...)> : public internal::FunctionMockerBase<R(TArgs...)> {
+ public:
+  using F = R(TArgs...);
+  using ArgumentTuple = typename internal::Function<F>::ArgumentTuple;
+
+  MockSpec<F> &With(const Matcher<TArgs> &... args) {
+    this->current_spec().SetMatchers(std::make_tuple(args...));
+    return this->current_spec();
+  }
+
+  R Invoke(TArgs... args) { return this->InvokeWith(ArgumentTuple(args...)); }
+};
+
+template <class... TArgs>
+struct MatcherTuple< tuple<TArgs...> > {
+  using type = tuple<Matcher<TArgs>... >;
+};
+
+template <class R, class... TArgs>
+struct Function<R(TArgs...)> {
+  using Result = R;
+  using ArgumentTuple = tuple<TArgs...>;
+  using ArgumentMatcherTuple = typename MatcherTuple<ArgumentTuple>::type;
+};
+} // internal
+
 inline namespace v1 {
 namespace detail {
 
