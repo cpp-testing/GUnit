@@ -43,8 +43,8 @@ class FunctionMocker<R(TArgs...)> : public internal::FunctionMockerBase<R(TArgs.
 };
 
 template <class... TArgs>
-struct MatcherTuple< tuple<TArgs...> > {
-  using type = tuple<Matcher<TArgs>... >;
+struct MatcherTuple<tuple<TArgs...>> {
+  using type = tuple<Matcher<TArgs>...>;
 };
 
 template <class R, class... TArgs>
@@ -53,7 +53,7 @@ struct Function<R(TArgs...)> {
   using ArgumentTuple = tuple<TArgs...>;
   using ArgumentMatcherTuple = typename MatcherTuple<ArgumentTuple>::type;
 };
-} // internal
+}  // internal
 
 inline namespace v1 {
 namespace detail {
