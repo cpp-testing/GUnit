@@ -11,6 +11,7 @@
 #include <fstream>
 #include <memory>
 #include <string>
+#include <tuple>
 #include <typeinfo>
 #include <unordered_map>
 #include "GUnit/Detail/Preprocessor.h"
@@ -43,15 +44,17 @@ class FunctionMocker<R(TArgs...)> : public internal::FunctionMockerBase<R(TArgs.
 };
 
 template <class... TArgs>
-struct MatcherTuple<tuple<TArgs...>> {
-  using type = tuple<Matcher<TArgs>...>;
+struct MatcherTuple<std::tuple<TArgs...>> {
+  using type = std::tuple<Matcher<TArgs>...>;
 };
 
 template <class R, class... TArgs>
 struct Function<R(TArgs...)> {
   using Result = R;
-  using ArgumentTuple = tuple<TArgs...>;
+  using ArgumentTuple = std::tuple<TArgs...>;
   using ArgumentMatcherTuple = typename MatcherTuple<ArgumentTuple>::type;
+  using MakeResultVoid = void(TArgs...);
+  using MakeResultIgnoredValue = IgnoredValue(TArgs...);
 };
 }  // internal
 
