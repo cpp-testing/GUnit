@@ -770,6 +770,37 @@ TEST(GMock, ShouldSupportGoogleMocksWithInvokeSyntax) {
   sut.test();
 }
 
+struct Type {
+  void foo(int) const {}
+};
+
+struct TypeMock {
+  MOCK_CONST_METHOD1(foo, void(int));
+};
+
+template <class T>
+struct example_type {
+  example_type(const T& t, const interface& i) : t(t), i(i) {}
+
+  void test() { t.foo(i.get(42)); }
+
+  const T& t;
+  const interface& i;
+};
+
+TEST(GMock, ShouldSupportGoogleMocksForTypesWithInvokeSyntax) {
+  using namespace testing;
+  StrictGMock<interface> m;
+  TypeMock gm;
+
+  EXPECT_INVOKE(m, get, 42).WillOnce(Return(77));
+  EXPECT_INVOKE(gm, foo, 77).Times(1);
+
+  example_type<TypeMock> sut{gm, m.object()};
+
+  sut.test();
+}
+
 struct polymorphic_ctor {
   polymorphic_ctor(int) {}
   virtual void f1() {}
