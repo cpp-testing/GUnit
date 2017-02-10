@@ -409,7 +409,9 @@ auto make(TArgs &&... args) {
 }  // v1
 }  // testing
 
-#if __has_include(<boost / di.hpp>)
+// clang-format off
+#if __has_include(<boost/di.hpp>)
+// clang-format on
 #include <boost/di.hpp>
 
 BOOST_DI_NAMESPACE_BEGIN

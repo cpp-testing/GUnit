@@ -184,8 +184,10 @@ TEST(GMake, ShouldMakeAndTryByValueConstIfRefIsNotProvided) {
   EXPECT_EQ(0u, mocks.size());
 }
 
-#if __has_include(<boost / di.hpp>)
-TEST(GMake, ShouldCreateUsingInjector) {
+// clang-format off
+#if __has_include(<boost/di.hpp>)
+// clang-format on
+TEST(GMake, ShouldCreateExampleUsingInjector) {
   using namespace testing;
   namespace di = boost::di;
   mocks_t mocks;
@@ -197,11 +199,42 @@ TEST(GMake, ShouldCreateUsingInjector) {
   );
   // clang-format on
 
-  auto object = make<example>(injector);
+  auto sut = make<std::unique_ptr<example>>(injector);
 
-  EXPECT_CALL(mocks.mock<interface>(), (get)(_)).WillOnce(Return(123));
-  EXPECT_CALL(mocks.mock<interface2>(), (f2)(123));
+  EXPECT_TRUE(sut.get());
+  EXPECT_EQ(2u, mocks.size());
+}
 
-  object.update();
+class di_complex_example {
+ public:
+  di_complex_example(const std::shared_ptr<interface>& csp, std::shared_ptr<interface2> sp, const interface4& cref,
+                     interface_dtor& ref)
+      : csp(csp), sp(sp), cref(cref), ref(ref) {}
+
+ private:
+  std::shared_ptr<interface> csp;
+  std::shared_ptr<interface2> sp;
+  const interface4& cref;
+  interface_dtor& ref;
+};
+
+TEST(GMake, ShouldCreateComplexExampleUsingInjector) {
+  using namespace testing;
+  namespace di = boost::di;
+  mocks_t mocks;
+
+  // clang-format off
+  const auto injector = di::make_injector(
+    di::bind<interface>.to(di::GMock{mocks}) [di::override]
+  , di::bind<interface2>.to(di::StrictGMock{mocks}) [di::override]
+  , di::bind<interface4>.to(di::StrictGMock{mocks}) [di::override]
+  , di::bind<interface_dtor>.to(di::StrictGMock{mocks}) [di::override]
+  );
+  // clang-format on
+
+  auto sut = make<std::unique_ptr<di_complex_example>>(injector);
+
+  EXPECT_TRUE(sut.get());
+  EXPECT_EQ(4u, mocks.size());
 }
 #endif

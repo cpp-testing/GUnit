@@ -916,7 +916,22 @@ GTEST(example, "[Values]", testing::Values(1, 2, 3)) {
   }
 }
 
-#if __has_include(<boost / di.hpp>)
+GTEST("Test1") {}
+GTEST("Test1", "Desc1") {}
+GTEST("Test1", "Desc2") {}
+GTEST("Test1", "Desc3") {
+  SHOULD("should1") {}
+  SHOULD("should2") {}
+}
+
+GTEST("Test2") {
+  SHOULD("call this one") {}
+  SHOULD("call this one but not this one") {}
+}
+
+// clang-format off
+#if __has_include(<boost/di.hpp>)
+// clang-format on
 class di_example {
  public:
   di_example(const interface& i1, interface2& i2) : i1(i1), i2(i2) {}
@@ -950,5 +965,48 @@ GTEST(di_example) {
 
     sut->update();
   }
+}
+
+class di_complex_example {
+ public:
+  di_complex_example(std::shared_ptr<interface> csp, std::shared_ptr<interface2> sp, const interface4& cref,
+                     interface_dtor& ref)
+      : csp(csp), sp(sp), cref(cref), ref(ref) {}
+
+  void update() {
+    const auto i = csp->get(42);
+    sp->f1(77.0);
+    cref.f2(arg{});
+    ref.get(i);
+  }
+
+ private:
+  std::shared_ptr<interface> csp;
+  std::shared_ptr<interface2> sp;
+  const interface4& cref;
+  interface_dtor& ref;
+};
+
+GTEST(di_complex_example, "[Complex Example]") {
+  using namespace testing;
+  namespace di = boost::di;
+
+  // clang-format off
+  const auto injector = di::make_injector(
+    di::bind<interface>.to(di::GMock{mocks}) [di::override]
+  , di::bind<interface2>.to(di::StrictGMock{mocks}) [di::override]
+  , di::bind<interface4>.to(di::StrictGMock{mocks}) [di::override]
+  , di::bind<interface_dtor>.to(di::StrictGMock{mocks}) [di::override]
+  );
+  // clang-format on
+
+  sut = make<SUT>(injector);
+
+  EXPECT_INVOKE(mock<interface>(), get, _).WillOnce(Return(123));
+  EXPECT_INVOKE(mock<interface2>(), f1, 77.0).Times(1);
+  EXPECT_INVOKE(mock<interface4>(), f2, _).Times(1);
+  EXPECT_INVOKE(mock<interface_dtor>(), get, 123).Times(1);
+
+  sut->update();
 }
 #endif
