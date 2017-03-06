@@ -938,3 +938,45 @@ TEST(GMock, ShouldBeConvertibleUsingObjectToSharedPtr) {
     (void)i;
   }
 }
+
+TEST(GMock, ShouldBeConvertibleUsingConstObjectToSharedPtr) {
+  using namespace testing;
+  const std::shared_ptr<GMock<interface>> mock = std::make_shared<GMock<interface>>();
+
+  {
+    interface& i = mock->object();
+    (void)i;
+  }
+
+  auto m = object(mock);
+
+  {
+    interface& i = m;
+    (void)i;
+  }
+
+  {
+    const interface& i = m;
+    (void)i;
+  }
+
+  {
+    interface* i = m;
+    (void)i;
+  }
+
+  {
+    const interface* i = m;
+    (void)i;
+  }
+
+  {
+    std::shared_ptr<interface> i = m;
+    (void)i;
+  }
+
+  {
+    const std::shared_ptr<interface>& i = m;
+    (void)i;
+  }
+}

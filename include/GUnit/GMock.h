@@ -417,9 +417,9 @@ inline auto ByRef(NiceGMock<T> &x) {
 
 inline namespace v1 {
 namespace detail {
-template <class TMock>
+template <class T, class TMock>
 struct Object {
-  using mock_t = typename TMock::type;
+  using mock_t = typename T::type;
 
   operator const mock_t &() const { return mock.object(); }
   operator mock_t &() { return mock.object(); }
@@ -429,9 +429,9 @@ struct Object {
   TMock &mock;
 };
 
-template <class TMock>
-struct Object<std::shared_ptr<TMock>> {
-  using mock_t = typename TMock::type;
+template <class T, class TMock>
+struct Object<std::shared_ptr<T>, TMock> {
+  using mock_t = typename T::type;
 
   operator const mock_t &() const { return mock->object(); }
   operator mock_t &() { return mock->object(); }
@@ -439,14 +439,14 @@ struct Object<std::shared_ptr<TMock>> {
   operator const mock_t *() const { return &mock->object(); }
   operator std::shared_ptr<mock_t>() { return std::static_pointer_cast<mock_t>(mock); }
 
-  std::shared_ptr<TMock> &mock;
+  TMock &mock;
 };
 }
 }  // detail::v1
 
 template <class TMock>
 auto object(TMock &mock) {
-  return detail::Object<TMock>{mock};
+  return detail::Object<std::decay_t<TMock>, TMock>{mock};
 }
 }  // testing
 
