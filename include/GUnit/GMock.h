@@ -448,6 +448,10 @@ template <class TMock>
 auto object(TMock &mock) {
   return detail::Object<std::decay_t<TMock>, TMock>{mock};
 }
+template <class TMock>
+auto object(TMock *mock) {
+  return detail::Object<std::decay_t<TMock>, TMock>{*mock};
+}
 }  // testing
 
 #if defined(__clang__)
