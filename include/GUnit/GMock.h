@@ -414,6 +414,40 @@ template <class T>
 inline auto ByRef(NiceGMock<T> &x) {
   return internal::ReferenceWrapper<T>(static_cast<T &>(x));
 }
+
+inline namespace v1 {
+namespace detail {
+template <class TMock>
+struct Object {
+  using mock_t = typename TMock::type;
+
+  operator const mock_t &() const { return mock.object(); }
+  operator mock_t &() { return mock.object(); }
+  operator mock_t *() { return &mock.object(); }
+  operator const mock_t *() const { return &mock.object(); }
+
+  TMock &mock;
+};
+
+template <class TMock>
+struct Object<std::shared_ptr<TMock>> {
+  using mock_t = typename TMock::type;
+
+  operator const mock_t &() const { return mock->object(); }
+  operator mock_t &() { return mock->object(); }
+  operator mock_t *() { return &mock->object(); }
+  operator const mock_t *() const { return &mock->object(); }
+  operator std::shared_ptr<mock_t>() { return std::static_pointer_cast<mock_t>(mock); }
+
+  std::shared_ptr<TMock> &mock;
+};
+}
+}  // detail::v1
+
+template <class TMock>
+auto object(TMock &mock) {
+  return detail::Object<TMock>{mock};
+}
 }  // testing
 
 #if defined(__clang__)

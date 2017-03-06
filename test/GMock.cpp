@@ -166,6 +166,12 @@ struct ipolymorphic {
   virtual void f4() const = 0;
 };
 
+struct same_sig {
+  virtual int f1(int) = 0;
+  virtual int f2(int) = 0;
+  virtual ~same_sig() noexcept {}
+};
+
 TEST(GMock, ShouldReturnVirtualFunctionOffset) {
   using namespace testing;
   EXPECT_EQ(2u, detail::offset(&interface::get));
@@ -175,6 +181,9 @@ TEST(GMock, ShouldReturnVirtualFunctionOffset) {
   EXPECT_EQ(2u, detail::offset(&ipolymorphic::f1));
   EXPECT_EQ(3u, detail::offset(&ipolymorphic::f3));
   EXPECT_EQ(4u, detail::offset(&ipolymorphic::f4));
+
+  EXPECT_EQ(0u, detail::offset(&same_sig::f1));
+  EXPECT_EQ(1u, detail::offset(&same_sig::f2));
 }
 
 TEST(GMock, ShouldReturnVirtualOverloadedFunctionOffset) {
@@ -854,4 +863,78 @@ TEST(GMock, ShouldSupportMoreThan10Parameters) {
 
   mock.object().f11(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11);
   mock.object().f15(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15);
+}
+
+TEST(GMock, ShouldBeConvertibleUsingObject) {
+  using namespace testing;
+  GMock<interface> mock;
+
+  {
+    interface& i = mock.object();
+    (void)i;
+  }
+
+  auto m = object(mock);
+
+  {
+    interface& i = m;
+    (void)i;
+  }
+
+  {
+    const interface& i = m;
+    (void)i;
+  }
+
+  {
+    interface* i = m;
+    (void)i;
+  }
+
+  {
+    const interface* i = m;
+    (void)i;
+  }
+}
+
+TEST(GMock, ShouldBeConvertibleUsingObjectToSharedPtr) {
+  using namespace testing;
+  std::shared_ptr<GMock<interface>> mock = std::make_shared<GMock<interface>>();
+
+  {
+    interface& i = mock->object();
+    (void)i;
+  }
+
+  auto m = object(mock);
+
+  {
+    interface& i = m;
+    (void)i;
+  }
+
+  {
+    const interface& i = m;
+    (void)i;
+  }
+
+  {
+    interface* i = m;
+    (void)i;
+  }
+
+  {
+    const interface* i = m;
+    (void)i;
+  }
+
+  {
+    std::shared_ptr<interface> i = m;
+    (void)i;
+  }
+
+  {
+    const std::shared_ptr<interface>& i = m;
+    (void)i;
+  }
 }
