@@ -249,12 +249,12 @@ class GTest : public detail::GTest<T, TParamType> {};
   void GTEST<__GUNIT_CAT(GTEST_TYPE_, __LINE__), NAME>::TestBody()
 
 #define __GTEST_IMPL_1(TYPE) __GTEST_IMPL(TYPE, ::testing::detail::string<>, ::testing::detail::type<void>{}, )
-#define __GTEST_IMPL_2(TYPE, NAME)                                                           \
-  auto __GUNIT_CAT(GTEST_TEST_NAME, __LINE__)() { return __GUNIT_CAT(NAME, _gtest_string); } \
+#define __GTEST_IMPL_2(TYPE, NAME)                                                                  \
+  static auto __GUNIT_CAT(GTEST_TEST_NAME, __LINE__)() { return __GUNIT_CAT(NAME, _gtest_string); } \
   __GTEST_IMPL(TYPE, decltype(__GUNIT_CAT(GTEST_TEST_NAME, __LINE__)()), ::testing::detail::type<void>{}, )
 
 #define __GTEST_IMPL_3(TYPE, NAME, PARAMS)                                                                                  \
-  auto __GUNIT_CAT(GTEST_TEST_NAME, __LINE__)() { return __GUNIT_CAT(NAME, _gtest_string); }                                \
+  static auto __GUNIT_CAT(GTEST_TEST_NAME, __LINE__)() { return __GUNIT_CAT(NAME, _gtest_string); }                         \
   static ::testing::internal::ParamGenerator<::testing::detail::apply_t<std::common_type_t, decltype(PARAMS)>> __GUNIT_CAT( \
       GTEST_EVAL, __LINE__)() {                                                                                             \
     return PARAMS;                                                                                                          \
