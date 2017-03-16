@@ -181,6 +181,8 @@ TEST_F(BenchmarkTest, ShouldCallF2) {           |
     * [Deleting Destructors](http://eli.thegreenplace.net/2015/c-deleting-destructors-and-virtual-operator-delete)
     * [Devirtualization in C++](http://hubicka.blogspot.com/2014/01/devirtualization-in-c-part-1.html)
     * [Member Function Pointers and the Fastest Possible C++ Delegates](https://www.codeproject.com/kb/cpp/fastdelegate.aspx)
+    * [Reversing C++ Virtual Functions](https://alschwalm.com/blog/static/2016/12/17/reversing-c-virtual-functions)
+    * [C++ vtables](http://shaharmike.com/cpp/vtable-part1)
     * ```g++ -fdump-class-hierarchy interface.hpp```
 
   * Similar projects ([FakeIt](https://github.com/eranpeer/FakeIt), [HippoMocks](https://github.com/dascandy/hippomocks))

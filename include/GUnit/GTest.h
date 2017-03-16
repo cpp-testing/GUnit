@@ -249,12 +249,12 @@ class GTest : public detail::GTest<T, TParamType> {};
   void GTEST<__GUNIT_CAT(GTEST_TYPE_, __LINE__), NAME>::TestBody()
 
 #define __GTEST_IMPL_1(TYPE) __GTEST_IMPL(TYPE, ::testing::detail::string<>, ::testing::detail::type<void>{}, )
-#define __GTEST_IMPL_2(TYPE, NAME)                                                                  \
-  static auto __GUNIT_CAT(GTEST_TEST_NAME, __LINE__)() { return __GUNIT_CAT(NAME, _gtest_string); } \
-  __GTEST_IMPL(TYPE, decltype(__GUNIT_CAT(GTEST_TEST_NAME, __LINE__)()), ::testing::detail::type<void>{}, )
+#define __GTEST_IMPL_2(TYPE, NAME)                                                           \
+  using __GUNIT_CAT(GTEST_TEST_NAME, __LINE__) = decltype(__GUNIT_CAT(NAME, _gtest_string)); \
+  __GTEST_IMPL(TYPE, __GUNIT_CAT(GTEST_TEST_NAME, __LINE__), ::testing::detail::type<void>{}, )
 
 #define __GTEST_IMPL_3(TYPE, NAME, PARAMS)                                                                                  \
-  static auto __GUNIT_CAT(GTEST_TEST_NAME, __LINE__)() { return __GUNIT_CAT(NAME, _gtest_string); }                         \
+  using __GUNIT_CAT(GTEST_TEST_NAME, __LINE__) = decltype(__GUNIT_CAT(NAME, _gtest_string));                                \
   static ::testing::internal::ParamGenerator<::testing::detail::apply_t<std::common_type_t, decltype(PARAMS)>> __GUNIT_CAT( \
       GTEST_EVAL, __LINE__)() {                                                                                             \
     return PARAMS;                                                                                                          \
@@ -263,7 +263,7 @@ class GTest : public detail::GTest<T, TParamType> {};
       const ::testing::TestParamInfo<::testing::detail::apply_t<std::common_type_t, decltype(PARAMS)>>& info) {             \
     return ::testing::internal::GetParamNameGen<::testing::detail::apply_t<std::common_type_t, decltype(PARAMS)>>()(info);  \
   }                                                                                                                         \
-  __GTEST_IMPL(TYPE, decltype(__GUNIT_CAT(GTEST_TEST_NAME, __LINE__)()), PARAMS, &__GUNIT_CAT(GTEST_EVAL, __LINE__),        \
+  __GTEST_IMPL(TYPE, __GUNIT_CAT(GTEST_TEST_NAME, __LINE__), PARAMS, &__GUNIT_CAT(GTEST_EVAL, __LINE__),                    \
                &__GUNIT_CAT(GTEST_GENERATE_NAMES, __LINE__))
 
 #define GTEST(...) __GUNIT_CAT(__GTEST_IMPL_, __GUNIT_SIZE(__VA_ARGS__))(__VA_ARGS__)
