@@ -102,9 +102,9 @@ struct contains;
 
 template <class T, class... TArgs>
 struct contains<T, std::tuple<TArgs...>>
-    : std::integral_constant<bool, !std::is_same<std::integer_sequence<bool, false, std::is_same<T, TArgs>::value...>,
-                                                 std::integer_sequence<bool, std::is_same<T, TArgs>::value..., false>>::value> {
-};
+    : std::integral_constant<bool,
+                             !std::is_same<std::integer_sequence<bool, false, std::is_same<T, TArgs>::value...>,
+                                           std::integer_sequence<bool, std::is_same<T, TArgs>::value..., false>>::value> {};
 
 }  // detail
 }  // v1

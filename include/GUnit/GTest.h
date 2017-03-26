@@ -25,6 +25,7 @@ inline namespace v1 {
 namespace detail {
 
 struct TestCaseInfo {
+  bool disabled = false;
   std::string symbol;
   std::string type;
   std::string name;
@@ -67,6 +68,8 @@ struct TestCaseInfoParser {
     };
 
     std::getline(stream, token, '<');
+    std::getline(stream, token, ',');
+    ti.disabled = token == "true";
     parseString(ti.name);
     parseString(ti.file);
     std::getline(stream, token, ',');
@@ -85,31 +88,36 @@ inline auto& tests() {
   return ts;
 }
 
-template <class T>
+template <bool DISABLED, class T>
 class GTestAutoRegister {
+  static auto IsDisabled(bool disabled) { return DISABLED || disabled ? "DISABLED_" : ""; }
+
   void MakeAndRegisterTestInfo(const TestCaseInfo& ti,
                                detail::type<TestInfo*(const char*, const char*, const char*, const char*, const void*,
                                                       void (*)(), void (*)(), internal::TestFactoryBase*)>) {
     if (ti.should.empty()) {
-      internal::MakeAndRegisterTestInfo(ti.type.c_str(), ti.name.c_str(), nullptr, nullptr, internal::GetTestTypeId(),
-                                        Test::SetUpTestCase, Test::TearDownTestCase, new internal::TestFactoryImpl<T>{});
+      internal::MakeAndRegisterTestInfo((IsDisabled(ti.disabled) + ti.type).c_str(), ti.name.c_str(), nullptr, nullptr,
+                                        internal::GetTestTypeId(), Test::SetUpTestCase, Test::TearDownTestCase,
+                                        new internal::TestFactoryImpl<T>{});
     } else {
-      internal::MakeAndRegisterTestInfo((ti.type + ti.name).c_str(), (std::string{GUNIT_SHOULD_PREFIX} + ti.should).c_str(),
-                                        nullptr, nullptr, internal::GetTestTypeId(), Test::SetUpTestCase,
-                                        Test::TearDownTestCase, new internal::TestFactoryImpl<T>{});
+      internal::MakeAndRegisterTestInfo((IsDisabled(ti.disabled) + ti.type + ti.name).c_str(),
+                                        (std::string{GUNIT_SHOULD_PREFIX} + ti.should).c_str(), nullptr, nullptr,
+                                        internal::GetTestTypeId(), Test::SetUpTestCase, Test::TearDownTestCase,
+                                        new internal::TestFactoryImpl<T>{});
     }
   }
 
   template <class... Ts>
   void MakeAndRegisterTestInfo(const TestCaseInfo& ti, detail::type<TestInfo*(Ts...)>) {
     if (ti.should.empty()) {
-      internal::MakeAndRegisterTestInfo(ti.type.c_str(), ti.name.c_str(), nullptr, nullptr, {ti.file.c_str(), ti.line},
-                                        internal::GetTestTypeId(), Test::SetUpTestCase, Test::TearDownTestCase,
-                                        new internal::TestFactoryImpl<T>{});
+      internal::MakeAndRegisterTestInfo((IsDisabled(ti.disabled) + ti.type).c_str(), ti.name.c_str(), nullptr, nullptr,
+                                        {ti.file.c_str(), ti.line}, internal::GetTestTypeId(), Test::SetUpTestCase,
+                                        Test::TearDownTestCase, new internal::TestFactoryImpl<T>{});
     } else {
-      internal::MakeAndRegisterTestInfo((ti.type + ti.name).c_str(), (std::string{GUNIT_SHOULD_PREFIX} + ti.should).c_str(),
-                                        nullptr, nullptr, {ti.file.c_str(), ti.line}, internal::GetTestTypeId(),
-                                        Test::SetUpTestCase, Test::TearDownTestCase, new internal::TestFactoryImpl<T>{});
+      internal::MakeAndRegisterTestInfo((IsDisabled(ti.disabled) + ti.type + ti.name).c_str(),
+                                        (std::string{GUNIT_SHOULD_PREFIX} + ti.should).c_str(), nullptr, nullptr,
+                                        {ti.file.c_str(), ti.line}, internal::GetTestTypeId(), Test::SetUpTestCase,
+                                        Test::TearDownTestCase, new internal::TestFactoryImpl<T>{});
     }
   }
 
@@ -143,7 +151,7 @@ class GTestAutoRegister {
         UnitTest::GetInstance()
             ->parameterized_test_registry()
             .GetTestCasePatternHolder<T>(ti.type.c_str(), {ti.file, ti.line})
-            ->AddTestPattern(ti.type.c_str(), std::string{GUNIT_SHOULD_PREFIX + ti.should}.c_str(),
+            ->AddTestPattern((IsDisabled(ti.disabled) + ti.type).c_str(), std::string{GUNIT_SHOULD_PREFIX + ti.should}.c_str(),
                              new internal::TestMetaFactory<T>());
         registered = true;
       }
@@ -154,9 +162,14 @@ class GTestAutoRegister {
  public:
   GTestAutoRegister() {
     if (!RegisterShouldTestCase()) {
-      MakeAndRegisterTestInfo(
-          {{}, GetTypeName(detail::type<typename T::TEST_TYPE>{}), T::TEST_NAME::c_str(), T::TEST_FILE, T::TEST_LINE, {}},
-          detail::type<decltype(internal::MakeAndRegisterTestInfo)>{});
+      MakeAndRegisterTestInfo({DISABLED,
+                               {},
+                               GetTypeName(detail::type<typename T::TEST_TYPE>{}),
+                               T::TEST_NAME::c_str(),
+                               T::TEST_FILE,
+                               T::TEST_LINE,
+                               {}},
+                              detail::type<decltype(internal::MakeAndRegisterTestInfo)>{});
     }
   }
 
@@ -173,7 +186,8 @@ class GTestAutoRegister {
     UnitTest::GetInstance()
         ->parameterized_test_registry()
         .GetTestCasePatternHolder<T>(GetTypeName(detail::type<typename T::TEST_TYPE>{}), {T::TEST_FILE, T::TEST_LINE})
-        ->AddTestCaseInstantiation(T::TEST_NAME::c_str(), eval, genNames, T::TEST_FILE, T::TEST_LINE);
+        ->AddTestCaseInstantiation((std::string{IsDisabled(DISABLED)} + T::TEST_NAME::c_str()).c_str(), eval, genNames,
+                                   T::TEST_FILE, T::TEST_LINE);
   }
 };
 
@@ -210,7 +224,7 @@ class GTest<T, TParamType, std::false_type, TAny> : public Test {
 template <class T, class TParamType>
 class GTest<T, TParamType, std::true_type, std::true_type> : public T {};
 
-template <class Name, class File, int Line, class Should, class T>
+template <bool Disabled, class Name, class File, int Line, class Should, class T>
 bool SHOULD_REGISTER_GTEST() {
   static auto shouldRegister = true;
   return shouldRegister;
@@ -223,7 +237,7 @@ class GTest : public detail::GTest<T, TParamType> {};
 }  // v1
 }  // testing
 
-#define __GTEST_IMPL(TYPE, NAME, PARAMS, ...)                                                                             \
+#define __GTEST_IMPL(DISABLED, TYPE, NAME, PARAMS, ...)                                                                   \
   struct __GUNIT_CAT(GTEST_STRING_, __LINE__) {                                                                           \
     const char* chrs = #TYPE;                                                                                             \
   };                                                                                                                      \
@@ -244,16 +258,17 @@ class GTest : public detail::GTest<T, TParamType> {};
     static constexpr auto TEST_LINE = __LINE__;                                                                           \
     void TestBody();                                                                                                      \
   };                                                                                                                      \
-  static ::testing::detail::GTestAutoRegister<GTEST<__GUNIT_CAT(GTEST_TYPE_, __LINE__), NAME>> __GUNIT_CAT(               \
+  static ::testing::detail::GTestAutoRegister<DISABLED, GTEST<__GUNIT_CAT(GTEST_TYPE_, __LINE__), NAME>> __GUNIT_CAT(     \
       ar, __LINE__){__VA_ARGS__};                                                                                         \
   void GTEST<__GUNIT_CAT(GTEST_TYPE_, __LINE__), NAME>::TestBody()
 
-#define __GTEST_IMPL_1(TYPE) __GTEST_IMPL(TYPE, ::testing::detail::string<>, ::testing::detail::type<void>{}, )
-#define __GTEST_IMPL_2(TYPE, NAME)                                                           \
+#define __GTEST_IMPL_1(DISABLED, TYPE) \
+  __GTEST_IMPL(DISABLED, TYPE, ::testing::detail::string<>, ::testing::detail::type<void>{}, )
+#define __GTEST_IMPL_2(DISABLED, TYPE, NAME)                                                 \
   using __GUNIT_CAT(GTEST_TEST_NAME, __LINE__) = decltype(__GUNIT_CAT(NAME, _gtest_string)); \
-  __GTEST_IMPL(TYPE, __GUNIT_CAT(GTEST_TEST_NAME, __LINE__), ::testing::detail::type<void>{}, )
+  __GTEST_IMPL(DISABLED, TYPE, __GUNIT_CAT(GTEST_TEST_NAME, __LINE__), ::testing::detail::type<void>{}, )
 
-#define __GTEST_IMPL_3(TYPE, NAME, PARAMS)                                                                                  \
+#define __GTEST_IMPL_3(DISABLED, TYPE, NAME, PARAMS)                                                                        \
   using __GUNIT_CAT(GTEST_TEST_NAME, __LINE__) = decltype(__GUNIT_CAT(NAME, _gtest_string));                                \
   static ::testing::internal::ParamGenerator<::testing::detail::apply_t<std::common_type_t, decltype(PARAMS)>> __GUNIT_CAT( \
       GTEST_EVAL, __LINE__)() {                                                                                             \
@@ -263,13 +278,20 @@ class GTest : public detail::GTest<T, TParamType> {};
       const ::testing::TestParamInfo<::testing::detail::apply_t<std::common_type_t, decltype(PARAMS)>>& info) {             \
     return ::testing::internal::GetParamNameGen<::testing::detail::apply_t<std::common_type_t, decltype(PARAMS)>>()(info);  \
   }                                                                                                                         \
-  __GTEST_IMPL(TYPE, __GUNIT_CAT(GTEST_TEST_NAME, __LINE__), PARAMS, &__GUNIT_CAT(GTEST_EVAL, __LINE__),                    \
+  __GTEST_IMPL(DISABLED, TYPE, __GUNIT_CAT(GTEST_TEST_NAME, __LINE__), PARAMS, &__GUNIT_CAT(GTEST_EVAL, __LINE__),          \
                &__GUNIT_CAT(GTEST_GENERATE_NAMES, __LINE__))
 
-#define GTEST(...) __GUNIT_CAT(__GTEST_IMPL_, __GUNIT_SIZE(__VA_ARGS__))(__VA_ARGS__)
+#define GTEST(...) __GUNIT_CAT(__GTEST_IMPL_, __GUNIT_SIZE(__VA_ARGS__))(false, __VA_ARGS__)
+#define DISABLED_GTEST(...) __GUNIT_CAT(__GTEST_IMPL_, __GUNIT_SIZE(__VA_ARGS__))(true, __VA_ARGS__)
 
 #define SHOULD(NAME)                                                                                                       \
-  if (::testing::detail::SHOULD_REGISTER_GTEST<TEST_NAME, decltype(__GUNIT_CAT(__FILE__, _gtest_string)), __LINE__,        \
+  if (::testing::detail::SHOULD_REGISTER_GTEST<false, TEST_NAME, decltype(__GUNIT_CAT(__FILE__, _gtest_string)), __LINE__, \
+                                               decltype(__GUNIT_CAT(NAME, _gtest_string)), TEST_TYPE>() &&                 \
+      std::string{::testing::UnitTest::GetInstance()->current_test_info()->name()}.find(std::string{GUNIT_SHOULD_PREFIX} + \
+                                                                                        NAME) != std::string::npos)
+
+#define DISABLED_SHOULD(NAME)                                                                                              \
+  if (::testing::detail::SHOULD_REGISTER_GTEST<true, TEST_NAME, decltype(__GUNIT_CAT(__FILE__, _gtest_string)), __LINE__,  \
                                                decltype(__GUNIT_CAT(NAME, _gtest_string)), TEST_TYPE>() &&                 \
       std::string{::testing::UnitTest::GetInstance()->current_test_info()->name()}.find(std::string{GUNIT_SHOULD_PREFIX} + \
                                                                                         NAME) != std::string::npos)

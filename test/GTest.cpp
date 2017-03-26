@@ -34,8 +34,10 @@ TEST(GTest, ShouldParseGivenStringAndProduceTestCaseInfo) {
   using namespace testing::detail;
   TestCaseInfoParser parser;
   const auto ti = parser.parse(
-      "bool SHOULD_REGISTER_GTEST<testing::v1::detail::string<(char)97, (char)98>, testing::v1::detail::string<(char)98>, "
+      "bool SHOULD_REGISTER_GTEST<true, testing::v1::detail::string<(char)97, (char)98>, "
+      "testing::v1::detail::string<(char)98>, "
       "42ul, testing::v1::detail::string<(char)99, (char)100>, type >()::shouldRegister");
+  EXPECT_TRUE(ti.disabled);
   EXPECT_EQ(std::string{"ab"}, ti.name);
   EXPECT_EQ(std::string{"b"}, ti.file);
   EXPECT_EQ(42, ti.line);
@@ -47,8 +49,10 @@ TEST(GTest, ShouldParseGivenStringWithTemplateTypeAndProduceTestCaseInfo) {
   using namespace testing::detail;
   TestCaseInfoParser parser;
   const auto ti = parser.parse(
-      "bool SHOULD_REGISTER_GTEST<testing::v1::detail::string<(char)97, (char)98>, testing::v1::detail::string<(char)98>, "
+      "bool SHOULD_REGISTER_GTEST<false, testing::v1::detail::string<(char)97, (char)98>, "
+      "testing::v1::detail::string<(char)98>, "
       "42ul, testing::v1::detail::string<(char)99, (char)100>, n::type<int, other<float, double>, short> >()::shouldRegister");
+  EXPECT_FALSE(ti.disabled);
   EXPECT_EQ(std::string{"ab"}, ti.name);
   EXPECT_EQ(std::string{"b"}, ti.file);
   EXPECT_EQ(42, ti.line);
@@ -60,8 +64,9 @@ TEST(GTest, ShouldParseGivenStringWithStringAsTypeAndProduceTestCaseInfo) {
   using namespace testing::detail;
   TestCaseInfoParser parser;
   const auto ti = parser.parse(
-      "bool SHOULD_REGISTER_GTEST<testing::detail::string<(char)97, (char)98>, testing::detail::string<(char)98>, 42ul, "
+      "bool SHOULD_REGISTER_GTEST<true, testing::detail::string<(char)97, (char)98>, testing::detail::string<(char)98>, 42ul, "
       "testing::detail::string<(char)99, (char)100>, testing::detail::string<(char)97, (char)99> >()::shouldRegister");
+  EXPECT_TRUE(ti.disabled);
   EXPECT_EQ(std::string{"ab"}, ti.name);
   EXPECT_EQ(std::string{"b"}, ti.file);
   EXPECT_EQ(42, ti.line);
@@ -73,8 +78,9 @@ TEST(GTest, ShouldParseGivenEmptyStringAndProduceTestCaseInfo) {
   using namespace testing::detail;
   TestCaseInfoParser parser;
   const auto ti = parser.parse(
-      "bool SHOULD_REGISTER_GTEST<testing::detail::string<>, testing::detail::string<(char)98>, 42ul, "
+      "bool SHOULD_REGISTER_GTEST<true, testing::detail::string<>, testing::detail::string<(char)98>, 42ul, "
       "testing::detail::string<(char)99, (char)100>, testing::detail::string<(char)97, (char)99> >()::shouldRegister");
+  EXPECT_TRUE(ti.disabled);
   EXPECT_EQ(std::string{}, ti.name);
   EXPECT_EQ(std::string{"b"}, ti.file);
   EXPECT_EQ(42, ti.line);
@@ -86,7 +92,8 @@ TEST(GTest, ShouldParseComplexStringAndProduceTestCaseInfo) {
   using namespace testing::detail;
   TestCaseInfoParser parser;
   const auto ti = parser.parse(
-      "bool testing::v1::detail::SHOULD_REGISTER_GTEST<testing::v1::detail::string<>, testing::v1::detail::string<(char)47, "
+      "bool testing::v1::detail::SHOULD_REGISTER_GTEST<true, testing::v1::detail::string<>, "
+      "testing::v1::detail::string<(char)47, "
       "(char)104, (char)111, (char)109, (char)101, (char)47, (char)107, (char)114, (char)105, (char)115, (char)47, (char)80, "
       "(char)114, (char)111, (char)106, (char)101, (char)99, (char)116, (char)115, (char)47, (char)71, (char)85, (char)110, "
       "(char)105, (char)116, (char)47, (char)116, (char)101, (char)115, (char)116, (char)47, (char)71, (char)84, (char)101, "
@@ -95,6 +102,7 @@ TEST(GTest, ShouldParseComplexStringAndProduceTestCaseInfo) {
       "(char)117, (char)108, (char)116, (char)32, (char)99, (char)111, (char)110, (char)115, (char)116, (char)114, (char)117, "
       "(char)99, (char)116, (char)105, (char)98, (char)108, (char)101, (char)32, (char)116, (char)121, (char)112, (char)101>, "
       "is_default_constructible>()::shouldRegister");
+  EXPECT_TRUE(ti.disabled);
   EXPECT_EQ(std::string{}, ti.name);
   EXPECT_EQ(std::string{"/home/kris/Projects/GUnit/test/GTest.cpp"}, ti.file);
   EXPECT_EQ(797, ti.line);
@@ -927,6 +935,28 @@ GTEST("Test1", "Desc3") {
 GTEST("Test2") {
   SHOULD("call this one") {}
   SHOULD("call this one but not this one") {}
+}
+
+DISABLED_GTEST("TestDisabled1") {}
+DISABLED_GTEST("TestDisabled2", "[]") {}
+DISABLED_GTEST("TestDisabled3", "[]") {
+  SHOULD("a") {}
+  SHOULD("b") {}
+}
+
+GTEST("TestDisabled4", "[]") {
+  DISABLED_SHOULD("a") {}
+  SHOULD("b") {}
+}
+
+DISABLED_GTEST("TestDisabled5", "[]") {
+  DISABLED_SHOULD("a") {}
+  DISABLED_SHOULD("b") {}
+}
+
+GTEST("TestDisabled6", "[]", testing::Values(1, 2, 3)) {
+  SHOULD("a") {}
+  DISABLED_SHOULD("b") {}
 }
 
 // clang-format off
