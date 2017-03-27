@@ -518,19 +518,19 @@ mock.object().f(2);
 
 ```cpp
 template <class T, class... TArgs>
-struct ifactory {
+struct IFactory {
   virtual T create(TArgs...) = 0;
-  virtual ~ifactory() = default;
+  virtual ~IFactory() = default;
 };
 ```
 
 ```cpp
-using iconfigFactory = ifactory<iconfig, std::string>;
+using IConfigFactory = IFactory<IConfig, std::string>;
 ```
 
 ```cpp
-GMock<iconfig> mockconfig;
-EXPECT_CALL(mock<iconfigFactory>(), (create)("string")).WillOnce(Return(mockconfig));
+GMock<IConfig> mockconfig;
+EXPECT_CALL(mock<IConfigFactory>(), (create)("string")).WillOnce(Return(mockconfig));
 ```
 
 * **(+) No specfic factory mocks for given number of parmaeters**
