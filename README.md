@@ -16,16 +16,6 @@
 
 > "If you liked it then you should have put a test on it", Beyonce rule
 
-#TDD (Test Driven Development)
-
-> "If you want to like it then you should have put a test on it FIRST", Beyonce TDD rule
-
-* Red-Green-Refactor requires a quick feedback loop (productivity)
-* Goal -> **10 minutes per test case**
-* The longer the feedback loop is the more shortcuts will be taken
-    * Add a new interface or extend an existing one and break [S]OLID?
-    * Refactor/extract an interface or keep it as it is and don't fix [S]OLID?
-
 ---
 
 #[GoogleTest](https://github.com/google/googletest)
@@ -155,7 +145,8 @@ TEST_F(BenchmarkTest, ShouldCallF2) {           |
 * Header only library
 * Based on top of GoogleTest/GoogleMock
   * `GUnit.GMock` - GoogleMock without hand written mocks
-  * `GUnit.GTest` - Makes creation of System Under Test (SUT) easier
+  * `GUnit.GMake` - Makes creation of System Under Test (SUT) and Mocks easier
+  * `GUnit.GTest` - GooglTest with strings and more friendly macros
 * Requirements
   * [C++14](https://ubershmekel.github.io/cppdrafts/c++14-cd.html)
   * [GoogleTest](https://github.com/google/googletest) (compatible with all versions)
@@ -166,40 +157,15 @@ TEST_F(BenchmarkTest, ShouldCallF2) {           |
   $mkdir build && cd build && cmake ..
   $make && ctest
   ```
-* Goals
-  * Makes TDD feedback loop quicker by...
-    * **Eliminating hand written mocks**
-    * **Speeding up compilation times**
-    * **Simplifying System Under Test (SUT) creation**
-* How?
-  * It's not a C++ standard solution (depends on vtable implementation)
-    * [Itanium C++ ABI (vtable)](https://mentorembedded.github.io/cxx-abi/abi.html)
-
-    ![GNU/Clang](http://img.my.csdn.net/uploads/201101/15/4457637_1295058284pWf7.jpg)
-
-    * [VTable in GCC](http://stackoverflow.com/questions/6258559/what-is-the-vtt-for-a-class)
-    * [Deleting Destructors](http://eli.thegreenplace.net/2015/c-deleting-destructors-and-virtual-operator-delete)
-    * [Devirtualization in C++](http://hubicka.blogspot.com/2014/01/devirtualization-in-c-part-1.html)
-    * [Member Function Pointers and the Fastest Possible C++ Delegates](https://www.codeproject.com/kb/cpp/fastdelegate.aspx)
-    * [Reversing C++ Virtual Functions](https://alschwalm.com/blog/static/2016/12/17/reversing-c-virtual-functions)
-    * [C++ vtables](http://shaharmike.com/cpp/vtable-part1)
-    * ```g++ -fdump-class-hierarchy interface.hpp```
-
-  * Similar projects ([FakeIt](https://github.com/eranpeer/FakeIt), [HippoMocks](https://github.com/dascandy/hippomocks))
-* Compile time [benchmark (Example)](https://github.com/cpp-testing/GUnit/tree/master/benchmark)
-
-    | Compiler | Number of Mocks | GoogleMock/GoogleTest | GoogleMock/GoogleTest + GUnit |
-    | -------- | --------------- | --------------------- | ----------------------------- |
-    | GCC-6    |               3 |                  2.6s |                         2.1s  |
-    | Clang-3.9|               3 |                  2.3s |                         1.9s  |
 
 #GUnit.GMock
  * **GoogleMock without writing and maintaining mocks by hand**
  * Supported features
    * `EXPECT_CALL` (requires additional parens for function call)
    ```cpp
-   EXPECT_CALL(mock, function()).WillOnce(Return(true)); // GoogleMock
-   EXPECT_CALL(mock, (function)()).WillOnce(Return(true)); // GUnit.GMock
+   EXPECT_CALL(mock, function(42)).WillOnce(Return(true)); // GoogleMock
+   EXPECT_CALL(mock, (function)(42)).WillOnce(Return(true)); // GUnit.GMock
+   EXPECT_INVOKE(mock, function, 42) // GUnit.GMock
    ```
    * `ON_CALL` (requires additional parens for function call)
    ```cpp
@@ -253,16 +219,11 @@ TEST_F(BenchmarkTest, ShouldCallF2) {           |
     auto make(TArgs&&... args);
   } // testing
 
-  namespace std {
-    template <class T, class TDeleter>
-    std::unique_ptr<T, TDeleter> move(unique_ptr<testing::GMock<T>, TDeleter>& mock) noexcept;
-
-    template <class T, class U>
-    std::shared_ptr<U> static_pointer_cast(const std::shared_ptr<testing::GMock<U>>& mock) noexcept;
-  } // std
+  template<class TMock>
+  auto object(TMock&); // converts mock to underlying type
   ```
 
-#GUnit.GMock - Tutorial by Example
+#GUnit.GMock - by Example
 
 ```cpp
 class iconfig {
@@ -363,7 +324,7 @@ TEST(Test, ShouldPrintTextWhenUpdate) {
 
 ---
 
-#GUnit.GTest
+#GUnit.GMake - By Example
 
 * **Removes boilerplate mocks declaration**
 * **Creates System Under Test (SUT) the same way despite the constructor changes**
@@ -446,7 +407,7 @@ TEST(Test, ShouldPrintTextWhenUpdate) {
 
 > Let's refactor (remove duplicates) from V3 then!
 
-##Test (V4) / using GTest
+##Test (V4) / using GUnit.GMake
 
 ```cpp
 class Test : public GTest<example> {
@@ -493,16 +454,161 @@ struct ifactory {
 ```
 
 ```cpp
-using iconfigfactory = ifactory<iconfig, std::string>;
+using iconfigFactory = ifactory<iconfig, std::string>;
 ```
 
 ```cpp
 GMock<iconfig> mockconfig;
-EXPECT_CALL(mock<iconfigfactory>(), (create)("string")).WillOnce(Return(mockconfig));
+EXPECT_CALL(mock<iconfigFactory>(), (create)("string")).WillOnce(Return(mockconfig));
 ```
 
 * **(+) No specfic factory mocks for given number of parmaeters**
 * (+) Factory aliases can be used to determine the mock
+
+---
+
+#GUnit.GTest - By Example
+
+> Simple test
+```cpp
+GoogleTest                                      | GUnit
+------------------------------------------------+---------------------------------------------
+TEST(SimpleTest, ShouldDoNothing)               | GTEST("Should do nothing")
+{ }                                             | { }
+```
+
+> Simple test with a fixture
+```cpp
+GoogleTest                                      | GUnit
+------------------------------------------------+---------------------------------------------
+TEST(SimpleTest, ShouldDoNothing)               | GTEST("Simple Test", "Should do nothing")
+{ }                                             | { }
+```
+
+> Test with base class
+```cpp
+GoogleTest                                      | GUnit
+------------------------------------------------+---------------------------------------------
+struct FooTest : testing::Test { };             | struct FooTest : testing::Test { };
+                                                |
+TEST_F(FooTest, ShouldDoNothing)                | GTEST(FooTest, "Should do nothing")
+{ }                                             | { }
+```
+
+> Multiple tests with base class
+```cpp
+GoogleTest                                      | GUnit
+------------------------------------------------+---------------------------------------------
+struct FooTest : testing::Test { };             | struct FooTest : testing::Test { };
+                                                |
+TEST_F(FooTest, ShouldDoNothingTest1) { }       | GTEST(FooTest, "Should do nothing test 1") { }
+TEST_F(FooTest, ShouldDoNothingTest2) { }       | GTEST(FooTest, "Should do nothing test 2") { }
+```
+
+> Test with SUT/Mocks creation
+```cpp
+GoogleTest                                      | GUnit
+------------------------------------------------+---------------------------------------------
+class IFoo;                                     | class IFoo;
+class Example;                                  | class Example;
+                                                |
+TEST(FooTest, ShouldCallFoo) {                  | GTEST(Example) { // optionally (Example, "Test")
+  std::shared_ptr<StrictGMock<IFoo>> fooMock    |   EXPECT_CALL(mock<IFoo>(), (foo)())
+   = std::make_shared<StrictGMock<IFoo>>();     |     .WillOnce(Return(42));
+                                                |   EXPECT_EQ(42, sut->run());
+  std::unique_ptr<Example> sut                  | }
+   = std::make_unique<Example>(object(fooMock));|
+                                                |
+  EXPECT_CALL(*fooMock, (foo)())                |
+    .WillOnce(Return(42));                      |
+  EXPECT_EQ(42, sut->run());                    |
+}                                               |
+```
+
+> Multiple tests with SUT and Mocks
+```cpp
+GoogleTest                                      | GUnit
+------------------------------------------------+---------------------------------------------
+class IFoo;                                     | class IFoo;
+class Example;                                  | class Example;
+                                                |
+struct FooTest : testing::Test {                | GTEST(Example) {
+  std::shared_ptr<StrictGMock<IFoo>> fooMock    |   std::cout << "set up" << '\n';
+   = std::make_shared<StrictGMock<IFoo>>();     |
+  std::unique_ptr<Example> sut                  |   SHOULD("call foo") {
+   = std::make_unique<Example>(object(fooMock));|     EXPECT_CALL(mock<IFoo>(), (foo)())
+                                                |       .WillOnce(Return(42));
+  void SetUp() override {                       |     EXPECT_EQ(42, sut->run());
+    std::cout << "set up" << '\n';              |   }
+  }                                             |
+                                                |   SHOULD("call foo and return 0") {
+  void TearDown() override {                    |     EXPECT_CALL(mock<IFoo>(), (foo)())
+    std::cout << "tear down" << '\n';           |       .WillOnce(Return(0));
+  }                                             |     EXPECT_EQ(0, sut->run());
+};                                              |   }
+                                                |
+TEST_F(FooTest, ShouldCallFoo) {                |   std::cout << "tear down" << '\n';
+  EXPECT_CALL(*fooMock, (foo)())                | }
+    .WillOnce(Return(42));                      |
+  EXPECT_EQ(42, sut->run());                    |
+}                                               |
+                                                |
+TEST_F(FooTest, ShouldCallFooAndRet0) {         |
+  EXPECT_CALL(*fooMock, (foo)())                |
+    .WillOnce(Return(0));                       |
+  EXPECT_EQ(0, sut->run());                     |
+}
+```
+
+> Disable simple test
+```cpp
+GoogleTest                                      | GUnit
+------------------------------------------------+---------------------------------------------
+TEST(DISABLED_Test, ShouldDoSomething)          | DISABLED_GTEST("Should do something")
+{ }                                             | { }
+```
+
+> Disable multiple tests
+```cpp
+GoogleTest                                      | GUnit
+------------------------------------------------+---------------------------------------------
+TEST_F(FooTest, DISABLED_ShouldDoA) {}          | DISABLED_GTEST(FooTest) {
+TEST_F(FooTest, DISABLED_ShouldDoB) {}          |   SHOULD("Do A") {}
+                                                |   SHOULD("Do B") {}
+                                                | }
+```
+
+> Disable some tests
+```cpp
+GoogleTest                                      | GUnit
+------------------------------------------------+---------------------------------------------
+TEST_F(FooTest, ShouldDoA) {}                   | GTEST(FooTest) {
+TEST_F(FooTest, DISABLED_ShouldDoB) {}          |   DISABLED_SHOULD("Do A") {}
+```                                             |   SHOULD("Do B") {}
+                                                | }
+```
+
+> Parametrized tests
+```cpp
+GoogleTest                                      | GUnit
+------------------------------------------------+---------------------------------------------
+class ParamTest :                               | GTEST("ParamTest", "[InstantiationName]",
+  public ::testing::TestWithParam<int> { };     |       testing::Values(1, 2, 3)) {
+                                                |  SHOULD("be true") { EXPECT_TRUE(GetParam() >= 1; }
+TEST_P(ParamTest, ShouldbeTrue) {               |  SHOULD("be false") { EXPECT_FALSE(false); }
+  EXPECT_TRUE(GetParam() >= 1);                 | }
+}                                               |
+                                                |
+TEST_P(ParamTest, ShouldBeFalse) {              |
+  EXPECT_FALSE(false);                          |
+}                                               |
+                                                |
+INSTANTIATE_TEST_CASE_P(                        |
+  InstantiationName,                            |
+  ParamTest,                                    |
+  testing::Values(1, 2, 3)                      |
+);                                              |
+ ```
 
 ---
 
@@ -531,33 +637,38 @@ EXPECT_CALL(mock<iconfigfactory>(), (create)("string")).WillOnce(Return(mockconf
 
 ##FAQ
 
-* How to mock overloaded methods?
+* How `GMock` works?
+  * It's not a C++ standard solution (depends on vtable implementation)
+    * [Itanium C++ ABI (vtable)](https://mentorembedded.github.io/cxx-abi/abi.html)
 
-  ```cpp
-  class interface {
-   public:
-    virtual void f(int) = 0;
-    virtual void f(int) const = 0;
-    virtual ~interface() = default;
-  };
+    ![GNU/Clang](http://img.my.csdn.net/uploads/201101/15/4457637_1295058284pWf7.jpg)
 
-  GMock<interface> mock;
+    * [VTable in GCC](http://stackoverflow.com/questions/6258559/what-is-the-vtt-for-a-class)
+    * [Deleting Destructors](http://eli.thegreenplace.net/2015/c-deleting-destructors-and-virtual-operator-delete)
+    * [Devirtualization in C++](http://hubicka.blogspot.com/2014/01/devirtualization-in-c-part-1.html)
+    * [Member Function Pointers and the Fastest Possible C++ Delegates](https://www.codeproject.com/kb/cpp/fastdelegate.aspx)
+    * [Reversing C++ Virtual Functions](https://alschwalm.com/blog/static/2016/12/17/reversing-c-virtual-functions)
+    * [C++ vtables](http://shaharmike.com/cpp/vtable-part1)
+    * ```g++ -fdump-class-hierarchy interface.hpp```
 
-  EXPECT_CALL(mock, (f, void(int) const)(1));
-  EXPECT_CALL(mock, (f, void(int))(2));
+  * Similar projects ([FakeIt](https://github.com/eranpeer/FakeIt), [HippoMocks](https://github.com/dascandy/hippomocks))
 
-  static_cast<const interface&>(mock).f(1);
-  mock.object().f(2);
-  ```
+* How quick is `GMock`?
+  * Compile time [benchmark (Example)](https://github.com/cpp-testing/GUnit/tree/master/benchmark)
 
-* Can GUnit be used with [Catch](https://github.com/philsquared/Catch)?
-  * Yes, GUnit isn't tied to GoogleTest, however it's tied to GoogleMock
+      | Compiler | Number of Mocks | GoogleMock/GoogleTest | GoogleMock/GoogleTest + GUnit |
+      | -------- | --------------- | --------------------- | ----------------------------- |
+      | GCC-6    |               3 |                  2.6s |                         2.1s  |
+      | Clang-3.9|               3 |                  2.3s |                         1.9s  |
 
 * But virtual function call has performance overhead?
   * This statement is not really true anymore with modern compilers as most virtual calls might be inlined
     * [Devirtualization in C++](http://hubicka.blogspot.co.uk/2014/01/devirtualization-in-c-part-2-low-level.html)
     * [Using final - C++11](https://godbolt.org/g/ASLk4B)
     * [Link Time Optimization - LTO](http://hubicka.blogspot.co.uk/2014/04/linktime-optimization-in-gcc-1-brief.html)
+
+* Can GUnit be used with [Catch](https://github.com/philsquared/Catch)?
+  * Yes, GUnit isn't tied to GoogleTest, however it's tied to GoogleMock
 
 ##Acknowledgements
 * Thanks to Eran Pe'er and Peter Bindels for [FakeIt](https://github.com/eranpeer/FakeIt) and [HippoMocks](https://github.com/dascandy/hippomocks)
