@@ -5,16 +5,12 @@
 
 ---
 
-#GUnit
-> Towards Painless Testing with GoogleTest and GoogleMock...
-
-![GUnit](https://upload.wikimedia.org/wikipedia/commons/0/0a/G-Unit_logo.png)
-
->
-
 #Testing
 
 > "If you liked it then you should have put a test on it", Beyonce rule
+
+#GUnit
+> Towards Painless Testing with GoogleTest and GoogleMock...
 
 ---
 
