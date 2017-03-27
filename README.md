@@ -5,16 +5,16 @@
 
 ---
 
-#Testing
+## Testing
 
 > "If you liked it then you should have put a test on it", Beyonce rule
 
-#GUnit
+## GUnit
 > Towards Painless Testing with GoogleTest and GoogleMock...
 
 ---
 
-#[GoogleTest](https://github.com/google/googletest)
+## [GoogleTest](https://github.com/google/googletest)
 * (+) Widely used
 * (+) Stable
 * (+) Powerful
@@ -23,7 +23,7 @@
 * (-) Macro based
 * (-) Slow to compile
 
-#[GoogleMock](https://github.com/google/googletest)
+## [GoogleMock](https://github.com/google/googletest)
 * (+) Widely used
 * (+) Stable
 * (+) Powerful
@@ -40,9 +40,9 @@
 * (-) Macro based
 * (-) Slow to compile
 
-#Showcase/Motivation for GUnit (Towards Painless Testing)
+## Showcase/Motivation for GUnit (Towards Painless Testing)
 
-###Example
+### Example
 
 ```cpp
 class interface1 {                          class interface2 {
@@ -76,7 +76,7 @@ class example {
 };
 ```
 
-###Test
+### Test
 ```cpp
 GoogleTest/GoogleMock                           | GUnit
 ------------------------------------------------+---------------------------------------------
