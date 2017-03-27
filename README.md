@@ -45,6 +45,22 @@
 * (-) Slow to compile
 
 #ShowCase/Motivation (Towards Painless Testing)
+  * [GUnit.GMock]
+    * No more hand written mocks!
+    * Support for more than 10 parameters
+    * Quicker compilation times
+    * Support for unique_ptr without any tricks
+    * Support for overloaded operators
+    * Support for mocking classes with constructors
+    * 100% Compatible with Google Mocks
+  * [GUnit.GMake]
+    * No need to instantiate System Under Test and Mocks
+      * Automatic mocks injection
+  * [GUnit.GTest]
+    * Test cases with string as names
+    * No more SetUp/TearDown (SHOULD clauses)
+    * One (GTEST) macro for all types of tests
+    * 100% Compatible with tests using GTest
 
 ###Example
 
@@ -410,10 +426,11 @@ TEST(Test, ShouldPrintTextWhenUpdate) {
 ##Test (V4) / using GUnit.GMake
 
 ```cpp
-class Test : public GTest<example> {
+class Test : public testing::Test {
 public:
   void SetUp() override {
-    std::tie(sut, mocks) = testing::make<SUT, NaggyMock>();
+    std::tie(sut, mocks) =
+      testing::make<std::unique_ptr<example>, NaggyMock>();
   }
 };
 ```
@@ -429,6 +446,68 @@ TEST(Test, ShouldPrintTextWhenUpdate) {
 ```
 
 * (+) **No repetitions with more than 1 test!**
+
+##Mock conversions using `object`
+
+```cpp
+foo_ref(IFoo&);
+foo_ptr(IFoo*);
+
+int main() {
+  GMock<IFoo> mock;
+  foo_ref(object(mock));
+  foo_ptr(object(mock));
+};
+```
+
+```cpp
+foo_up(std::unique_ptr<IFoo>);
+foo_ref(IFoo&);
+foo_ptr(IFoo*);
+
+int main() {
+  std::unique_ptr<StrictGMock<IFoo>> mock
+    = std::make_unique<StrictGMock<IFoo>>();
+
+  foo_up(object(mock));
+  foo_ref(object(mock));
+  foo_ptr(object(mock));
+}
+```
+
+```cpp
+foo_up(std::shared_ptr<IFoo>);
+foo_ref(IFoo&);
+foo_ptr(IFoo*);
+
+int main() {
+  std::shared_ptr<StrictGMock<IFoo>> mock
+    = std::make_shared<StrictGMock<IFoo>>();
+
+  foo_sp(object(mock));
+  foo_ref(object(mock));
+  foo_ptr(object(mock));
+}
+```
+
+##How to mock overloaded methods?
+
+```cpp
+class interface {
+ public:
+  virtual void f(int) = 0;
+  virtual void f(int) const = 0;
+  virtual ~interface() = default;
+};
+
+GMock<interface> mock;
+
+EXPECT_CALL(mock, (f, void(int) const)(1));
+EXPECT_CALL(mock, (f, void(int))(2));
+
+static_cast<const interface&>(mock).f(1);
+mock.object().f(2);
+```
 
 ---
 
