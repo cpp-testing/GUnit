@@ -44,7 +44,7 @@
 * (-) Macro based
 * (-) Slow to compile
 
-#Showcase/Motivation (Towards Painless Testing)
+#Showcase/Motivation for GUnit (Towards Painless Testing)
 
 ###Example
 
@@ -697,7 +697,7 @@ INSTANTIATE_TEST_CASE_P(                        |
 "example"_test_fixture = [] {
   auto [sut, mocks] = make<example, NaggyMock>();
 
-  "should print text when update"_test = [=] {
+  "should print text when update"_test = [&] {
     using namespace testing;
     EXPECT_CALL(mocks<iconfig>(), (is_dumpable)()).WillOnce(Return(true));
     EXPECT_CALL(mocks<iprinter>(), (print)("text"));
