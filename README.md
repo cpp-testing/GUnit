@@ -392,6 +392,19 @@ static_cast<const interface&>(mock).f(1);
 mock.object().f(2);
 ```
 
+### Universal EXPECT_* syntax (works with Google Mock's and GUnit.GMock's)
+
+```cpp
+struct IFoo {
+  virtual ~IFoo() noexcept = default;
+  virtual bool foo(int) = 0;
+};
+```
+```cpp
+GMock<IFoo> mock;
+EXPECT_INVOKE(mock, foo, 42).WillOnce(Return(42)); // same as EXPECT_CALL(mock, (foo)(42)).WillOnce(Return(42));
+```
+
 ### [Advanced] Constructors with non-interface parameters and make (Assisted Injection)
 
 ```cpp
@@ -570,7 +583,7 @@ TEST(SimpleTest, ShouldDoNothing)               | GTEST("Simple Test", "Should d
 { }                                             | { }
 ```
 
-> Test with base class
+> Test with a base class
 ```cpp
 GoogleTest                                      | GUnit
 ------------------------------------------------+---------------------------------------------
@@ -580,7 +593,7 @@ TEST_F(FooTest, ShouldDoNothing)                | GTEST(FooTest, "Should do noth
 { }                                             | { }
 ```
 
-> Multiple tests with base class
+> Multiple tests with a base class
 ```cpp
 GoogleTest                                      | GUnit
 ------------------------------------------------+---------------------------------------------
@@ -597,7 +610,7 @@ GoogleTest                                      | GUnit
 class IFoo;                                     | class IFoo;
 class Example;                                  | class Example;
                                                 |
-TEST(FooTest, ShouldCallFoo) {                  | GTEST(Example) { // optionally (Example, "Test")
+TEST(FooTest, ShouldCallFoo) {                  | GTEST(Example, "Should call foo") {
   std::shared_ptr<StrictGMock<IFoo>> fooMock    |   EXPECT_CALL(mock<IFoo>(), (foo)())
    = std::make_shared<StrictGMock<IFoo>>();     |     .WillOnce(Return(42));
                                                 |   EXPECT_EQ(42, sut->run());
@@ -635,12 +648,12 @@ struct FooTest : testing::Test {                | GTEST(Example) {
 TEST_F(FooTest, ShouldCallFoo) {                |   std::cout << "tear down" << '\n';
   EXPECT_CALL(*fooMock, (foo)())                | }
     .WillOnce(Return(42));                      |
-  EXPECT_EQ(42, sut->run());                    |
-}                                               |
-                                                |
-TEST_F(FooTest, ShouldCallFooAndRet0) {         |
-  EXPECT_CALL(*fooMock, (foo)())                |
-    .WillOnce(Return(0));                       |
+  EXPECT_EQ(42, sut->run());                    | // There are 2 tests cases here!
+}                                               | //   1.	Example.Should call foo
+                                                | //   2. Example.Should call foo and return 0
+TEST_F(FooTest, ShouldCallFooAndRet0) {         | //
+  EXPECT_CALL(*fooMock, (foo)())                | // SetUp and TeardDown will be called
+    .WillOnce(Return(0));                       | // separately for both of them
   EXPECT_EQ(0, sut->run());                     |
 }
 ```
