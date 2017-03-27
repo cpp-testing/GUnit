@@ -467,7 +467,7 @@ EXPECT_CALL(mock<IConfigFactory>(), (create)("string")).WillOnce(Return(mockconf
     };
   } // testing
   ```
-  
+
 ## GUnit.GMake - Tutorial by example
 
 ### Test (V3 - C++17)
@@ -540,18 +540,18 @@ TEST(Test, ShouldPrintTextWhenUpdate) {
 
 ## GUnit.GTest
 * **Simplifies usage of GoogleTest (no more label as test case names!)**
-    
+
 * Synopsis
   ```cpp
     #define GTEST(type_to_be_tested OR test_case_name,
                   [optional] additional_test_case_name,
                   [optional] parametric test values);
     #define DISABLED_GTEST(...); // disable test
-    
+
     #define SHOULD(test_case_name); creates a new test case inside GTEST
     #define DISABLED_SHOULD(test_case_name); // disable should clause (test case)
   ```
-    
+
 ## GUnit.GTest - Tutorial by example
 
 > Simple test
