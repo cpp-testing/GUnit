@@ -138,6 +138,7 @@ TEST_F(BenchmarkTest, ShouldCallF2) {           |
 ## GUnit
 * Header only library
 * Based on top of GoogleTest/GoogleMock
+* Modular (GMock/GMake/GTest are independent)
   * `GUnit.GMock` - GoogleMock without hand written mocks
     * No more hand written mocks!
     * Support for more than 10 parameters
@@ -679,6 +680,32 @@ INSTANTIATE_TEST_CASE_P(                        |
   testing::Values(1, 2, 3)                      |
 );                                              |
  ```
+
+---
+
+## Integration tests with Dependency Injection ([[Boost].DI](https://github.com/boost-experimental/di))
+
+```cpp
+class example; // System Under Test
+
+GTEST(example) {
+  namespace di = boost::di;
+
+  SHOULD("create example") {
+    const auto injector = di::make_injector(
+      di::bind<interface>.to(di::NiceGMock{mocks})
+    , di::bind<interface2>.to(di::StrictGMock{mocks})
+    );
+
+    sut = testing::make<SUT>(injector);
+
+    EXPECT_CALL(mock<interface>(), (get)(_)).WillOnce(Return(123));
+    EXPECT_CALL(mock<interface2>(), (f2)(123));
+
+    sut->update();
+  }
+}
+```
 
 ---
 
