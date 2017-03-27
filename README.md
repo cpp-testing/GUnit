@@ -276,7 +276,7 @@ TEST(Test, ShouldPrintTextWhenUpdate) {
   auto mockprinter = std::make_shared<GMock<iprinter>>(); // defines and creates a mock
 
   example sut{static_cast<const iconfig&>(mockconfig)
-            , std::static_pointer_cast<iprinter>(mockprinter)};
+            , object(mockprinter)};
 
   EXPECT_CALL(mockconfig, (is_dumpable)()).WillOnce(Return(true)); // additional parens
   EXPECT_CALL(*mockprinter, (print)("text")); // additional parens
