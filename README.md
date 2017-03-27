@@ -44,23 +44,7 @@
 * (-) Macro based
 * (-) Slow to compile
 
-#ShowCase/Motivation (Towards Painless Testing)
-  * [GUnit.GMock]
-    * No more hand written mocks!
-    * Support for more than 10 parameters
-    * Quicker compilation times
-    * Support for unique_ptr without any tricks
-    * Support for overloaded operators
-    * Support for mocking classes with constructors
-    * 100% Compatible with Google Mocks
-  * [GUnit.GMake]
-    * No need to instantiate System Under Test and Mocks
-      * Automatic mocks injection
-  * [GUnit.GTest]
-    * Test cases with string as names
-    * No more SetUp/TearDown (SHOULD clauses)
-    * One (GTEST) macro for all types of tests
-    * 100% Compatible with tests using GTest
+#Showcase/Motivation (Towards Painless Testing)
 
 ###Example
 
@@ -161,8 +145,21 @@ TEST_F(BenchmarkTest, ShouldCallF2) {           |
 * Header only library
 * Based on top of GoogleTest/GoogleMock
   * `GUnit.GMock` - GoogleMock without hand written mocks
+    * No more hand written mocks!
+    * Support for more than 10 parameters
+    * Quicker compilation times
+    * Support for unique_ptr without any tricks
+    * Support for overloaded operators
+    * Support for mocking classes with constructors
+    * 100% Compatible with Google Mocks
   * `GUnit.GMake` - Makes creation of System Under Test (SUT) and Mocks easier
+    * No need to instantiate System Under Test and Mocks
+      * Automatic mocks injection
   * `GUnit.GTest` - GooglTest with strings and more friendly macros
+    * Test cases with string as names
+    * No more SetUp/TearDown (SHOULD clauses)
+    * One (GTEST) macro for all types of tests
+    * 100% Compatible with tests using GTest
 * Requirements
   * [C++14](https://ubershmekel.github.io/cppdrafts/c++14-cd.html)
   * [GoogleTest](https://github.com/google/googletest) (compatible with all versions)
