@@ -229,10 +229,10 @@ TEST_F(BenchmarkTest, ShouldCallF2) {           |
   } // testing
 
   template<class TMock>
-  auto object(TMock&); // converts mock to underlying type
+  auto object(TMock&); // converts mock to the underlying type
   ```
 
-#GUnit.GMock - by Example
+#GUnit.GMock - Tutorial by example
 
 ```cpp
 class iconfig {
@@ -333,7 +333,7 @@ TEST(Test, ShouldPrintTextWhenUpdate) {
 
 ---
 
-#GUnit.GMake - By Example
+#GUnit.GMake - Tutorial by example
 
 * **Removes boilerplate mocks declaration**
 * **Creates System Under Test (SUT) the same way despite the constructor changes**
@@ -440,7 +440,7 @@ TEST(Test, ShouldPrintTextWhenUpdate) {
 
 * (+) **No repetitions with more than 1 test!**
 
-##Mock conversions using `object`
+##GMock conversion to the underlying type
 
 ```cpp
 foo_ref(IFoo&);
@@ -448,8 +448,8 @@ foo_ptr(IFoo*);
 
 int main() {
   GMock<IFoo> mock;
-  foo_ref(object(mock));
-  foo_ptr(object(mock));
+  foo_ref(object(mock)); // converts mock to IFoo&
+  foo_ptr(object(mock)); // converts mock to IFoo*
 };
 ```
 
@@ -462,9 +462,9 @@ int main() {
   std::unique_ptr<StrictGMock<IFoo>> mock
     = std::make_unique<StrictGMock<IFoo>>();
 
-  foo_up(object(mock));
-  foo_ref(object(mock));
-  foo_ptr(object(mock));
+  foo_up(object(mock));  // converts mock to std::unique_ptr<IFoo>
+  foo_ref(object(mock)); // converts mock to IFoo&
+  foo_ptr(object(mock)); // converts mock to IFoo*
 }
 ```
 
@@ -477,9 +477,9 @@ int main() {
   std::shared_ptr<StrictGMock<IFoo>> mock
     = std::make_shared<StrictGMock<IFoo>>();
 
-  foo_sp(object(mock));
-  foo_ref(object(mock));
-  foo_ptr(object(mock));
+  foo_sp(object(mock));  // converts mock to std::shared_ptr<IFoo>
+  foo_ref(object(mock)); // converts mock to IFoo&
+  foo_ptr(object(mock)); // converts mock to IFoo*
 }
 ```
 
@@ -504,7 +504,7 @@ mock.object().f(2);
 
 ---
 
-## [Advanced] Constructors with non-interface parameters and make (Assisted Injection)
+### [Advanced] Constructors with non-interface parameters and make (Assisted Injection)
 
 ```cpp
   example(iconfig& config, int value, const std::shared_ptr<iprinter>& printer, int data);
@@ -515,7 +515,7 @@ mock.object().f(2);
                                                             // but it's not imortant for unique types
 ```
 
-##[Advanced] Generic Factories
+### [Advanced] Generic Factories
 
 ```cpp
 template <class T, class... TArgs>
@@ -539,7 +539,7 @@ EXPECT_CALL(mock<iconfigFactory>(), (create)("string")).WillOnce(Return(mockconf
 
 ---
 
-#GUnit.GTest - By Example
+#GUnit.GTest - Tutorial by example
 
 > Simple test
 ```cpp
