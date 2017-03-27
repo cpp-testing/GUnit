@@ -135,7 +135,7 @@ TEST_F(BenchmarkTest, ShouldCallF2) {           |
 }                                               |}
 ```
 
-# GUnit
+## GUnit
 * Header only library
 * Based on top of GoogleTest/GoogleMock
   * `GUnit.GMock` - GoogleMock without hand written mocks
@@ -165,7 +165,7 @@ TEST_F(BenchmarkTest, ShouldCallF2) {           |
   $make && ctest
   ```
 
-# GUnit.GMock
+## GUnit.GMock
  * **GoogleMock without writing and maintaining mocks by hand**
  * Supported features
    * `EXPECT_CALL` (requires additional parens for function call)
@@ -230,7 +230,7 @@ TEST_F(BenchmarkTest, ShouldCallF2) {           |
   auto object(TMock&); // converts mock to the underlying type
   ```
 
-# GUnit.GMock - Tutorial by example
+## GUnit.GMock - Tutorial by example
 
 ```cpp
 class iconfig {
@@ -331,7 +331,7 @@ TEST(Test, ShouldPrintTextWhenUpdate) {
 
 ---
 
-# GUnit.GMake - Tutorial by example
+## GUnit.GMake - Tutorial by example
 
 * **Removes boilerplate mocks declaration**
 * **Creates System Under Test (SUT) the same way despite the constructor changes**
@@ -537,7 +537,7 @@ EXPECT_CALL(mock<iconfigFactory>(), (create)("string")).WillOnce(Return(mockconf
 
 ---
 
-# GUnit.GTest - Tutorial by example
+## GUnit.GTest - Tutorial by example
 
 > Simple test
 ```cpp
