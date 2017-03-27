@@ -12,8 +12,6 @@
 ## GUnit
 > Towards Painless Testing with GoogleTest and GoogleMock...
 
----
-
 ## [GoogleTest](https://github.com/google/googletest)
 * (+) Widely used
 * (+) Stable
@@ -137,7 +135,7 @@ TEST_F(BenchmarkTest, ShouldCallF2) {           |
 }                                               |}
 ```
 
-#GUnit
+# GUnit
 * Header only library
 * Based on top of GoogleTest/GoogleMock
   * `GUnit.GMock` - GoogleMock without hand written mocks
@@ -167,7 +165,7 @@ TEST_F(BenchmarkTest, ShouldCallF2) {           |
   $make && ctest
   ```
 
-#GUnit.GMock
+# GUnit.GMock
  * **GoogleMock without writing and maintaining mocks by hand**
  * Supported features
    * `EXPECT_CALL` (requires additional parens for function call)
@@ -232,7 +230,7 @@ TEST_F(BenchmarkTest, ShouldCallF2) {           |
   auto object(TMock&); // converts mock to the underlying type
   ```
 
-#GUnit.GMock - Tutorial by example
+# GUnit.GMock - Tutorial by example
 
 ```cpp
 class iconfig {
@@ -269,7 +267,7 @@ class example {
 };
 ```
 
-##Test (V1)
+### Test (V1)
 ```cpp
 TEST(Test, ShouldPrintTextWhenUpdate) {
   using namespace testing;
@@ -292,7 +290,7 @@ TEST(Test, ShouldPrintTextWhenUpdate) {
 
 > Can we do better?
 
-##Test (V2) / using make
+### Test (V2) / using make
 
 ```cpp
 TEST(Test, ShouldPrintTextWhenUpdate) {
@@ -313,7 +311,7 @@ TEST(Test, ShouldPrintTextWhenUpdate) {
 
 > Is the make call generic?
 
-##Test (V2.1) / using make and unique_ptr
+### Test (V2.1) / using make and unique_ptr
 
 ```cpp
 TEST(Test, ShouldPrintTextWhenUpdate) {
@@ -333,7 +331,7 @@ TEST(Test, ShouldPrintTextWhenUpdate) {
 
 ---
 
-#GUnit.GMake - Tutorial by example
+# GUnit.GMake - Tutorial by example
 
 * **Removes boilerplate mocks declaration**
 * **Creates System Under Test (SUT) the same way despite the constructor changes**
@@ -374,7 +372,7 @@ TEST(Test, ShouldPrintTextWhenUpdate) {
   } // testing
   ```
 
-##Test (V3 - C++17)
+### Test (V3 - C++17)
 
 ```cpp
 TEST(Test, ShouldPrintTextWhenUpdate) {
@@ -398,7 +396,7 @@ TEST(Test, ShouldPrintTextWhenUpdate) {
     ...
   ```
 
-##Test (V3 - C++14)
+### Test (V3 - C++14)
 
 ```cpp
 TEST(Test, ShouldPrintTextWhenUpdate) {
@@ -416,7 +414,7 @@ TEST(Test, ShouldPrintTextWhenUpdate) {
 
 > Let's refactor (remove duplicates) from V3 then!
 
-##Test (V4) / using GUnit.GMake
+### Test (V4) / using GUnit.GMake
 
 ```cpp
 class Test : public testing::Test {
@@ -440,7 +438,7 @@ TEST(Test, ShouldPrintTextWhenUpdate) {
 
 * (+) **No repetitions with more than 1 test!**
 
-##GMock conversion to the underlying type
+### GMock conversion to the underlying type
 
 ```cpp
 foo_ref(IFoo&);
@@ -483,7 +481,7 @@ int main() {
 }
 ```
 
-##How to mock overloaded methods?
+### How to mock overloaded methods?
 
 ```cpp
 class interface {
@@ -539,7 +537,7 @@ EXPECT_CALL(mock<iconfigFactory>(), (create)("string")).WillOnce(Return(mockconf
 
 ---
 
-#GUnit.GTest - Tutorial by example
+# GUnit.GTest - Tutorial by example
 
 > Simple test
 ```cpp
@@ -684,11 +682,11 @@ INSTANTIATE_TEST_CASE_P(                        |
 
 ---
 
-##Vision for C++20?
+### Vision for C++20?
 
 * SG7: Mocks generation using static reflection (http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0194r0.pdf)
 
-###Test (V5)
+### Test (V5)
 ```cpp
 "example"_test_fixture = [] {
   auto [sut, mocks] = make<example, NaggyMock>();
@@ -702,12 +700,12 @@ INSTANTIATE_TEST_CASE_P(                        |
 };
 ```
 
-##Limitations
+### Limitations
 
 * GMock can't mock classes with multiple or virtual inheritance
 * GMock, by default, can fake interface with up to 128 virtual methods
 
-##FAQ
+### FAQ
 
 * How `GMock` works?
   * It's not a C++ standard solution (depends on vtable implementation)
@@ -742,10 +740,10 @@ INSTANTIATE_TEST_CASE_P(                        |
 * Can GUnit be used with [Catch](https://github.com/philsquared/Catch)?
   * Yes, GUnit isn't tied to GoogleTest, however it's tied to GoogleMock
 
-##Acknowledgements
+### Acknowledgements
 * Thanks to Eran Pe'er and Peter Bindels for [FakeIt](https://github.com/eranpeer/FakeIt) and [HippoMocks](https://github.com/dascandy/hippomocks)
 
-##References
+### References
 * [Meeting C++ 2016: Mocking C++](https://www.youtube.com/watch?v=6N92PkBeIHw)
 * [Meeting C++ 2016: TDD/BDD and Dependency Injection](https://www.youtube.com/watch?v=T3uMcxhzRUE) | [Slides](http://boost-experimental.github.io/di/meetingcpp-2016)
 * [Automatic Mocks Injector](https://github.com/cpp-testing/mocks_injector)
