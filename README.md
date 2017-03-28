@@ -10,7 +10,7 @@
 > "If you liked it then you should have put a test on it", Beyonce rule
 
 ## GUnit
-> Towards Painless Testing with GoogleTest and GoogleMock...
+> Towards Painless Testing with GoogleTest and GoogleMock.
 
 ## [GoogleTest](https://github.com/google/googletest)
 * (+) Widely used
