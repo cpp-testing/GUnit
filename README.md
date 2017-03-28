@@ -402,7 +402,8 @@ struct IFoo {
 ```
 ```cpp
 GMock<IFoo> mock;
-EXPECT_INVOKE(mock, foo, 42).WillOnce(Return(42)); // same as EXPECT_CALL(mock, (foo)(42)).WillOnce(Return(42));
+EXPECT_INVOKE(mock, foo, 42).WillOnce(Return(42)); 
+// same as EXPECT_CALL(mock, (foo)(42)).WillOnce(Return(42));
 ```
 
 ### [Advanced] Constructors with non-interface parameters and make (Assisted Injection)
