@@ -200,16 +200,14 @@ template <class TParser>
 inline auto symbols(const std::string &symbol) {
   std::set<typename TParser::type> result;
   std::stringstream cmd;
-  cmd << "nm -gpP " << progname();
+  cmd << "nm -pP " << progname();
   auto fp = popen(cmd.str().c_str(), "r");
   if (fp) {
     char buf[8192] = {};
     while (fgets(buf, sizeof(buf), fp)) {
-      if (!strncmp(buf, symbol.c_str(), symbol.length())) {
-        auto i = symbol.length() + 1;
-        while (buf[i] != ' ' && buf[i]) ++i;
-        buf[i] = 0;
-        result.emplace(TParser::parse(demangle(buf)));
+      std::string tc{buf};
+      if (tc.find(symbol) != std::string::npos) {
+        result.emplace(TParser::parse(demangle(tc.substr(0, tc.find(' ')))));
       }
     }
   }

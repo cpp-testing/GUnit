@@ -45,7 +45,7 @@ struct TestCaseInfoParser {
   static auto parse(const std::string& line) {
     TestCaseInfo ti;
     ti.symbol = line;
-    const auto str = std::string{">()::shouldRegister"};
+    const auto str = std::string{">()"};
     ti.symbol.replace(ti.symbol.find(str), str.length(), "|");
     std::string token;
     std::istringstream stream(ti.symbol);
