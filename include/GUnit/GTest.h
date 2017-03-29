@@ -84,7 +84,7 @@ struct TestCaseInfoParser {
 };
 
 inline auto& tests() {
-  static auto ts = symbols<TestCaseInfoParser>("_ZZN7testing2v16detail21SHOULD_REGISTER_GTEST");
+  static auto ts = symbols<TestCaseInfoParser>("N7testing2v16detail21SHOULD_REGISTER_GTEST");
   return ts;
 }
 
