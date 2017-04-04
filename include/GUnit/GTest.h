@@ -16,109 +16,117 @@
 #include "GUnit/GMake.h"
 #include "GUnit/GMock.h"
 
-#if !defined(GUNIT_SHOULD_PREFIX)
-#define GUNIT_SHOULD_PREFIX "should "
-#endif
-
 namespace testing {
 inline namespace v1 {
 namespace detail {
 
-struct TestCaseInfo {
-  bool disabled = false;
-  std::string symbol;
-  std::string type;
-  std::string name;
-  std::string file;
-  int line = 0;
-  std::string should;
-
-  bool operator==(const TestCaseInfo& ti) const { return symbol == ti.symbol; }
-  bool operator!=(const TestCaseInfo& ti) const { return symbol != ti.symbol; }
-  bool operator<(const TestCaseInfo& ti) const { return symbol < ti.symbol; }
-  bool operator>(const TestCaseInfo& ti) const { return symbol > ti.symbol; }
-};
-
-struct TestCaseInfoParser {
-  using type = TestCaseInfo;
-
-  static auto parse(const std::string& line) {
-    TestCaseInfo ti;
-    ti.symbol = line;
-    const auto str = std::string{">()::shouldRegister"};
-    ti.symbol.replace(ti.symbol.find(str), str.length(), "|");
-    std::string token;
-    std::istringstream stream(ti.symbol);
-
-    const auto parseString = [&](std::string& result, char end = '>') {
-      std::getline(stream, token, end);
-      if (token.find("::detail::string") != std::string::npos) {
-        if (token.find(")") != std::string::npos) {
-          std::istringstream istream(token);
-          while (std::getline(istream, token, ',')) {
-            const auto begin = token.find(')');
-            result += static_cast<char>(std::atoi(token.substr(begin + 1).c_str()));
-          }
-        }
-      } else {
-        detail::trim(token);
-        result = token;
-      }
-      std::getline(stream, token, ',');
-    };
-
-    std::getline(stream, token, '<');
-    std::getline(stream, token, ',');
-    ti.disabled = token == "true";
-    parseString(ti.name);
-    parseString(ti.file);
-    std::getline(stream, token, ',');
-    ti.line = std::atoi(token.c_str());
-    parseString(ti.should);
-    parseString(ti.type, '|');
-    if (!ti.type.empty() && ti.type[0] == '"' && ti.type[ti.type.length() - 2] == '"') {
-      ti.type = ti.type.substr(1, ti.type.length() - 3);
-    }
-    return ti;
+bool PatternMatchesString(const char *pattern,
+                                           const char *str) {
+  switch (*pattern) {
+    case '\0':
+    case ':':  // Either ':' or '\0' marks the end of the pattern.
+      return *str == '\0';
+    case '?':  // Matches any single character.
+      return *str != '\0' && PatternMatchesString(pattern + 1, str + 1);
+    case '*':  // Matches any string (possibly empty) of characters.
+      return (*str != '\0' && PatternMatchesString(pattern, str + 1)) ||
+          PatternMatchesString(pattern + 1, str);
+    default:  // Non-special character.  Matches itself.
+      return *pattern == *str &&
+          PatternMatchesString(pattern + 1, str + 1);
   }
-};
-
-inline auto& tests() {
-  static auto ts = symbols<TestCaseInfoParser>("_ZZN7testing2v16detail21SHOULD_REGISTER_GTEST");
-  return ts;
 }
+
+bool MatchesFilter( const std::string& name, const char* filter) {
+  const char *cur_pattern = filter;
+  for (;;) {
+    if (PatternMatchesString(cur_pattern, name.c_str())) {
+      return true;
+    }
+
+    // Finds the next pattern in the filter.
+    cur_pattern = strchr(cur_pattern, ':');
+
+    // Returns if no more pattern can be found.
+    if (cur_pattern == NULL) {
+      return false;
+    }
+
+    // Skips the pattern separater (the ':' character).
+    cur_pattern++;
+  }
+}
+
+bool FilterMatchesShould(const std::string& name, const std::string &should) {
+  // Split --gtest_filter at '-', if there is one, to separate into
+  // positive filter and negative filter portions
+  const char* const p = should.c_str();
+  const char* const dash = strchr(p, '-');
+  std::string positive;
+  std::string negative;
+  if (dash == NULL) {
+    positive = should.c_str();  // Whole string is a positive filter
+    negative = "";
+  } else {
+    positive = std::string(p, dash);   // Everything up to the dash
+    negative = std::string(dash + 1);  // Everything after the dash
+    if (positive.empty()) {
+      // Treat '-test1' as the same as '*-test1'
+      positive = "*";
+    }
+  }
+
+  return (MatchesFilter(name, positive.c_str()) && !MatchesFilter(name, negative.c_str()));
+}
+
+struct TestRun {
+  std::string should = GetShouldParam();
+  bool once = false;
+
+  static std::string GetShouldParam() {
+    const std::string filter = "--should=";
+    for (auto i = 0u; i < internal::GetArgvs().size(); ++i) {
+      if (internal::GetArgvs()[i].find(filter) != std::string::npos) {
+        return internal::GetArgvs()[i].substr(filter.length());
+      }
+    }
+    return "*";
+  }
+
+  bool run(const std::string& name, int line) {
+    if (once) {
+      return false;
+    }
+    const auto result = line > test_line && FilterMatchesShould(name, should);
+    if (result) {
+      std::cout << "[ SHOULD   ] " << name <<  std::endl;
+    }
+    test_line = line;
+    once = true;
+    return result;
+  }
+
+  int test_line = 0;
+};
 
 template <bool DISABLED, class T>
 class GTestAutoRegister {
   static auto IsDisabled(bool disabled) { return DISABLED || disabled ? "DISABLED_" : ""; }
 
-  void MakeAndRegisterTestInfo(const TestCaseInfo& ti,
+  void MakeAndRegisterTestInfo(bool disabled, const std::string& type, const std::string& name, const std::string& /*file*/, int /*line*/,
                                detail::type<TestInfo*(const char*, const char*, const char*, const char*, const void*,
                                                       void (*)(), void (*)(), internal::TestFactoryBase*)>) {
-    if (ti.should.empty()) {
-      internal::MakeAndRegisterTestInfo((IsDisabled(ti.disabled) + ti.type).c_str(), ti.name.c_str(), nullptr, nullptr,
+      internal::MakeAndRegisterTestInfo((IsDisabled(disabled) + type).c_str(), name.c_str(), nullptr, nullptr,
                                         internal::GetTestTypeId(), Test::SetUpTestCase, Test::TearDownTestCase,
                                         new internal::TestFactoryImpl<T>{});
-    } else {
-      internal::MakeAndRegisterTestInfo((IsDisabled(ti.disabled) + ti.type + ti.name).c_str(),
-                                        (std::string{GUNIT_SHOULD_PREFIX} + ti.should).c_str(), nullptr, nullptr,
-                                        internal::GetTestTypeId(), Test::SetUpTestCase, Test::TearDownTestCase,
-                                        new internal::TestFactoryImpl<T>{});
-    }
   }
 
   template <class... Ts>
-  void MakeAndRegisterTestInfo(const TestCaseInfo& ti, detail::type<TestInfo*(Ts...)>) {
-    if (ti.should.empty()) {
-      internal::MakeAndRegisterTestInfo((IsDisabled(ti.disabled) + ti.type).c_str(), ti.name.c_str(), nullptr, nullptr,
-                                        {ti.file.c_str(), ti.line}, internal::GetTestTypeId(), Test::SetUpTestCase,
-                                        Test::TearDownTestCase, new internal::TestFactoryImpl<T>{});
-    } else {
-      internal::MakeAndRegisterTestInfo((IsDisabled(ti.disabled) + ti.type + ti.name).c_str(),
-                                        (std::string{GUNIT_SHOULD_PREFIX} + ti.should).c_str(), nullptr, nullptr,
-                                        {ti.file.c_str(), ti.line}, internal::GetTestTypeId(), Test::SetUpTestCase,
-                                        Test::TearDownTestCase, new internal::TestFactoryImpl<T>{});
-    }
+  void MakeAndRegisterTestInfo(bool disabled, const std::string& type, const std::string& name, const std::string& file, int line, detail::type<TestInfo*(Ts...)>) {
+      internal::MakeAndRegisterTestInfo((IsDisabled(disabled) + type).c_str(), name.c_str(), nullptr, nullptr,
+                                        {file.c_str(), line},
+                                        internal::GetTestTypeId(), Test::SetUpTestCase, Test::TearDownTestCase,
+                                        new internal::TestFactoryImpl<T>{});
   }
 
   template <class TestType>
@@ -133,61 +141,48 @@ class GTestAutoRegister {
     return str;
   }
 
-  bool RegisterShouldTestCase() {
-    auto registered = false;
-    for (const auto& ti : tests()) {
-      if (GetTypeName(detail::type<typename T::TEST_TYPE>{}) == ti.type && T::TEST_NAME::c_str() == ti.name) {
-        MakeAndRegisterTestInfo(ti, detail::type<decltype(internal::MakeAndRegisterTestInfo)>{});
-        registered = true;
-      }
-    }
-    return registered;
-  }
-
-  bool RegisterShouldParamTestCase() {
-    auto registered = false;
-    for (const auto& ti : tests()) {
-      if (GetTypeName(detail::type<typename T::TEST_TYPE>{}) == ti.type && T::TEST_NAME::c_str() == ti.name) {
-        UnitTest::GetInstance()
-            ->parameterized_test_registry()
-            .GetTestCasePatternHolder<T>(ti.type.c_str(), {ti.file, ti.line})
-            ->AddTestPattern((IsDisabled(ti.disabled) + ti.type).c_str(), std::string{GUNIT_SHOULD_PREFIX + ti.should}.c_str(),
-                             new internal::TestMetaFactory<T>());
-        registered = true;
-      }
-    }
-    return registered;
-  }
+  //bool RegisterShouldParamTestCase() {
+    //auto registered = false;
+    //for (const auto& ti : tests()) {
+      //if (GetTypeName(detail::type<typename T::TEST_TYPE>{}) == ti.type && T::TEST_NAME::c_str() == ti.name) {
+        //UnitTest::GetInstance()
+            //->parameterized_test_registry()
+            //.GetTestCasePatternHolder<T>(ti.type.c_str(), {ti.file, ti.line})
+            //->AddTestPattern((IsDisabled(ti.disabled) + ti.type).c_str(), std::string{GUNIT_SHOULD_PREFIX + ti.should}.c_str(),
+                             //new internal::TestMetaFactory<T>());
+        //registered = true;
+      //}
+    //}
+    //return registered;
+  //}
 
  public:
   GTestAutoRegister() {
-    if (!RegisterShouldTestCase()) {
-      MakeAndRegisterTestInfo({DISABLED,
-                               {},
-                               GetTypeName(detail::type<typename T::TEST_TYPE>{}),
-                               T::TEST_NAME::c_str(),
-                               T::TEST_FILE,
-                               T::TEST_LINE,
-                               {}},
+      MakeAndRegisterTestInfo(DISABLED,
+                              GetTypeName(detail::type<typename T::TEST_TYPE>{}),
+                              T::TEST_NAME::c_str(),
+                              T::TEST_FILE,
+                              T::TEST_LINE,
                               detail::type<decltype(internal::MakeAndRegisterTestInfo)>{});
-    }
   }
 
   template <class TEval, class TGenerateNames>
-  explicit GTestAutoRegister(const TEval& eval, const TGenerateNames& genNames) {
-    if (!RegisterShouldParamTestCase()) {
-      UnitTest::GetInstance()
-          ->parameterized_test_registry()
-          .GetTestCasePatternHolder<T>(GetTypeName(detail::type<typename T::TEST_TYPE>{}), {T::TEST_FILE, T::TEST_LINE})
-          ->AddTestPattern(GetTypeName(detail::type<typename T::TEST_TYPE>{}),
-                           GetTypeName(detail::type<typename T::TEST_TYPE>{}), new internal::TestMetaFactory<T>());
-    }
+  GTestAutoRegister(const TEval& eval, const TGenerateNames& genNames) {
+    (void)eval;
+    (void)genNames;
+    //if (!RegisterShouldParamTestCase()) {
+      //UnitTest::GetInstance()
+          //->parameterized_test_registry()
+          //.GetTestCasePatternHolder<T>(GetTypeName(detail::type<typename T::TEST_TYPE>{}), {T::TEST_FILE, T::TEST_LINE})
+          //->AddTestPattern(GetTypeName(detail::type<typename T::TEST_TYPE>{}),
+                           //GetTypeName(detail::type<typename T::TEST_TYPE>{}), new internal::TestMetaFactory<T>());
+    //}
 
-    UnitTest::GetInstance()
-        ->parameterized_test_registry()
-        .GetTestCasePatternHolder<T>(GetTypeName(detail::type<typename T::TEST_TYPE>{}), {T::TEST_FILE, T::TEST_LINE})
-        ->AddTestCaseInstantiation((std::string{IsDisabled(DISABLED)} + T::TEST_NAME::c_str()).c_str(), eval, genNames,
-                                   T::TEST_FILE, T::TEST_LINE);
+    //UnitTest::GetInstance()
+        //->parameterized_test_registry()
+        //.GetTestCasePatternHolder<T>(GetTypeName(detail::type<typename T::TEST_TYPE>{}), {T::TEST_FILE, T::TEST_LINE})
+        //->AddTestCaseInstantiation((std::string{IsDisabled(DISABLED)} + T::TEST_NAME::c_str()).c_str(), eval, genNames,
+                                   //T::TEST_FILE, T::TEST_LINE);
   }
 };
 
@@ -224,11 +219,6 @@ class GTest<T, TParamType, std::false_type, TAny> : public Test {
 template <class T, class TParamType>
 class GTest<T, TParamType, std::true_type, std::true_type> : public T {};
 
-template <bool Disabled, class Name, class File, int Line, class Should, class T>
-bool SHOULD_REGISTER_GTEST() {
-  static auto shouldRegister = true;
-  return shouldRegister;
-}
 }  // detail
 
 template <class T = detail::none_t, class TParamType = void>
@@ -253,14 +243,20 @@ class GTest : public detail::GTest<T, TParamType> {};
                                  ::testing::detail::apply_t<std::common_type_t, decltype(PARAMS)>> {                      \
     using TEST_TYPE = __GUNIT_CAT(GTEST_TYPE_, __LINE__);                                                                 \
     using TEST_NAME = NAME;                                                                                               \
-                                                                                                                          \
     static constexpr auto TEST_FILE = __FILE__;                                                                           \
     static constexpr auto TEST_LINE = __LINE__;                                                                           \
-    void TestBody();                                                                                                      \
+    void TestBodyImpl(::testing::detail::TestRun&); \
+    void TestBody() {\
+      ::testing::detail::TestRun tr; \
+      while(tr.once) {\
+        tr.once = false; \
+        TestBodyImpl(tr);\
+      }; \
+    }                                                                                                    \
   };                                                                                                                      \
   static ::testing::detail::GTestAutoRegister<DISABLED, GTEST<__GUNIT_CAT(GTEST_TYPE_, __LINE__), NAME>> __GUNIT_CAT(     \
       ar, __LINE__){__VA_ARGS__};                                                                                         \
-  void GTEST<__GUNIT_CAT(GTEST_TYPE_, __LINE__), NAME>::TestBody()
+  void GTEST<__GUNIT_CAT(GTEST_TYPE_, __LINE__), NAME>::TestBodyImpl(::testing::detail::TestRun& __attribute__((unused)) tr_gtest)
 
 #define __GTEST_IMPL_1(DISABLED, TYPE) \
   __GTEST_IMPL(DISABLED, TYPE, ::testing::detail::string<>, ::testing::detail::type<void>{}, )
@@ -285,13 +281,7 @@ class GTest : public detail::GTest<T, TParamType> {};
 #define DISABLED_GTEST(...) __GUNIT_CAT(__GTEST_IMPL_, __GUNIT_SIZE(__VA_ARGS__))(true, __VA_ARGS__)
 
 #define SHOULD(NAME)                                                                                                       \
-  if (::testing::detail::SHOULD_REGISTER_GTEST<false, TEST_NAME, decltype(__GUNIT_CAT(__FILE__, _gtest_string)), __LINE__, \
-                                               decltype(__GUNIT_CAT(NAME, _gtest_string)), TEST_TYPE>() &&                 \
-      std::string{::testing::UnitTest::GetInstance()->current_test_info()->name()}.find(std::string{GUNIT_SHOULD_PREFIX} + \
-                                                                                        NAME) != std::string::npos)
+  if (tr_gtest.run(NAME, __LINE__))
 
 #define DISABLED_SHOULD(NAME)                                                                                              \
-  if (::testing::detail::SHOULD_REGISTER_GTEST<true, TEST_NAME, decltype(__GUNIT_CAT(__FILE__, _gtest_string)), __LINE__,  \
-                                               decltype(__GUNIT_CAT(NAME, _gtest_string)), TEST_TYPE>() &&                 \
-      std::string{::testing::UnitTest::GetInstance()->current_test_info()->name()}.find(std::string{GUNIT_SHOULD_PREFIX} + \
-                                                                                        NAME) != std::string::npos)
+  if (false)

@@ -123,29 +123,6 @@ TEST(Utility, ShouldReturnCallStack) {
   EXPECT_THAT(call_stack("\n", 1, 2), testing::MatchesRegex(".*Utility_ShouldReturnCallStack_Test.*"));
 }
 
-TEST(Utility, ShouldReturnSymbols) {
-  struct Parser {
-    using type = std::string;
-    static auto parse(const std::string& line) { return line; }
-  };
-  const auto& parsed = symbols<Parser>("_ZTIN7testing2v16detail32Utility_ShouldReturnSymbols_TestE");
-  ASSERT_TRUE(parsed.size() >= 1);
-}
-
-TEST(Utility, ShouldReturnFileAndLine) {
-  const auto al = addr2line(__builtin_return_address(0));
-#if defined(__APPLE__)  // addr2line is not installed by default
-  EXPECT_EQ(std::string{}, al.first);
-  EXPECT_TRUE(0 == al.second);
-#else
-#if defined(NDEBUG)
-  EXPECT_TRUE(al.first == "??" || al.first == "");
-#else
-  EXPECT_THAT(al.first, testing::MatchesRegex(".*gtest.*"));
-  EXPECT_TRUE(al.second > 0);
-#endif
-#endif
-}
 }
 }
 }

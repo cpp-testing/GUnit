@@ -196,27 +196,6 @@ inline auto &progname() {
   return self;
 }
 
-template <class TParser>
-inline auto symbols(const std::string &symbol) {
-  std::set<typename TParser::type> result;
-  std::stringstream cmd;
-  cmd << "nm -gpP " << progname();
-  auto fp = popen(cmd.str().c_str(), "r");
-  if (fp) {
-    char buf[8192] = {};
-    while (fgets(buf, sizeof(buf), fp)) {
-      if (!strncmp(buf, symbol.c_str(), symbol.length())) {
-        auto i = symbol.length() + 1;
-        while (buf[i] != ' ' && buf[i]) ++i;
-        buf[i] = 0;
-        result.emplace(TParser::parse(demangle(buf)));
-      }
-    }
-  }
-  pclose(fp);
-  return result;
-}
-
 inline std::pair<std::string, int> addr2line(void *addr) {
   std::stringstream cmd;
   cmd << "addr2line -Cpe " << progname() << " " << addr;
