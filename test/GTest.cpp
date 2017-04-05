@@ -706,7 +706,6 @@ GTEST(longest_ctor_force) {
 GTEST(complex_example) {
   using namespace testing;
 
-  std::cout << "setup" << std::endl;
   // setup
   std::tie(sut, mocks) = testing::make<SUT, testing::NiceGMock>();
   EXPECT_CALL(mock<interface>(), (get)(_)).WillOnce(Return(123));
@@ -740,8 +739,6 @@ GTEST(complex_example) {
 
     sut->update();
   }
-
-  std::cout << "teardown" << std::endl;
 }
 
 struct is_default_constructible {};
@@ -757,9 +754,8 @@ GTEST(is_default_constructible) {
 
 GTEST(example, "[should create sut with a mock]") {
   using namespace testing;
-  //TODO
-  //ASSERT_TRUE(nullptr == sut.get());
-  //EXPECT_EQ(0u, mocks.size());
+  ASSERT_TRUE(nullptr == sut.get());
+  EXPECT_EQ(0u, mocks.size());
 
   SHOULD("override sut and pass polymorphic type") {
     StrictGMock<interface> i;

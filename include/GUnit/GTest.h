@@ -81,7 +81,7 @@ bool FilterMatchesShould(const std::string& name, const std::string &should) {
 
 struct TestRun {
   std::string should = GetShouldParam();
-  bool once = false;
+  bool once = true;
 
   static std::string GetShouldParam() {
     const std::string filter = "--should=";
@@ -95,14 +95,14 @@ struct TestRun {
 
   bool run(const std::string& name, int line) {
     if (once) {
-      return false;
+      return once;
     }
     const auto result = line > test_line && FilterMatchesShould(name, should);
     if (result) {
       std::cout << "[ SHOULD   ] " << name <<  std::endl;
+      test_line = line;
+      once = true;
     }
-    test_line = line;
-    once = true;
     return result;
   }
 
@@ -141,21 +141,6 @@ class GTestAutoRegister {
     return str;
   }
 
-  //bool RegisterShouldParamTestCase() {
-    //auto registered = false;
-    //for (const auto& ti : tests()) {
-      //if (GetTypeName(detail::type<typename T::TEST_TYPE>{}) == ti.type && T::TEST_NAME::c_str() == ti.name) {
-        //UnitTest::GetInstance()
-            //->parameterized_test_registry()
-            //.GetTestCasePatternHolder<T>(ti.type.c_str(), {ti.file, ti.line})
-            //->AddTestPattern((IsDisabled(ti.disabled) + ti.type).c_str(), std::string{GUNIT_SHOULD_PREFIX + ti.should}.c_str(),
-                             //new internal::TestMetaFactory<T>());
-        //registered = true;
-      //}
-    //}
-    //return registered;
-  //}
-
  public:
   GTestAutoRegister() {
       MakeAndRegisterTestInfo(DISABLED,
@@ -168,21 +153,17 @@ class GTestAutoRegister {
 
   template <class TEval, class TGenerateNames>
   GTestAutoRegister(const TEval& eval, const TGenerateNames& genNames) {
-    (void)eval;
-    (void)genNames;
-    //if (!RegisterShouldParamTestCase()) {
-      //UnitTest::GetInstance()
-          //->parameterized_test_registry()
-          //.GetTestCasePatternHolder<T>(GetTypeName(detail::type<typename T::TEST_TYPE>{}), {T::TEST_FILE, T::TEST_LINE})
-          //->AddTestPattern(GetTypeName(detail::type<typename T::TEST_TYPE>{}),
-                           //GetTypeName(detail::type<typename T::TEST_TYPE>{}), new internal::TestMetaFactory<T>());
-    //}
+      UnitTest::GetInstance()
+          ->parameterized_test_registry()
+          .GetTestCasePatternHolder<T>(GetTypeName(detail::type<typename T::TEST_TYPE>{}), {T::TEST_FILE, T::TEST_LINE})
+          ->AddTestPattern(GetTypeName(detail::type<typename T::TEST_TYPE>{}),
+                           GetTypeName(detail::type<typename T::TEST_TYPE>{}), new internal::TestMetaFactory<T>());
 
-    //UnitTest::GetInstance()
-        //->parameterized_test_registry()
-        //.GetTestCasePatternHolder<T>(GetTypeName(detail::type<typename T::TEST_TYPE>{}), {T::TEST_FILE, T::TEST_LINE})
-        //->AddTestCaseInstantiation((std::string{IsDisabled(DISABLED)} + T::TEST_NAME::c_str()).c_str(), eval, genNames,
-                                   //T::TEST_FILE, T::TEST_LINE);
+    UnitTest::GetInstance()
+        ->parameterized_test_registry()
+        .GetTestCasePatternHolder<T>(GetTypeName(detail::type<typename T::TEST_TYPE>{}), {T::TEST_FILE, T::TEST_LINE})
+        ->AddTestCaseInstantiation((std::string{IsDisabled(DISABLED)} + T::TEST_NAME::c_str()).c_str(), eval, genNames,
+                                   T::TEST_FILE, T::TEST_LINE);
   }
 };
 
@@ -250,7 +231,10 @@ class GTest : public detail::GTest<T, TParamType> {};
       ::testing::detail::TestRun tr; \
       while(tr.once) {\
         tr.once = false; \
-        TestBodyImpl(tr);\
+        GTEST t;\
+        t.SetUp();\
+        t.TestBodyImpl(tr);\
+        t.TearDown();\
       }; \
     }                                                                                                    \
   };                                                                                                                      \
