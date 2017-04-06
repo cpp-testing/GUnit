@@ -20,7 +20,7 @@ namespace testing {
 inline namespace v1 {
 namespace detail {
 
-bool PatternMatchesString(const char* pattern, const char* str) {
+inline bool PatternMatchesString(const char* pattern, const char* str) {
   switch (*pattern) {
     case '\0':
     case ':':  // Either ':' or '\0' marks the end of the pattern.
@@ -34,7 +34,7 @@ bool PatternMatchesString(const char* pattern, const char* str) {
   }
 }
 
-bool MatchesFilter(const std::string& name, const char* filter) {
+inline bool MatchesFilter(const std::string& name, const char* filter) {
   const char* cur_pattern = filter;
   for (;;) {
     if (PatternMatchesString(cur_pattern, name.c_str())) {
@@ -45,7 +45,7 @@ bool MatchesFilter(const std::string& name, const char* filter) {
     cur_pattern = strchr(cur_pattern, ':');
 
     // Returns if no more pattern can be found.
-    if (cur_pattern == NULL) {
+    if (cur_pattern == nullptr) {
       return false;
     }
 
@@ -54,14 +54,14 @@ bool MatchesFilter(const std::string& name, const char* filter) {
   }
 }
 
-bool FilterMatchesShould(const std::string& name, const std::string& should) {
+inline bool FilterMatchesShould(const std::string& name, const std::string& should) {
   // Split --gtest_filter at '-', if there is one, to separate into
   // positive filter and negative filter portions
   const char* const p = should.c_str();
   const char* const dash = strchr(p, '-');
   std::string positive;
   std::string negative;
-  if (dash == NULL) {
+  if (dash == nullptr) {
     positive = should.c_str();  // Whole string is a positive filter
     negative = "";
   } else {
@@ -73,7 +73,7 @@ bool FilterMatchesShould(const std::string& name, const std::string& should) {
     }
   }
 
-  return (MatchesFilter(name, positive.c_str()) && !MatchesFilter(name, negative.c_str()));
+  return MatchesFilter(name, positive.c_str()) && !MatchesFilter(name, negative.c_str());
 }
 
 struct TestRun {
@@ -90,10 +90,16 @@ struct TestRun {
     return "*";
   }
 
-  bool run(const std::string& name, int line) {
+  bool run(bool disabled, const std::string& name, int line) {
     if (once) {
       return false;
     }
+
+    if (disabled && !GTEST_FLAG(also_run_disabled_tests)) {
+      std::cout << "[ DISABLED ] " << name << std::endl;
+      return false;
+    }
+
     const auto result = line > test_line && FilterMatchesShould(name, should);
     if (result) {
       std::cout << "[ SHOULD   ] " << name << std::endl;
@@ -225,17 +231,17 @@ class GTest : public detail::GTest<T, TParamType> {};
       ::testing::detail::TestRun tr;                                                                                      \
       while (tr.once) {                                                                                                   \
         tr.once = false;                                                                                                  \
-        GTEST test;                                                                                                          \
-        test.SetUp();                                                                                                        \
-        test.TestBodyImpl(tr);                                                                                               \
-        test.TearDown();                                                                                                     \
+        GTEST test;                                                                                                       \
+        test.SetUp();                                                                                                     \
+        test.TestBodyImpl(tr);                                                                                            \
+        test.TearDown();                                                                                                  \
       };                                                                                                                  \
     }                                                                                                                     \
   };                                                                                                                      \
   static ::testing::detail::GTestAutoRegister<DISABLED, GTEST<__GUNIT_CAT(GTEST_TYPE_, __LINE__), NAME>> __GUNIT_CAT(     \
       ar, __LINE__){__VA_ARGS__};                                                                                         \
-  void GTEST<__GUNIT_CAT(GTEST_TYPE_, __LINE__), NAME>::TestBodyImpl(::testing::detail::TestRun& __attribute__((unused))  \
-                                                                         tr_gtest)
+  void GTEST<__GUNIT_CAT(GTEST_TYPE_, __LINE__), NAME>::TestBodyImpl(::testing::detail::TestRun& tr_gtest                 \
+                                                                     __attribute__((unused)))
 
 #define __GTEST_IMPL_1(DISABLED, TYPE) \
   __GTEST_IMPL(DISABLED, TYPE, ::testing::detail::string<>, ::testing::detail::type<void>{}, )
@@ -259,6 +265,5 @@ class GTest : public detail::GTest<T, TParamType> {};
 #define GTEST(...) __GUNIT_CAT(__GTEST_IMPL_, __GUNIT_SIZE(__VA_ARGS__))(false, __VA_ARGS__)
 #define DISABLED_GTEST(...) __GUNIT_CAT(__GTEST_IMPL_, __GUNIT_SIZE(__VA_ARGS__))(true, __VA_ARGS__)
 
-#define SHOULD(NAME) if (tr_gtest.run(NAME, __LINE__))
-
-#define DISABLED_SHOULD(NAME) if (::testing::GTEST_FLAG(also_run_disabled_tests) && tr_gtest.run(NAME, __LINE__))
+#define SHOULD(NAME) if (tr_gtest.run(false, NAME, __LINE__))
+#define DISABLED_SHOULD(NAME) if (tr_gtest.run(true, NAME, __LINE__))

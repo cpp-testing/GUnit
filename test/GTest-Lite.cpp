@@ -5,9 +5,21 @@
 // (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 //
-#pragma once
-
-#include "GUnit/GMake.h"
-#include "GUnit/GMock.h"
 #include "GUnit/GTest-Lite.h"
-#include "GUnit/GTest.h"
+#include <cstdlib>
+
+// clang-format off
+
+int main() {
+
+  "should compile"_test = [] {
+      std::exit(0);
+  };
+
+  "should not run"_test_disabled = [] {
+      std::exit(1);
+  };
+
+}
+
+// clang-format on
