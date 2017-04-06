@@ -10,7 +10,7 @@
 > "If you liked it then you should have put a test on it", Beyonce rule
 
 ## GUnit
-> Towards Painless Testing with GoogleTest and GoogleMock...
+> Towards Painless Testing with GoogleTest and GoogleMock.
 
 ## [GoogleTest](https://github.com/google/googletest)
 * (+) Widely used
@@ -276,7 +276,7 @@ TEST(Test, ShouldPrintTextWhenUpdate) {
   auto mockprinter = std::make_shared<GMock<iprinter>>(); // defines and creates a mock
 
   example sut{static_cast<const iconfig&>(mockconfig)
-            , std::static_pointer_cast<iprinter>(mockprinter)};
+            , object(mockprinter)};
 
   EXPECT_CALL(mockconfig, (is_dumpable)()).WillOnce(Return(true)); // additional parens
   EXPECT_CALL(*mockprinter, (print)("text")); // additional parens
@@ -330,9 +330,118 @@ TEST(Test, ShouldPrintTextWhenUpdate) {
 }
 ```
 
+### GMock conversion to the underlying type
+
+```cpp
+foo_ref(IFoo&);
+foo_ptr(IFoo*);
+
+int main() {
+  GMock<IFoo> mock;
+  foo_ref(object(mock)); // converts mock to IFoo&
+  foo_ptr(object(mock)); // converts mock to IFoo*
+};
+```
+
+```cpp
+foo_up(std::unique_ptr<IFoo>);
+foo_ref(IFoo&);
+foo_ptr(IFoo*);
+
+int main() {
+  std::unique_ptr<StrictGMock<IFoo>> mock
+    = std::make_unique<StrictGMock<IFoo>>();
+
+  foo_up(object(mock));  // converts mock to std::unique_ptr<IFoo>
+  foo_ref(object(mock)); // converts mock to IFoo&
+  foo_ptr(object(mock)); // converts mock to IFoo*
+}
+```
+
+```cpp
+foo_up(std::shared_ptr<IFoo>);
+foo_ref(IFoo&);
+foo_ptr(IFoo*);
+
+int main() {
+  std::shared_ptr<StrictGMock<IFoo>> mock
+    = std::make_shared<StrictGMock<IFoo>>();
+
+  foo_sp(object(mock));  // converts mock to std::shared_ptr<IFoo>
+  foo_ref(object(mock)); // converts mock to IFoo&
+  foo_ptr(object(mock)); // converts mock to IFoo*
+}
+```
+
+### How to mock overloaded methods?
+
+```cpp
+class interface {
+ public:
+  virtual void f(int) = 0;
+  virtual void f(int) const = 0;
+  virtual ~interface() = default;
+};
+
+GMock<interface> mock;
+
+EXPECT_CALL(mock, (f, void(int) const)(1));
+EXPECT_CALL(mock, (f, void(int))(2));
+
+static_cast<const interface&>(mock).f(1);
+mock.object().f(2);
+```
+
+### Universal EXPECT_* syntax (works with Google Mock's and GUnit.GMock's)
+
+```cpp
+struct IFoo {
+  virtual ~IFoo() noexcept = default;
+  virtual bool foo(int) = 0;
+};
+```
+```cpp
+GMock<IFoo> mock;
+EXPECT_INVOKE(mock, foo, 42).WillOnce(Return(42)); 
+// same as EXPECT_CALL(mock, (foo)(42)).WillOnce(Return(42));
+```
+
+### [Advanced] Constructors with non-interface parameters and make (Assisted Injection)
+
+```cpp
+  example(iconfig& config, int value, const std::shared_ptr<iprinter>& printer, int data);
+                            ^                                                   ^
+                            \_____________________       _______________________/
+                                                  \     /
+  std::tie(sut, mocks) = make<example, StrictMock>(42, 77); // order of the same types is important
+                                                            // but it's not imortant for unique types
+```
+
+### [Advanced] Generic Factories
+
+```cpp
+template <class T, class... TArgs>
+struct IFactory {
+  virtual T create(TArgs...) = 0;
+  virtual ~IFactory() = default;
+};
+```
+
+```cpp
+using IConfigFactory = IFactory<IConfig, std::string>;
+```
+
+```cpp
+GMock<IConfig> mockconfig;
+EXPECT_CALL(mock<IConfigFactory>(), (create)("string")).WillOnce(Return(mockconfig));
+```
+
+* **(+) No specfic factory mocks for given number of parmaeters**
+* (+) Factory aliases can be used to determine the mock
+
 ---
 
-## GUnit.GMake - Tutorial by example
+## GUnit.GMake
 
 * **Removes boilerplate mocks declaration**
 * **Creates System Under Test (SUT) the same way despite the constructor changes**
@@ -372,6 +481,8 @@ TEST(Test, ShouldPrintTextWhenUpdate) {
     };
   } // testing
   ```
+
+## GUnit.GMake - Tutorial by example
 
 ### Test (V3 - C++17)
 
@@ -439,104 +550,21 @@ TEST(Test, ShouldPrintTextWhenUpdate) {
 
 * (+) **No repetitions with more than 1 test!**
 
-### GMock conversion to the underlying type
-
-```cpp
-foo_ref(IFoo&);
-foo_ptr(IFoo*);
-
-int main() {
-  GMock<IFoo> mock;
-  foo_ref(object(mock)); // converts mock to IFoo&
-  foo_ptr(object(mock)); // converts mock to IFoo*
-};
-```
-
-```cpp
-foo_up(std::unique_ptr<IFoo>);
-foo_ref(IFoo&);
-foo_ptr(IFoo*);
-
-int main() {
-  std::unique_ptr<StrictGMock<IFoo>> mock
-    = std::make_unique<StrictGMock<IFoo>>();
-
-  foo_up(object(mock));  // converts mock to std::unique_ptr<IFoo>
-  foo_ref(object(mock)); // converts mock to IFoo&
-  foo_ptr(object(mock)); // converts mock to IFoo*
-}
-```
-
-```cpp
-foo_up(std::shared_ptr<IFoo>);
-foo_ref(IFoo&);
-foo_ptr(IFoo*);
-
-int main() {
-  std::shared_ptr<StrictGMock<IFoo>> mock
-    = std::make_shared<StrictGMock<IFoo>>();
-
-  foo_sp(object(mock));  // converts mock to std::shared_ptr<IFoo>
-  foo_ref(object(mock)); // converts mock to IFoo&
-  foo_ptr(object(mock)); // converts mock to IFoo*
-}
-```
-
-### How to mock overloaded methods?
-
-```cpp
-class interface {
- public:
-  virtual void f(int) = 0;
-  virtual void f(int) const = 0;
-  virtual ~interface() = default;
-};
-
-GMock<interface> mock;
-
-EXPECT_CALL(mock, (f, void(int) const)(1));
-EXPECT_CALL(mock, (f, void(int))(2));
-
-static_cast<const interface&>(mock).f(1);
-mock.object().f(2);
-```
-
 ---
 
-### [Advanced] Constructors with non-interface parameters and make (Assisted Injection)
+## GUnit.GTest
+* **Simplifies usage of GoogleTest (no more label as test case names!)**
 
-```cpp
-  example(iconfig& config, int value, const std::shared_ptr<iprinter>& printer, int data);
-                            ^                                                   ^
-                            \_____________________       _______________________/
-                                                  \     /
-  std::tie(sut, mocks) = make<example, StrictMock>(42, 77); // order of the same types is important
-                                                            // but it's not imortant for unique types
-```
+* Synopsis
+  ```cpp
+    #define GTEST(type_to_be_tested OR test_case_name,
+                  [optional] additional_test_case_name,
+                  [optional] parametric test values);
+    #define DISABLED_GTEST(...); // disable test
 
-### [Advanced] Generic Factories
-
-```cpp
-template <class T, class... TArgs>
-struct IFactory {
-  virtual T create(TArgs...) = 0;
-  virtual ~IFactory() = default;
-};
-```
-
-```cpp
-using IConfigFactory = IFactory<IConfig, std::string>;
-```
-
-```cpp
-GMock<IConfig> mockconfig;
-EXPECT_CALL(mock<IConfigFactory>(), (create)("string")).WillOnce(Return(mockconfig));
-```
-
-* **(+) No specfic factory mocks for given number of parmaeters**
-* (+) Factory aliases can be used to determine the mock
-
----
+    #define SHOULD(test_case_name); creates a new test case inside GTEST
+    #define DISABLED_SHOULD(test_case_name); // disable should clause (test case)
+  ```
 
 ## GUnit.GTest - Tutorial by example
 
@@ -556,7 +584,7 @@ TEST(SimpleTest, ShouldDoNothing)               | GTEST("Simple Test", "Should d
 { }                                             | { }
 ```
 
-> Test with base class
+> Test with a base class
 ```cpp
 GoogleTest                                      | GUnit
 ------------------------------------------------+---------------------------------------------
@@ -566,7 +594,7 @@ TEST_F(FooTest, ShouldDoNothing)                | GTEST(FooTest, "Should do noth
 { }                                             | { }
 ```
 
-> Multiple tests with base class
+> Multiple tests with a base class
 ```cpp
 GoogleTest                                      | GUnit
 ------------------------------------------------+---------------------------------------------
@@ -583,7 +611,7 @@ GoogleTest                                      | GUnit
 class IFoo;                                     | class IFoo;
 class Example;                                  | class Example;
                                                 |
-TEST(FooTest, ShouldCallFoo) {                  | GTEST(Example) { // optionally (Example, "Test")
+TEST(FooTest, ShouldCallFoo) {                  | GTEST(Example, "Should call foo") {
   std::shared_ptr<StrictGMock<IFoo>> fooMock    |   EXPECT_CALL(mock<IFoo>(), (foo)())
    = std::make_shared<StrictGMock<IFoo>>();     |     .WillOnce(Return(42));
                                                 |   EXPECT_EQ(42, sut->run());
@@ -621,12 +649,12 @@ struct FooTest : testing::Test {                | GTEST(Example) {
 TEST_F(FooTest, ShouldCallFoo) {                |   std::cout << "tear down" << '\n';
   EXPECT_CALL(*fooMock, (foo)())                | }
     .WillOnce(Return(42));                      |
-  EXPECT_EQ(42, sut->run());                    |
-}                                               |
-                                                |
-TEST_F(FooTest, ShouldCallFooAndRet0) {         |
-  EXPECT_CALL(*fooMock, (foo)())                |
-    .WillOnce(Return(0));                       |
+  EXPECT_EQ(42, sut->run());                    | // There are 2 tests cases here!
+}                                               | //   1.	Example.Should call foo
+                                                | //   2. Example.Should call foo and return 0
+TEST_F(FooTest, ShouldCallFooAndRet0) {         | //
+  EXPECT_CALL(*fooMock, (foo)())                | // SetUp and TeardDown will be called
+    .WillOnce(Return(0));                       | // separately for both of them
   EXPECT_EQ(0, sut->run());                     |
 }
 ```
