@@ -122,7 +122,6 @@ TEST(Utility, ShouldReturnCallStack) {
   EXPECT_THAT(call_stack("\n", 1, 1), testing::MatchesRegex(".*Utility_ShouldReturnCallStack_Test.*"));
   EXPECT_THAT(call_stack("\n", 1, 2), testing::MatchesRegex(".*Utility_ShouldReturnCallStack_Test.*"));
 }
-
 }
 }
 }
