@@ -138,7 +138,7 @@ TEST_F(BenchmarkTest, ShouldCallF2) {           |
 ## GUnit
 * Header only library
 * Based on top of GoogleTest/GoogleMock
-* Modular (GMock/GMake/GTest are independent)
+* Modular (GMock/GMake/GTest/GTest-Lite are independent)
   * `GUnit.GMock` - GoogleMock without hand written mocks
     * No more hand written mocks!
     * Support for more than 10 parameters
@@ -155,6 +155,7 @@ TEST_F(BenchmarkTest, ShouldCallF2) {           |
     * No more SetUp/TearDown (SHOULD clauses)
     * One (GTEST) macro for all types of tests
     * 100% Compatible with tests using GTest
+  * `GUnit.GTest-Lite` - lightweight, limited, no-macro way of defining simple tests
 * Requirements
   * [C++14](https://ubershmekel.github.io/cppdrafts/c++14-cd.html)
   * [GoogleTest](https://github.com/google/googletest) (compatible with all versions)
@@ -709,13 +710,36 @@ INSTANTIATE_TEST_CASE_P(                        |
 );                                              |
  ```
 
-> Note Running specific `should` test case requires ':' in the test filter (`--gtest-filter="test case pattern:should pattern"`)
+> Note Running specific `should` test case requires ':' in the test filter (`--gtest_filter="test case pattern:should pattern"`)
 
-*  --gtest-filter="FooTest*:Do A"  # calls FooTest with should("Do A")
-*  --gtest-filter="FooTest*:-Do A" # calls FooTest with not should("Do A")
-*  --gtest-filter="FooTest*:Do*"   # calls FooTest with should("Do...")
-*  --gtest-filter="FooTest.:Do*"   # calls FooTest with should("Do...")
-*  --gtest-filter="-FooTest?:-Do*" # calls not FooTest with not should("Do...")
+*  --gtest_filter="FooTest*:Do A"  # calls FooTest with should("Do A")
+*  --gtest_filter="FooTest*:-Do A" # calls FooTest with not should("Do A")
+*  --gtest_filter="FooTest*:Do*"   # calls FooTest with should("Do...")
+*  --gtest_filter="FooTest.:Do*"   # calls FooTest with should("Do...")
+*  --gtest_filter="-FooTest?:-Do*" # calls not FooTest with not should("Do...")
+
+## GUnit.GTest-Lite
+* Synopsis
+  ```cpp
+  template <class T, T...>
+  constexpr auto operator""_test;
+
+  template <class T, T...>
+  constexpr auto operator""_test_disabled;
+  ```
+
+## GUnit.GTest-Lite - Tutorial by example
+```cpp
+int main() {
+  "should always be true"_test = [] {
+    EXPECT_TRUE(true);
+  };
+
+  "should not be run"_test_disabled = [] {
+    EXPECT_TRUE(false);
+  };
+}
+```
 
 ---
 

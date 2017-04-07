@@ -7,6 +7,8 @@
 //
 #pragma once
 
+namespace detail {
+
 template <bool, char...>
 struct test;
 
@@ -27,16 +29,18 @@ struct test<false, Chars...> {
   }
 };
 
+} // detail
+
 #if defined(__clang__)
 #pragma clang diagnostic ignored "-Wgnu-string-literal-operator-template"
 #endif
 
 template <class T, T... Chars>
 constexpr auto operator""_test() {
-  return test<true, Chars...>{};
+  return detail::test<true, Chars...>{};
 }
 
 template <class T, T... Chars>
 constexpr auto operator""_test_disabled() {
-  return test<false, Chars...>{};
+  return detail::test<false, Chars...>{};
 }
