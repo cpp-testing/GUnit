@@ -80,14 +80,11 @@ struct TestRun {
   std::string should = GetShouldParam();
   bool once = true;
 
-  static std::string GetShouldParam() {
-    const std::string filter = "--should=";
-    for (auto i = 0u; i < internal::GetArgvs().size(); ++i) {
-      if (internal::GetArgvs()[i].find(filter) != std::string::npos) {
-        return internal::GetArgvs()[i].substr(filter.length());
-      }
-    }
-    return "*";
+  std::string GetShouldParam() const {
+    const auto sep = GTEST_FLAG(filter).find(":");
+    return sep == std::string::npos
+      ? "*"
+      : GTEST_FLAG(filter).substr(sep + 1);
   }
 
   bool run(bool disabled, const std::string& name, int line) {
