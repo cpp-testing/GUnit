@@ -709,9 +709,7 @@ INSTANTIATE_TEST_CASE_P(                        |
 );                                              |
  ```
 
-> Note Running specific `should` test case requires ':' in the test filter
-
->   `--gtest-filter="test case pattern:should pattern"`
+> Note Running specific `should` test case requires ':' in the test filter (`--gtest-filter="test case pattern:should pattern"`)
 
 *  --gtest-filter="FooTest*:Do A"  # calls FooTest with should("Do A")
 *  --gtest-filter="FooTest*:-Do A" # calls FooTest with not should("Do A")
