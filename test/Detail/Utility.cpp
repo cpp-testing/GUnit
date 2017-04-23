@@ -114,7 +114,9 @@ TEST(Utility, ShouldReturnDemangledName) {
   EXPECT_EQ(std::string{"std::vector<double, std::allocator<double> >::~vector()"}, demangle("_ZNSt6vectorIdSaIdEED1Ev"));
 }
 
+#if !defined(__APPLE__)
 TEST(Utility, ShouldReturnProgFullPath) { EXPECT_EQ(internal::GetArgvs()[0], progname()); }
+#endif
 
 TEST(Utility, ShouldReturnCallStack) {
   EXPECT_EQ(std::string{}, call_stack("\n", 0, 0));
