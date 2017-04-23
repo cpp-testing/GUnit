@@ -76,6 +76,32 @@ inline bool FilterMatchesShould(const std::string& name, const std::string& shou
   return MatchesFilter(name, positive.c_str()) && !MatchesFilter(name, negative.c_str());
 }
 
+// This function is lifted from GTest's internals.
+// Returns true iff colors should be used in the output.
+bool ShouldUseColor(bool stdout_is_tty) {
+  using internal::String;
+
+  const char* const gtest_color = GTEST_FLAG(color).c_str();
+
+  if (String::CaseInsensitiveCStringEquals(gtest_color, "auto")) {
+    const char* const term = internal::posix::GetEnv("TERM");
+    const bool term_supports_color = String::CStringEquals(term, "xterm") || String::CStringEquals(term, "xterm-color") ||
+                                     String::CStringEquals(term, "xterm-256color") || String::CStringEquals(term, "screen") ||
+                                     String::CStringEquals(term, "screen-256color") || String::CStringEquals(term, "tmux") ||
+                                     String::CStringEquals(term, "tmux-256color") ||
+                                     String::CStringEquals(term, "rxvt-unicode") ||
+                                     String::CStringEquals(term, "rxvt-unicode-256color") ||
+                                     String::CStringEquals(term, "linux") || String::CStringEquals(term, "cygwin");
+    return stdout_is_tty && term_supports_color;
+  }
+
+  return String::CaseInsensitiveCStringEquals(gtest_color, "yes") ||
+         String::CaseInsensitiveCStringEquals(gtest_color, "true") || String::CaseInsensitiveCStringEquals(gtest_color, "t") ||
+         String::CStringEquals(gtest_color, "1");
+  // We take "yes", "true", "t", and "1" as meaning "yes".  If the value is neither one of these nor "auto", we treat it as "no"
+  // to be conservative.
+}
+
 struct TestRun {
   std::string should = GetShouldParam();
   bool once = true;
@@ -92,14 +118,30 @@ struct TestRun {
       return false;
     }
 
+    static const bool is_stdout_tty = ShouldUseColor(internal::posix::IsATTY(internal::posix::FileNo(stdout)) != 0);
+
+    auto colorize = ShouldUseColor(is_stdout_tty);
+
     if (disabled && !GTEST_FLAG(also_run_disabled_tests)) {
+      if (colorize) {
+        std::cout << "\033[0;33m";
+      }
       std::cout << "[ DISABLED ] " << name << std::endl;
+      if (colorize) {
+        std::cout << "\033[m";  // Resets the terminal to default.
+      }
       return false;
     }
 
     const auto result = line > test_line && FilterMatchesShould(name, should);
     if (result) {
+      if (colorize) {
+        std::cout << "\033[0;33m";
+      }
       std::cout << "[ SHOULD   ] " << name << std::endl;
+      if (colorize) {
+        std::cout << "\033[m";  // Resets the terminal to default.
+      }
       test_line = line;
       once = true;
     }
