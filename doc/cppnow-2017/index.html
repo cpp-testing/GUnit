@@ -55,18 +55,106 @@ Kris Jusiak, Quantlab Financial
 
 ==============================================================================
 
+## "The only way to go fast is to go well" Uncle Bob
+
+----
+
 ## Agenda
 
+* Testing/Mocking
+* Testable code -> Loosely coupled code -> DI
+* Testing interfaces (mocking)
+* Testing templates (mocking)
+* Automatic mocks injection
+* TDD - unit test
+* BDD - acceptance test (override configuration)
+* Perfect commit...
+* C++2X...
+
+----
+
+###STUPID vs SOLID (Object Oriented design)
+
+<table><tr>
+ <td>
+  <table>
+    <tr><td><b>S</b></td><td>Singleton</td></tr>
+    <tr><td><b>T</b></td><td>Tight Coupling</td></tr>
+    <tr><td><b>U</b></td><td>Untestability</td></tr>
+    <tr><td><b>P</b></td><td>Premature Optimization</td></tr>
+    <tr><td><b>I</b></td><td>Indescriptive Naming</td></tr>
+    <tr><td><b>D</b></td><td>Duplication</td></tr>
+  </table>
+ </td>
+
+ <td>
+  <table>
+    <tr><td><b>S</b></td><td><b>Single Responsibility</b></td></tr>
+    <tr><td><b>O</b></td><td>Open-close</td></tr>
+    <tr><td><b>L</b></td><td>Liskov substitution</td></tr>
+    <tr><td><b>I</b></td><td>Interface segregation</td></tr>
+    <tr><td><b>D</b></td><td><b>Dependency inversion</b></td></tr>
+  </table>
+ </td>
+
+ </tr>
+</table>
+> "Clean Code" Uncle Bob
+
+----
+
+* C++2X
+"example"_test_fixture = [] {
+  auto [sut, mocks] = make<example, NaggyMock>();
+
+  "should print text when update"_test = [&] {
+    using namespace testing;
+    EXPECT_CALL(mocks<iconfig>(), (is_dumpable)()).WillOnce(Return(true));
+    EXPECT_CALL(mocks<iprinter>(), (print)("text"));
+    sut->update();
+  };
+};
+
+class example; // System Under Test
+
+"should print read text"_test = [] {
+ constexpr auto value = 42;
+ auto [sut, mocks] = testing::make<App>(); // creates System Under Test
+                                            // and mocks!
+
+ InSequence sequence;
+ EXPECT_CALL(mocks<Readable>(), read()).WillOnce(Return(value));
+ EXPECT_CALL(mocks<Printable>(), print(value));
+
+ sut.run();
+};
+
+GTEST(example) {
+  namespace di = boost::di;
+
+  SHOULD("create example") {
+    const auto injector = di::make_injector(
+      di::bind<interface>.to(di::NiceGMock{mocks})
+    , di::bind<interface2>.to(di::StrictGMock{mocks})
+    );
+
+    sut = testing::make<SUT>(injector);
+
+    EXPECT_CALL(mock<interface>(), (get)(_)).WillOnce(Return(123));
+    EXPECT_CALL(mock<interface2>(), (f2)(123));
+
+    sut->update();
+  }
+}
+
+Stub vs Fake vs Mock?
 
 Treat code as production code!
 * refactor (remove duplicates)
 
-"The only way to go fast is to go well", Uncle Bob
-
 Goal
 - writing tests can't be hard!
-
-Make it testable -> Loosely coupled code
+- one test despite hwo to inject
 
 Dependency Injection
 
@@ -78,7 +166,6 @@ real value
 unit tests (quick)
 find problems quickly
 test corner cases (hard in BDD)
-
 
 BDD - Behavior Driven Development
 - acceptance testing
@@ -95,8 +182,6 @@ interfaces
 templates
 
 Automatic mocks injection
-
-
 
 ##Agenda
 
@@ -128,33 +213,6 @@ Automatic mocks injection
 
 ----
 
-###STUPID vs SOLID (Object Oriented design)
-
-<table><tr>
- <td>
-  <table>
-    <tr><td><b>S</b></td><td>Singleton</td></tr>
-    <tr><td><b>T</b></td><td>Tight Coupling</td></tr>
-    <tr><td><b>U</b></td><td>Untestability</td></tr>
-    <tr><td><b>P</b></td><td>Premature Optimization</td></tr>
-    <tr><td><b>I</b></td><td>Indescriptive Naming</td></tr>
-    <tr><td><b>D</b></td><td>Duplication</td></tr>
-  </table>
- </td>
-
- <td>
-  <table>
-    <tr><td><b>S</b></td><td><b>Single Responsibility</b></td></tr>
-    <tr><td><b>O</b></td><td>Open-close</td></tr>
-    <tr><td><b>L</b></td><td>Liskov substitution</td></tr>
-    <tr><td><b>I</b></td><td>Interface segregation</td></tr>
-    <tr><td><b>D</b></td><td><b>Dependency inversion</b></td></tr>
-  </table>
- </td>
-
- </tr>
-</table>
-> "Clean Code" Uncle Bob
 
 ==============================================================================
 
