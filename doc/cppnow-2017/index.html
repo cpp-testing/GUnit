@@ -77,15 +77,11 @@ Kris Jusiak, Quantlab Financial
 ----
 
 * Runners/Assertions <- should be in C++ standard
-    * GoogleTest/GUnit, Catch, Boost.Test
+    * GoogleTest/GUnit, Catch, Boost.Test, ...
 
 (TDD - unit testing)
 
 ---
-
-user story BDD scenario/TDD/commits
-
-----
 
 ###STUPID vs SOLID (Object Oriented design)
 
@@ -121,7 +117,7 @@ user story BDD scenario/TDD/commits
 "example"_test_fixture = [] {
   auto [sut, mocks] = make<example, NaggyMock>();
 
-  "should print text when update"_test = [&] {
+  "should print text on update"_test = [&] {
     using namespace testing;
     EXPECT_CALL(mocks<iconfig>(), (is_dumpable)()).WillOnce(Return(true));
     EXPECT_CALL(mocks<iprinter>(), (print)("text"));
@@ -180,6 +176,7 @@ real value
 unit tests (quick)
 find problems quickly
 test corner cases (hard in BDD)
+documentation (requirements)
 
 BDD - Behavior Driven Development
 - acceptance testing
@@ -196,6 +193,33 @@ interfaces
 templates
 
 Automatic mocks injection
+
+Example (Print read text app)
+1. User story
+2. Scenarios (BDD style)
+3. Design
+    o
+   / \
+  o   o cross-functional tasks
+     /
+    o
+
+4. Acceptance driven (per task)
+ iteration
+  * a bit of BDD test
+  * a bit of TDD
+  * a bit of implementation
+
+Note: eXtreme programming techniques
+* pair programming
+  * one dev is writing a test, another one is implementing it
+
+5. Commit (cross functional - AT, UT, impl)
+6. Merge request / review
+
+goto 4.
+
+Summary
 
 ##Agenda
 
