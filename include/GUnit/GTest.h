@@ -78,7 +78,7 @@ inline bool FilterMatchesShould(const std::string& name, const std::string& shou
 
 // This function is lifted from GTest's internals.
 // Returns true iff colors should be used in the output.
-bool ShouldUseColor(bool stdout_is_tty) {
+inline bool ShouldUseColor(bool stdout_is_tty) {
   using internal::String;
 
   const char* const gtest_color = GTEST_FLAG(color).c_str();
