@@ -126,10 +126,11 @@ struct TestRun {
       if (colorize) {
         std::cout << "\033[0;33m";
       }
-      std::cout << "[ DISABLED ] " << name << std::endl;
+      std::cout << "[ DISABLED ] ";
       if (colorize) {
         std::cout << "\033[m";  // Resets the terminal to default.
       }
+      std::cout << name << std::endl;
       return false;
     }
 
@@ -138,10 +139,11 @@ struct TestRun {
       if (colorize) {
         std::cout << "\033[0;33m";
       }
-      std::cout << "[ SHOULD   ] " << name << std::endl;
+      std::cout << "[ SHOULD   ] ";
       if (colorize) {
         std::cout << "\033[m";  // Resets the terminal to default.
       }
+      std::cout << name << std::endl;
       test_line = line;
       once = true;
     }
