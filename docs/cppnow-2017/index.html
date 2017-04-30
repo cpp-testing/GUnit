@@ -1,4 +1,5 @@
 <!doctype html>
+
 <html lang="en">
 
 	<head>
@@ -57,33 +58,580 @@ Kris Jusiak, Quantlab Financial
 
 ## "The only way to go fast is to go well" Uncle Bob
 
-----
+==============================================================================
 
 ## Agenda
 
 * Testing
-  * Runners/Assertions
-  * Testable (loosely coupeled) code (TDD - unit testing)
-      * Single Responsibility Principle
-      * Dependency Injection
-        * Interfaces/Type Erasure/Templates/Concepts
-  * Mocking
-    * Interfaces/Type Erasure/Concepts
-    * Automatic mocks injection
-  * Acceptance testing (BDD)
-* Showcase (User Story -> ... -> commit)
+  * Why?
+  * How And When?
+    * Frameworks
+    * Mocking
+    * Writing A Testable Code (Unit Testing)
+        * Single Responsibility Principle
+        * Dependency Injection
+    * Automatic Mocks Injection
+    * Acceptance Testing
+* Showcase (User Story -> ... -> Commit)
 * C++2X...
+
+==============================================================================
+
+##Why we need to test?
+
+![testing](images/cowboy.png)
 
 ----
 
-* Runners/Assertions <- should be in C++ standard
-    * GoogleTest/GUnit, Catch, Boost.Test, ...
+##It's all about Money!
 
-(TDD - unit testing)
+![cost](images/cost.jpg)
+
+----
+
+##Different types of tests have different costs
+
+![pyramid](images/pyramid.png)
+
+----
+
+* Unit-Tests - 70-85% 
+  * Testing in isolation (mocking)
+  * Easy to write
+  * Quick to run (immediate feedback)
+  * Find code issues quickly 
+  * Test corner cases
+  * Documentation (requirements)
+  * Refactoring without worries
+
+* Integration-Tests - 10-20% (between classes)
+  * Integration between classes
+
+* Acceptance-Tests - 5-10%
+  * Slower to run
+  * Harder to write
+  * In some cases might be manual
+
+----
+
+##Test your code and save more money!
+
+![cost_testing](images/cost_testing.jpg)
+
+----
+
+### "Don't cling to a mistake just because you spent a lot of time and money making it!"
+
+==============================================================================
+
+### Testing - Goals
+
+* Testing can't be hard (simplicity)
+* Tests should not require tests for tests (declartivness)
+* Implementation details should not affect tests (reusability)
+* Testing code should be as good as production code (quality)
+
+> To achieve those goals we need...
+
+==============================================================================
+
+### 1. We need a good* testing framework
+
+```cpp
+#include <cassert> // no much testing facilities in the standard
+
+void test_should_add_2_numbers() {
+  assert(4 == add(2, 2)); // *no proper asserts
+                          // *no nice outputs
+}
+
+int main() {
+  test_should_add_2_numbers(); // *no automatic test registration
+}
+```
+
+```sh
+$CXX -g tests.cpp && ./a.out # *no way to specify which tests to run
+```
+
+----
+
+### Solution -> C++ Testing Frameworks
+
+#### <p align="left">Boost.Test</p>
+
+```cpp
+BOOST_AUTO_TEST_CASE(should_add_2_numbers) {
+  BOOST_CHECK_EQUAL(4, add(2, 2));
+}
+```
+
+#### <p align="left">Catch</p>
+
+```cpp
+TEST_CASE("Numbers can be added", "[add]") {
+  SECTION("should add 2 numbers") { REQUIRE(4 == add(2, 2)); }
+}
+```
+
+----
+
+### Solution -> C++ Testing Frameworks
+
+#### <p align="left">GoogleTest</p>
+
+```cpp
+TEST(AddTest, should_add_2_numbers) {
+  EXPECT_EQ(4, add(2, 2));
+}
+```
+
+#### <p align="left">GoogleTest/GUnit.GTest</p>
+
+```cpp
+GTEST("Can add numbers") {
+  SHOULD("add 2 numbers") { EXPECT_EQ(4, add(2, 2)); }
+}
+```
+
+#### <p align="left">GUnit.GTest-Lite (it will be used on the slides)</p>
+```cpp
+"should add 2 numbers"_test = [] {
+  EXPECT(4 == add(2, 2));
+};
+```
+
+----
+
+### Test-Frameworks references
+
+| | |
+|-|-|
+| GUnit.GTest | https://github.com/cpp-testing/GUnit#GTest |
+| GUnit.GTest-Lite | https://github.com/cpp-testing/GUnit#GTest-Lite |
+
+
+==============================================================================
+
+## 2. We need a good* Mocking framework
+
+####good*
+* Easy to use
+* Limited boilerplate (especially macros)
+* Mocking Interfaces/Concepts/Type-Erasure
+
+----
+
+### Stubs vs Fakes vs Mocks
+
+| | |
+|-|-|
+|Fake|An object with limited capabilities|
+|Stubs|An object that provides predefined answers to method calls and record calls|
+|Mocks|An object on which you set expectations which are verified by the mock|
 
 ---
 
-###STUPID vs SOLID (Object Oriented design)
+https://martinfowler.com/articles/mocksArentStubs.html
+
+----
+
+###Mocking interfaces - the story so far - GoogleMock
+
+```cpp
+class IReader {
+public:
+  virtual ~interface() = default;
+  virtual int read() const;
+};
+```
+
+```cpp
+/**
+ * Boilerplate
+ */
+class MockReader : public IReader {
+public:
+  MOCK_CONST_METHOD1(read, int()); // See the bug?
+};
+```
+
+```cpp
+"should read 42"_test = [] {
+  MockReader reader{};
+  EXPECT_CALL(reader, read()).WillOnce(Return(42));
+  EXPECT(42 == reader.read(42));
+};
+```
+
+----
+
+###Mocking interfaces - better alternatives
+
+* HippoMocks
+* FakeIt
+* **GUnit.GMock** (based on GoogleMock)
+
+```cpp
+"should read 42"_test = [] {
+  GMock<IReader> reader{};
+  EXPECT_CALL(reader, read).WillOnce(Return(42));
+  EXPECT(42 == reader.read());
+};
+```
+
+* No hand written macros :)
+* No boilerplate code
+* Not a standard solution either!
+  * vtable manipulation involved
+
+----
+
+### Mocking templates
+
+#### We are back to square one <- macros
+
+```cpp
+template<class TReader>
+auto read(TReader& reader) { return reader.read(); }
+```
+
+```cpp
+"should read 42"_test = [] {
+  MockReader reader{};
+  // At least we can use the same front-end
+  EXPECT_CALL(reader, read).WillOnce(Return(42));
+  read(reader);
+  EXPECT(42 == reader.read);
+};
+```
+
+----
+
+### Mocking concepts
+
+#### Concepts lite - not yet :(
+
+```cpp
+template <class T>
+concept bool Readable =
+  CopyConstructible<T> &&
+  CopyAssignable<T> &&
+  requires(T t) {
+    { t.read() -> int }
+  }
+};
+```
+
+#### But with concept emulation - yes, please!
+
+```cpp
+template <class T>
+constexpr auto Readable =
+  CopyConstructible<T> &&
+  CopyAssignable<T> &&
+  Callable<int(T::*)>($(read));
+```
+
+----
+
+### Mocking concepts
+
+```cpp
+"should read 42"_test = [] {
+  GMock<Readable> reader{}; // concept based!
+  EXPECT_CALL(reader, read).WillOnce(Return(42));
+  EXPECT(42 == reader.read());
+};
+```
+
+----
+
+## TODO explain how!
+
+----
+
+### Mocking type-erasure
+
+##### Type Erasure (dynamic dispatch without inheritance)
+```cpp
+any<Readable> reader = FileReader{"file.txt"};
+reader = StreamReader{};
+```
+
+```cpp
+auto read(any<Readable> reader) {
+  return reader.read();
+}
+```
+
+```cpp
+"should read 42"_test = [] {
+  GMock<Readable> reader{}; // concept based
+                            // the same as with concepts!
+  EXPECT_CALL(reader, read).WillOnce(Return(42));
+  EXPECT(42 == reader.read());
+};
+```
+
+----
+
+### Mocking references
+
+| | |
+|-|-|
+| GoogleMock | https://github.com/google/googletest |
+| GUnit.GMock | https://github.com/cpp-testing/GUnit#GMock |
+| Dyno (Type-Erasure) | https://github.com/ldionne/dyno |
+
+==============================================================================
+
+## 3. We need to write a testable/'SOLID' code 
+
+----
+
+##Story: Print a value from a file
+
+```
+Scenario 1: Value from a file is displayed
+ Given an 'input.txt' file with an integer value in it
+   And console terminal is ready
+ When the App runs
+ Then the integer value from 'input.txt' file
+   should be printed on the terminal console
+```
+
+----
+
+## KISS - ~~Keep it simple~~, STUPID
+
+```cpp
+int main() {
+  auto value = 0;
+  {
+    std::ifstream file{"input.txt"};
+    assert(file.good());
+    file >> value;
+  }
+  std::cout << value << '\n';
+}
+```
+
+----
+
+## Let's try to test it
+
+####It suppose to be easy!
+
+1. Unit-Tests - **Give me a break!**
+
+2. Acceptance-Tests
+  * Create a file and print a text into it?
+  * Redirect std::cout to some other file?
+  * Compare files?
+  * I give up, it's too difcult, it seems to WORK, I checked it manually!
+    * What about your future team members?
+
+3. Manual-Tests by some other team - **Yes, please!**
+
+----
+
+###Solution -> Start form the test first!
+
+==============================================================================
+
+## 3.1. We need to test drive the code - Test Driven Development (the when)
+
+> Unit Tests (the what)
+
+----
+
+##TDD Mantra - Red-Green-Refactor
+
+<img src="images/tdd.gif" width="40%" />
+
+> Refactor => remove duplicates!
+
+----
+
+##The Three Rules Of Tdd
+
+1. You are not allowed to write any production code unless it is to make a failing unit test pass
+2. You are not allowed to write any more of a unit test than is sufficient to fail
+  * Compilation failures are failures
+3. You are not allowed to write any more production code than is sufficient to pass the one failing unit test
+
+----
+
+##Let's start all over again with TDD
+
+----
+
+#### 1. TDD/RED - Write a bit of test (start from expectations, intentions)
+
+```cpp
+"should not print anything when the input is empty" = [] {
+  app.run();
+  EXPECT("" == out.str());
+};
+```
+
+----
+
+#### 2. TDD/GREEN - Make it compile/pass (the simpler way)
+
+```cpp
+"should not print anythinig when the input is empty" = [] {
+  std::stringstream out{};
+  struct {
+    void run() { }
+    std::ostream& os;
+  } app{out};
+  app.run();
+  EXPECT("" == out.str());
+};
+```
+
+----
+
+#### 3. TDD/REFECTOR - Remove duplicates/extract
+
+```cpp
+class App {
+public:
+  explicit App(std::ostream& os)
+    : os(os)
+  { }
+
+  void run() { }
+
+private:
+  std::ostream& os;
+};
+```
+
+```cpp
+"should not print anythinig when the input is empty" = [] {
+  // given (arrange)
+  std::stringstream out{};
+  App app{};
+
+  // when (act)
+  app.run();
+
+  // then (assert)
+  EXPECT("" == out.str());
+};
+```
+
+----
+
+#### 1. TDD/RED - Write a bit of the next test
+
+```cpp
+"should print value 42 when the input is 42" = [] {
+  // given
+  std::stringstream out{};
+  std::stringstream in{};
+
+  // when
+  app.run();
+
+  // then
+  EXPECT("42" == out.str());
+};
+```
+
+----
+
+#### 2. TDD/GREEN - Make it compile/pass (the simpler way)
+
+```cpp
+"should print value 42 when the input is 42" = [] {
+  // given
+  std::stringstream in{}, out{};
+  struct { 
+    void run() { out << "42"; }
+    std::ostream& out;
+    std::istream& in;
+  } app{in, out};
+  
+  // when
+  app.run();
+  
+  // then
+  EXPECT("42" == out.str());
+};
+```
+
+----
+
+#### 3. TDD/REFECTOR - remove duplicates (across all tests)
+
+```cpp
+"should not print anythinig when the input is empty" = [] {
+  // given (arrange)
+  std::stringstream in{}, out{};
+  App app{in, out};
+
+  // when (act)
+  app.run();
+
+  // then (assert)
+  EXPECT("" == out.str());
+};
+```
+
+```cpp
+"should print value 42 when the input is 42" = [] {
+  // given (arrange)
+  const auto value = "42";
+  std::stringstream in, out{};
+  App app{in, out};
+  in << value;
+
+  // when (act)
+  app.run();
+
+  // then (assert)
+  EXPECT(value == out.str());
+};
+```
+
+----
+
+#### 3. TDD/REFECTOR - remove duplicates (across the implementation)
+
+```cpp
+class App {
+public:
+  App(std::istream& in, std::oustream& out)
+    : in(in), out(out)
+  { }
+
+  void run() { out << in.rdbuf(); }
+
+private:
+  std::istream& in;
+  std::ostream& out;
+};
+```
+
+----
+
+##Test Driven Development (TDD)
+
+* All benefits of Unit-Testing!
+
+* TDD drives the design by producing
+  * Loosely coupled code
+  * Easy to test code
+
+* No need for the test coverage <- it implies 100%
+
+==============================================================================
+
+###3.2. We need to write `SOLID` instead of `STUPID` code
 
 <table><tr>
  <td>
@@ -99,11 +647,11 @@ Kris Jusiak, Quantlab Financial
 
  <td>
   <table>
-    <tr><td><b>S</b></td><td><b>Single Responsibility</b></td></tr>
+    <tr><td><b>S</b></td><td><u>Single Responsibility</u></td></tr>
     <tr><td><b>O</b></td><td>Open-close</td></tr>
     <tr><td><b>L</b></td><td>Liskov substitution</td></tr>
     <tr><td><b>I</b></td><td>Interface segregation</td></tr>
-    <tr><td><b>D</b></td><td><b>Dependency inversion</b></td></tr>
+    <tr><td><b>D</b></td><td><u>Dependency inversion</u></td></tr>
   </table>
  </td>
 
@@ -113,247 +661,19 @@ Kris Jusiak, Quantlab Financial
 
 ----
 
-* C++2X
-"example"_test_fixture = [] {
-  auto [sut, mocks] = make<example, NaggyMock>();
-
-  "should print text on update"_test = [&] {
-    using namespace testing;
-    EXPECT_CALL(mocks<iconfig>(), (is_dumpable)()).WillOnce(Return(true));
-    EXPECT_CALL(mocks<iprinter>(), (print)("text"));
-    sut->update();
-  };
-};
-
-class example; // System Under Test
-
-"should print read text"_test = [] {
- constexpr auto value = 42;
- auto [sut, mocks] = testing::make<App>(); // creates System Under Test
-                                            // and mocks!
-
- InSequence sequence;
- EXPECT_CALL(mocks<Readable>(), read()).WillOnce(Return(value));
- EXPECT_CALL(mocks<Printable>(), print(value));
-
- sut.run();
-};
-
-GTEST(example) {
-  namespace di = boost::di;
-
-  SHOULD("create example") {
-    const auto injector = di::make_injector(
-      di::bind<interface>.to(di::NiceGMock{mocks})
-    , di::bind<interface2>.to(di::StrictGMock{mocks})
-    );
-
-    sut = testing::make<SUT>(injector);
-
-    EXPECT_CALL(mock<interface>(), (get)(_)).WillOnce(Return(123));
-    EXPECT_CALL(mock<interface2>(), (f2)(123));
-
-    sut->update();
-  }
-}
-
-Stub vs Fake vs Mock?
-
-Treat code as production code!
-* refactor (remove duplicates)
-
-Goal
-- writing tests can't be hard!
-- one test despite hwo to inject
-
-Dependency Injection
-
-Testing frameworks
-Boost.Test/GoogleTest/Catch/...
-
-TDD - Test Driven Development
-real value
-unit tests (quick)
-find problems quickly
-test corner cases (hard in BDD)
-documentation (requirements)
-
-BDD - Behavior Driven Development
-- acceptance testing
-
-Perfect commit
-tree with cross functional split
-acceptance test + unit tests + cross functional
-
-
-GMake SUT creation
-
-Mocking
-interfaces
-templates
-
-Automatic mocks injection
-
-Example (Print read text app)
-1. User story
-2. Scenarios (BDD style)
-3. Design
-    o
-   / \
-  o   o cross-functional tasks
-     /
-    o
-
-4. Acceptance driven (per task)
- iteration
-  * a bit of BDD test
-  * a bit of TDD
-  * a bit of implementation
-
-Note: eXtreme programming techniques
-* pair programming
-  * one dev is writing a test, another one is implementing it
-
-5. Commit (cross functional - AT, UT, impl)
-6. Merge request / review
-
-goto 4.
-
-Summary
-
-##Agenda
-
-* In search of the best design
-    * Injection at compile-time
-      * Constructor injection
-      * Templates (Policy design)
-      * Concepts
-    * Injection at run-time
-      * Virtual functions
-      * Functional design
-      * Type erasure
-* [Boost].DI
-  * Concepts driven design
-* Summary
-
-==============================================================================
-
-##In search of the best design!
-
-* Loosely coupled code (easy to extend, maintain, reause)
-* Testable code (TDD, BDD)
-    * Easy/Automatic mocking
-
-  > "If you liked it then you should have put a test on it" Beyonce rule
-
-* ...
-      There is much more!
-
-----
-
-
-==============================================================================
-
-###Story: Print a value from a file (BDD Style)
-
-```
-Scenario 1: Value from a file is displayed
- Given an 'input.txt' file with an integer value in it
-   And console terminal is ready
- When the App runs
- Then the integer value from 'input.txt'
-   should be printed on the terminal console
-```
-
-----
-
-## KISS - ~~Keep it simple~~, STUPID (V0)
-
+#### God object
 ```cpp
-class App { // God object - does too much!
-  void run() {
-    auto value = 0;
-    {
-      std::ifstream file{"input.txt"};
-      assert(file.good());
-      file >> value;
-    }
-    std::cout << value << '\n';
-  }
+class Manager {
+public:
+  int read() const;
+  void write(int);
+  void open(std::string_view);
+  void update(float);
+  bool send(std::any);
+  std::any get();
+  ...
 };
 ```
-
-```cpp
-int main() {
-    App{}.run();
-}
-```
-
-> We read code more often than we write it!
-
-----
-
-## God object (V0)
-
-![app](images/app0.png)
-
-* (+) Does the job?
-* (-) Tightly coupled (hard to extend/maintain)
-* (-) Hard to test (TDD/BDD)
-
-----
-
-###Composition Root
-
-> Unique location in an application where modules are composed together
-
-```cpp
-int main() {
-  App{}.run();
-}
-```
-
-* Simplifies writing integration tests
-
-----
-
-##Injection
-
-> Compile-time options
-
-* Dependencies are ONLY known at compile-time
-  * Most of them!
-
-----
-
-###Constructor injection (V1)
-
-```cpp
-class App {
- Reader reader;
- Printer printer;
-
- public:
-  App(Reader&& reader, Printer&& printer)
-    : reader(std::move(reader))
-    , printer(std::move(printer))
-  { }
-
-  void run() {
-    printer.print(reader.read());
-  }
-};
-```
-
-```cpp
-int main() {
-  Reader reader;                                  // wiring
-  Printer printer;                                // wiring
-  App app{std::move(reader), std::move(printer)}; // wiring
-}
-```
-
-----
 
 ###Single responsibility principle
 
@@ -361,34 +681,103 @@ int main() {
 
 ----
 
-###Constructor injection (V1)
+###Single responsibility principle
 
-![app](images/app1.png)
+```cpp
+/**
+ * Purpose: read (more generic istream)
+ */
+class Reader {
+public: 
+  int read(); 
+};
+```
 
-* (+) We can test it in isolation (including App) but it's hard
-* (+) Reader/Printer are not tightly coupled to the App
-* (-) Can't inject different Readers/Printers
-* (-) We introduced a wiring mess
+```cpp
+/**
+ * Purpose: print (more generic ostream)
+ */
+class Printer {
+public: 
+  void print(int); 
+};
+```
 
 ----
 
-###There we have it - Dependency Injection (DI)
+###Single responsibility principle is needed but it's not enough for testable code!
+
+```cpp
+class App {
+ Reader reader; // tightly coupling, no way to fake it for the test
+ Printer printer; // tightly coupling, no way to fake it for the test
+
+public:
+  void run();
+};
+```
+
+> Code like that would never be written using TDD!
+
+----
+
+##We need more, we need to be able to inject fake implementations!
+
+##We need...
+
+----
+
+###The Dependency Inversion Principle	
 
 > "Don't call us, we'll call you", Hollywood principle
 
-####Wiring - Create and pass required dependencies
 ```cpp
-Reader reader{...};   // wiring
-Printer printer{...}; // wiring
-...                   // ...
-App app{...};         // wiring
+// It's all about the construction
+App::App(std::istream& in, std::ostream& out); // DEPENDENCY INJECTION!
 ```
-
-> Separates creation logic from business logic
 
 ----
 
-###Templates / Policy Design / Duck Typing (V2)
+###The Dependency Inversion Principle	
+
+> "Depend on abstractions, not on concretions"
+
+####What can we inject?
+
+| | |
+|-|-|
+| Compile-Time | Templates/Concepts |
+| Run-Time | Interfaces/Type-Erasure/Functions |
+
+----
+
+##Let's get back to our example
+
+----
+
+##Test - goal - sudo syntax
+
+```cpp
+"should print read text"_test = {
+  // given
+  [app, fakes] = make<App>(); // create an app and fakes for me, please
+
+  // when
+  fakes<Reader>.read().return(42);
+  fakes<Printer>.print(42);
+
+  // then
+  app.run();
+}
+```
+
+* Write test easily and quickly
+* Implantation details, how deps are injected, should not affect the test
+* Isolate the word around us
+
+----
+
+###Templates / Policy Design / Duck Typing
 
 ```cpp
 template<class TReader, class TPrinter>
@@ -409,72 +798,30 @@ public:
 
 ```cpp
 int main() {
-  Reader reader;                                // wiring
-  Printer printer;                              // wiring
-  App<Reader, Printer>{reader, printer}.run();  // wiring
+  Reader reader{};           // wiring
+  Printer printer{};         // wiring
+  App app{reader, printer};  // wiring
+  app.run();
 }
 ```
 
 ----
 
-###Templates / Policy Design / Duck Typing (V2)
+###Composition Root
 
-* (+) Reader/Printer/App migt be tested in isolation
-  * hand written mocks
-* (+) Reader/Printer are not tightly coupled to the App
-* (+) Different Readers/Printers can be injected
-* (-) Header files only
-* (-) Slower compilation times (Point of instantiation - POI)
-* (-) Code bloat (executable size)
-* (-) Templates are contagious and give bad error messages
+> Unique location in an application where modules are composed together
 
----
-
-STL example: `std::vector`
-
-----
-
-###Template argument deduction for class templates (C++17)
-
-####C++14
 ```cpp
-  App<Reader, Printer>{reader, printer}.run();
+int main() {
+  App{...}.run();
+}
 ```
 
-####C++17
-```cpp
-  App{reader, printer}.run(); // templates are still there
-                              // just deduced from parameters
-```
+####Simplifies writing integration tests
 
 ----
 
 ###Concepts/C++2X?
-
-####API
-```cpp
-template<class... Ts>
-concept bool Concept = requires(Ts..., args...) {
-  expressions...
-};
-```
-
-####Example
-```cpp
-template <class T>
-concept bool Concept =
-  requires(T t, std::ostream& os) {
-    { os << t } -> std::ostream&; // printable
-  } &&
-  requires(T t, int p1, double p2) {
-    { t.foo(p1, p2) } -> void // foo callable with void(T::*)(int, double)
-  }
-};
-```
-
-----
-
-###Concepts/C++2X? (V3)
 
 ```cpp
 template <class T>
@@ -492,7 +839,7 @@ concept bool Printable = requires(T printer) {
 
 ----
 
-###Concepts/C++2X? (V3)
+###Concepts/C++2X?
 
 ```cpp
 template<Readable TReader, Printable TPrinter> // concepts
@@ -518,34 +865,6 @@ int main() {
   App{reader, printer}.run();                // wiring
 }
 ```
-
-----
-
-###Concepts/C++2X? (V3)
-
-* (+) We can test it in isolation
-  * Generate mocks from type constraints using static reflection
-* (+) Reader/Printer are not tightly coupled to the App
-* (+) Different Readers/Printers can be injected
-* (+) Short error messages
-  * Constraint not satisfied (POI)
-* (-) Header files only
-
--
-
-| | |
-|-|-|
-|[ (SG8) Concepts lite](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3580.pdf) | Constrating templates |
-|[ (SG7) Static reflection](www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0194r0.pdf) | Fakes/Stubs/Mocks generation |
-
-----
-
-##Injection
-
-> Run-time options
-
-* Dependencies AREN'T known at compile-time
-  * For example - type depends on some configuration from xml file
 
 ----
 
@@ -622,17 +941,6 @@ int main() {
 
 ----
 
-###Virtual functions/interfaces (V4)
-
-![app](images/app3.png)
-
-* (+) Easy to test and mock (TDD/BDD)
-* (-) Requires heap (possible cache misses) and inheritance
-* (-) Performance hit due to virtual dispatch
-* (-) Wiring mess!
-
-----
-
 ###Virtual functions/interfaces - performance
 ####final keyword and devirtualization
 
@@ -648,98 +956,6 @@ https://godbolt.org/g/e8olYN
 -
 
 https://channel9.msdn.com/Events/GoingNative/2013/Inheritance-Is-The-Base-Class-of-Evil
-
-----
-
-###Functional design (V5)
-
-```cpp
-using fprinter = std::function<void(int)>;
-using fread    = std::function<int()>;
-```
-
-```cpp
-const auto fileReader = [](std::string_view path) {
-  return [=] {
-    auto value = 0;
-    {
-      std::ifstream file{path};
-      file >> value;
-    }
-    return value;
-  };
-};
-```
-
-```cpp
-const auto consolePrinter = [](int value) {
-  std::cout << value << '\n';
-};
-```
-
-----
-
-###Functional design (V5)
-
-```cpp
-class App {
-  fprinter printer;
-  fread read;
-
- public:
-   App(const fprinter& printer, const fread& read)
-     : printer(printer), read(read)
-   { }
-
-   void run() {
-     printer(read());
-   }
-};
-```
-
-----
-
-###Functional design (V5)
-
-```cpp
-int main() {
-  App{fileReader, consolePrinter}.run();
-}
-```
-
-* (+) Powerful design
-* (+) Easy to mock
-* (-) std::function may allocate and causes code bloat
-* (-) Requires totally different approach
-* (-) Code bloat
-
-----
-
-###Type erasure/Virtual Concepts/C++2X (V6)
-
-```cpp
-class FileReader final { // no inhertiance
-  std::ifstream file;
-
-public:
-  explicit FileReader(std::string_view path) : file{path} {
-    assert(file.good());
-  }
-
-  int read() {
-    auto value = 0;
-    file >> value;
-    return value;
-  }
-};
-```
-
-```cpp
-class ConsolePrinter final { // no inhertiance
-public:
-  void print(int value) { std::cout << value << '\n'; }
-};
-```
 
 ----
 
@@ -772,25 +988,22 @@ int main() {
 
 ----
 
-###Type erasure/Virtual Concepts/C++2X (V6)
-
-* (+) Inheritance is not required
-* (+) Value semantics (no heap usage required)
-* (+) Based on the same concepts as for type constraints
-* (+) Performance (worst case - function call)
-* (-) May allocate
-  * Possible Small Buffer Optimization (SBO)
-
----
-
 * STL example: `std::shared_ptr deleter`
 * [(SG8) Virtual concepts](https://github.com/andyprowl/virtual-concepts/blob/master/draft/Dynamic%20Generic%20Programming%20with%20Virtual%20Concepts.pdf)
+
+----
+
+###Law of Demeter
+
+> "Only talk to your immediate friends"
 
 ----
 
 ###Doesn't matter which option will be chosen the wiring will have to happen either way!
 
 ----
+
+Dependency Injection
 
 ###Manual DI - Wiring
 
@@ -958,119 +1171,9 @@ error: inline function 'abstract_type<IPrinter>::is_not_bound::error'
 
 ----
 
-###[[Boost].DI](https://github.com/boost-experimental/di) - Let's come back to our example (V1)
 
-####Automatic Injection
 
-```cpp
-class App {
- Reader reader;
- Printer printer;
-
-public:
-  App(Reader&& reader, Printer&& printer)
-    : reader(std::move(reader))
-    , printer(std::move(printer))
-  {}
-
-  void run() {
-    printer.print(reader.read());
-  }
-};
-```
-
-----
-
-###[[Boost].DI](https://github.com/boost-experimental/di) - Automatic Injection
-
-#####Manual DI - Wiring mess
-```cpp
-int main() {
-  auto reader = Reader{};                                // wiring
-  auto printer = Printer{std::cout};                     // wiring
-  auto app = App{std::move(reader), std::move(printer)}; // wiring
-  app.run();
-}
-```
-
-#####[Boost].DI
-```cpp
-int main() {
-  di::make_injector().create<App>().run();
-}
-```
-
-----
-
-###[[Boost].DI](https://github.com/boost-experimental/di) - Refactoring for free!
-
-####Let's change `App` constructor
-
-######Before
-```cpp
-App(Reader&& reader, Printer&& printer)
-  : reader(std::move(reader))
-  , printer(std::move(printer))
-{ }
-```
-
-######After
-```cpp
-App(Printer& printer, std::unique_ptr<Reader> reader)
- : printer(printer)
- , reader(std::move(reader))
-{}
-
-```
-
-----
-
-###[[Boost].DI](https://github.com/boost-experimental/di) - Refactoring for free!
-
-#####Manual DI - Wiring mess
-```cpp
-int main() {
-  auto reader = std::make_unique<Reader>{};   // diff wiring!
-  auto printer = Printer{std::cout};          // wiring
-  auto app = App{printer, std::move(reader)}; // diff wiring!
-  app.run();
-}
-```
-
-#####[Boost].DI - No changes!
-```cpp
-int main() {
-  di::make_injector().create<App>().run(); // same as before!
-}
-```
-
-----
-
-###[[Boost].DI](https://github.com/boost-experimental/di) - Automatic Mocks Injector
-
-####[GUnit.GMock](https://github.com/cpp-testing/GUnit)
-```cpp
-GMock<IReader> readerMock; // no more MOCK_CONST_METHOD7(...), etc.
-EXPECT_CALL(readerMock, read(_)).WillOnce(Return(42));
-```
-
-####Test
-```cpp
-"should print read text"_test = [] {
-  constexpr auto value = 42;
-
-  auto [sut, mocks] = make<App>(); // creates System Under Test
-                                   // and mocks
-
-  InSequence sequence;
-  EXPECT_CALL(mocks<IReader)>(), read()).WillOnce(Return(value));
-  EXPECT_CALL(mocks<IPrinter>(), print(value));
-
-  sut.run();
-};
-```
-
-----
+==============================================================================
 
 ###[[Boost].DI](https://github.com/boost-experimental/di) - Behaviour Driven Development (BDD)
 
@@ -1426,21 +1529,335 @@ int main() {
 | ------- | ------------- |
 | Try it online! | http://melpon.org/wandbox/permlink/UGaFDy2jaSCeksa1 |
 
+
 ==============================================================================
 
-###Summary
+# Acceptance Test Driven Development (ATDD)
+
+Scenario 1: Value from a file is displayed
+ Given an 'input.txt' file with an integer value in it
+   And console terminal is ready
+ When the App runs
+ Then the integer value from 'input.txt'
+   should be printed on the terminal console
+
+GTEST(example) {
+  namespace di = boost::di;
+
+  SHOULD("create example") {
+    const auto injector = di::make_injector(
+      di::bind<interface>.to(di::NiceGMock{mocks})
+    , di::bind<interface2>.to(di::StrictGMock{mocks})
+    );
+
+    sut = testing::make<SUT>(injector);
+
+    EXPECT_CALL(mock<interface>(), (get)(_)).WillOnce(Return(123));
+    EXPECT_CALL(mock<interface2>(), (f2)(123));
+
+    sut->update();
+  }
+}
+
+
+
+==============================================================================
+
+# Showcase
 
 ----
 
-###Good practises are good practices for a reason!
+* Agile (Scrum Methodology)
+* UML 2.5 (design)
+* eXtreme Programming Techniques
+* Continous Integration (github/travis)
+* ATDD/BDD/TDD
+* C++17
+
+> All code compiles and pass tests.
 
 ----
 
-###Concepts and static reflection will be a game changer!
+1. Product backlog refinment
+
+Refinment
+  Priority: 
+    Story:  As a trading system I would like to send orders to the exchange
+
+  Acceptance critera
+
+    Scenario 1: 
+      Given an decision engine and a connection to the exchange
+      When the decision engine triggers an orders
+      And there is no other outstanding order
+      Then order should be send to the exchange
+
+    Scenario 2: 
+      Given an decision engine and a connection to the exchange
+      When the exchange confirmed the order
+      Then the confirmation should be sent to the decision engine
+
+    Scenario 3, Scenario 4, ...
+
+Design/Workshop
+
+    Domains
+      decision engine <-> gateway <-> exchange
+
+    Cross functional:
+
+           decision engine
+          /
+         trigger order
+         /
+        has any oustanding orders
+    yes / \ no
+     X    gateway
+            \ send order
+        
+           exchange
+          /
+         confirmation
+         /
+      gateway
+      / send
+    decision engine
+
+Tasks
+  1. decision... -> yes
+  2. decision... -> no
+  3. confirmation -> transfer
+
+Planning
+  Estimates (poker, has to be understood by everyone)
+    * story points <- complexity of the task
+      1 sp -> transfer a message trhough all layers
+
+    1. decision... -> yes (2sp)
+    2. decision... -> no (1sp)
+    3. confirmation -> transfer (3sp)
+
+ team velociy (avg. 20 sp)
+ commitment -> 1/2/3
+
+Sprint (1 week)
+
+  Story 1.
+    1.1 Acceptance driven development (ATDD with BDD)
+
+      given
+
+      when
+
+      then
+
+      > start from your expectatoins
+
+    Test Driven Development (unit testing)
+
+      TDD mantra
+      TDD real values
+
+      should...
+
+      eXtreme programming -> pairing, one test one implementation
+
+
+      write a bit more of test
+
+    Commit each time 
+
+      * rebase or merge or branch with history how tthe test eveolved
+
+      [Story.1] Add
+      
+      Problem:
+        - fdsalfdlsa
+
+      Solution:
+        - fdsalfjdsalfjdlsaj
+
+    Commit content: acceptance test + unit tests + cross functional
+
+    Create a merge request
+      github
+
+    Code review
+      Did you consider...?
+
+
+    Someone else is accepting your merge requests
+
+    Take the next story... 
+      * Pair with someone else of the team!
+
+As a I would like to 
+
+Artifacts
+  * Acceptance criteria (BDD style)
+
+  Scenario 1: Value from a file is displayed
+   Given an 'input.txt' file with an integer value in it
+     And console terminal is ready
+   When the App runs
+   Then the integer value from 'input.txt'
+     should be printed on the terminal console
+
+  Scenario 1: Value from a file is displayed
+   Given an 'input.txt' file with an integer value in it
+     And console terminal is ready
+   When the App runs
+   Then the integer value from 'input.txt'
+     should be printed on the terminal console
+
+
+     NOTE
+> Always start from the expections (express intentions!)
+Treat code as production code!
+* refactor (remove duplicates)
+
+
+Example (Print read text app)
+1. User story
+2. Scenarios (BDD style)
+3. Design
+    o
+   / \
+  o   o cross-functional tasks
+     /
+    o
+
+4. Acceptance driven (per task)
+ iteration
+  * a bit of BDD test
+  * a bit of TDD
+  * a bit of implementation
+
+Note: eXtreme programming techniques
+* pair programming
+  * one dev is writing a test, another one is implementing it
+
+5. Commit (cross functional - AT, UT, impl)
+6. Merge request / review
+
+goto 4.
+
+
+
+==============================================================================
+
+# Testing and C++2X...
 
 ----
 
-###Dependency Injection
+### Automatic test registration and std::testing assertions
+
+```cpp
+"should add 2 numbers"_test = [] {
+  std::testing::assert(4 == add(2, 2));
+};
+```
+
+----
+
+### Test Suites/Fixtures
+
+```cpp
+"Calculator"_test_fixture = [] {
+  // set-up
+  auto sut = calcualtor{};
+
+  "should add 2 numbers"_test = [&] {
+    std::testing::assert(4 == sut.add(2, 2));
+  };
+
+  "should sub 2 numbers"_test = [&] {
+    std::testing::assert(0 == sut.sub(2, 2));
+  };
+
+  // tear-down
+};
+```
+
+----
+
+### Mocking interfaces
+
+```cpp
+class ifoo {
+public:
+  virtual ~ifoo() noexcept = default;
+  virtual int bar() = 0;
+};
+```
+
+```cpp
+std::testing::mock<ifoo> foo{};
+foo.expect_call(bar).will_once(return(42));
+std::testing::assert(42 == foo.bar());
+```
+
+### Mocking concepts
+
+```cpp
+template <class T>
+concept bool IFooable =
+  requires(T t) {
+    t.bar() -> int
+  };
+```
+
+```cpp
+std::testing::mock<IFooable> foo{};
+foo.expect_call(bar).will_once(return(42));
+std::testing::assert(42 == foo.bar());
+```
+
+----
+
+### Automatic mocks injection
+
+```cpp
+"App"_test_fixture = [] {
+ constexpr auto value = 42;
+ auto [sut, mocks] = std::testing::make<App>();
+
+ mocks.expect_call<Readable>(read()).will_once(return(value));
+ mocks.expect_call<Printable>(print(value));
+
+ sut.run();
+};
+```
+
+----
+
+### STD 
+* concepts lite
+* virtual concepts
+* static reflection
+* source line info
+
+==============================================================================
+
+# Summary
+
+----
+
+### "If you liked it then you should have put a test on it" Beyonce rule
+
+----
+
+----
+
+### Good practises are good practices for a reason!
+
+----
+
+### Concepts and static reflection will be a game changer!
+
+----
+
+### Dependency Injection
 
 * A powerful design pattern helping with producing
   * Loosely coupled code
@@ -1451,14 +1868,6 @@ int main() {
   * Simplify refactoring (constructor parameters deduction)
   * Make testing easier (automatic mocks injection)
   * Supports templates/concepts injection
-
-----
-
-###Dependency Injection - guideline
-
-![guideline](images/guideline.png)
-
-
 
 ==============================================================================
 
