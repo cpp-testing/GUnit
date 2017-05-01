@@ -71,7 +71,7 @@ Kris Jusiak, Quantlab Financial
         * Single Responsibility Principle
         * Dependency Injection
     * Automatic Mocks Injection
-    * Acceptance Testing
+    * Test Driven Development
 * Showcase (User Story -> ... -> Commit)
 * C++2X...
 
@@ -364,7 +364,27 @@ const auto Readable =
 
 ----
 
-## TODO explain how!
+### Virtual Concepts - Implementation details
+
+```cpp
+$(name) [] {
+  return [](auto t, auto r, auto... args) {
+   struct { // inherit from this...
+    static auto expr() {
+     return [](const auto &self, decltype(args)... args) 
+       -> decltype(self.name(std::forward<decltype(args)>(args)...)) 
+     {};
+    }
+    auto name(decltype(args)... args) {
+     return static_cast<decltype(t) *>(this)
+       ->template call<name, typename decltype(r)::type>(
+           std::forward<decltype(args)>(args)...);
+    }
+   } _;
+   return _; // local struct
+  };
+ }
+```
 
 ----
 
@@ -997,7 +1017,7 @@ int main() {
 
 ==============================================================================
 
-## Consider test driving implementation
+## Consider test driving the implementation
 
 | | | |
 |-|-|-|
@@ -1023,6 +1043,159 @@ int main() {
 
 ----
 
+##Test Driven Development (TDD)
+
+* All benefits of Unit-Testing!
+
+* TDD drives the design by producing
+  * Loosely coupled code
+  * Easy to test code
+
+* No need for the test coverage <- it implies 100%
+
+* How to know that code wasn't written in TDD?
+  * You comment some code and there is no failing test
+  * Singletons/Globals in the code (the root of all evil)
+  * God objects
+  * ...
+
+----
+
+#### Acceptance Test Driven Development (ATDD)
+
+```
+Scenario 1: Value from a file is displayed
+ Given an 'input.txt' file with an integer value in it
+   And console terminal is ready
+ When the App runs
+ Then the integer value from 'input.txt'
+   should be printed on the terminal console
+```
+
+ ```cpp
+GTEST(example) {
+  namespace di = boost::di;
+
+  SHOULD("create example") {
+    const auto injector = di::make_injector(
+      di::bind<interface>.to(di::NiceGMock{mocks})
+    , di::bind<interface2>.to(di::StrictGMock{mocks})
+    );
+
+    sut = testing::make<SUT>(injector);
+
+    EXPECT_CALL(mock<interface>(), (get)(_)).WillOnce(Return(123));
+    EXPECT_CALL(mock<interface2>(), (f2)(123));
+
+    sut->update();
+  }
+}
+```
+
+==============================================================================
+
+## Showcase (User Story -> ... -> Commit)
+
+----
+
+### Tools
+
+* Agile (Scrum)
+* UML 2.5 (design)
+* eXtreme Programming
+* Continous Integration
+* ATDD/BDD/TDD
+* C++17
+
+----
+
+1. Product backlog refinment
+
+Refinment
+  Priority: 
+    Story:  As a trading system I would like to send orders to the exchange
+
+  Acceptance critera
+
+  ```
+Feature: User trades stocks
+  Scenario: User requests a sell before close of trading
+    Given I have 100 shares of MSFT stock
+       And the decision makers decides to sell 50 APPL stock
+       And the time is before close of trading
+
+    When I ask to sell 20 shares of MSFT stock
+
+     Then I should have 80 shares of MSFT stock
+      And I should have 150 shares of APPL stock
+      And a sell order for 20 shares of MSFT stock should have been executed
+```
+
+----
+
+Design/Workshop
+
+    Domains
+      decision engine <-> gateway <-> exchange
+
+    Cross functional:
+
+           decision engine
+          /
+         trigger order
+         /
+        has any oustanding orders
+    yes / \ no
+     X    gateway
+            \ send order
+        
+           exchange
+          /
+         confirmation
+         /
+      gateway
+      / send
+    decision engine
+
+----
+
+Tasks
+  1. decision... -> yes
+  2. decision... -> no
+  3. confirmation -> transfer
+
+----
+
+Planning
+  Estimates (poker, has to be understood by everyone)
+    * story points <- complexity of the task
+      1 sp -> transfer a message trhough all layers
+
+    1. decision... -> yes (2sp)
+    2. decision... -> no (1sp)
+    3. confirmation -> transfer (3sp)
+
+ team velociy (avg. 20 sp)
+ commitment -> 1/2/3
+
+----
+
+Sprint (1 week)
+
+  Story 1.
+    1.1 Acceptance driven development (ATDD with BDD)
+
+      given
+
+      when
+
+      then
+
+      > start from your expectatoins
+
+    Test Driven Development (unit testing)
+
+inline auto __attribute__((optimize("O0"))) dtor_offset() {
 ##Let's start all over again with TDD
 
 ----
@@ -1179,147 +1352,76 @@ private:
 
 ----
 
-##Test Driven Development (TDD)
+```cpp
+template<class TStream>
+struct exchange {
+  void receive();
+  void send();
+};
 
-* All benefits of Unit-Testing!
+struct shares {
+  int get(std::string_view share);
+};
 
-* TDD drives the design by producing
-  * Loosely coupled code
-  * Easy to test code
+template<class TShares>
+struct decision_maker {
+  std::pair<bool, what> should_by();
+  void update(T);
+};
 
-* No need for the test coverage <- it implies 100%
+template<class TDecisionMaker, class TExchange, class Translactor>
+struct trading_system {
+  TDecisionMaker& dm;
+  TExchange& exchange;
 
-* How to know that code wasn't written in TDD?
-  * You comment some code and there is no failing test
-  * Singletons/Globals in the code (the root of all evil)
-  * God objects
-  * ...
-
-----
-
-#### Acceptance Test Driven Development (ATDD)
-
-```
-Scenario 1: Value from a file is displayed
- Given an 'input.txt' file with an integer value in it
-   And console terminal is ready
- When the App runs
- Then the integer value from 'input.txt'
-   should be printed on the terminal console
-```
-
- ```cpp
-GTEST(example) {
-  namespace di = boost::di;
-
-  SHOULD("create example") {
-    const auto injector = di::make_injector(
-      di::bind<interface>.to(di::NiceGMock{mocks})
-    , di::bind<interface2>.to(di::StrictGMock{mocks})
-    );
-
-    sut = testing::make<SUT>(injector);
-
-    EXPECT_CALL(mock<interface>(), (get)(_)).WillOnce(Return(123));
-    EXPECT_CALL(mock<interface2>(), (f2)(123));
-
-    sut->update();
+  void process() {
+    if (auto buffer = exchange.receive(); buffer > 0) {
+      dm.update(translator.translate(buffer));
+    } eles if (auto [fire, what] = dm.should_buy(); fire) {
+      exchange.send(translator.translate(what));
+    }
   }
-}
+};
+
+"User request a sell before close of trading"_test = [] {
+
+  auto [ts, mocks] = testing::make<trading_system>(); // creates sut and mocks
+
+  GIVEN(mocks<DecisionMaker>(), should_buy()).WillOnce(Return({true, {"APPL", 20}}));
+  GIVEN(mocks("MyShares"_s), get("APPL")).WillOnce(Return(100));
+
+  WHEN(ts.process());
+
+  THEN(mocks("exchange"_s), send({"APPL", 20}));
+};
+
+
+"User request a sell before close of trading"_test = [] {
+  testing::mocks mocks{};
+  const auto injector = di::make_injector(
+    di::bind<Stremable>.to(mocks) [di::override]
+  );
+  auto ts = injector.create<trading_system>();
+
+  "my first"_scenario = [&] {
+    GIVEN(mocks<DecisionMaker>(), should_buy()).WillOnce(Return({true, {"APPL", 20}}));
+    GIVEN(mocks("MyShares"_s), get("APPL")).WillOnce(Return(100));
+
+    WHEN(ts.process());
+
+    THEN(mocks("exchange"_s), send({"APPL", 20}));
+  }
+
+  "second"_scenario = [&] {
+    GIVEN(mocks<DecisionMaker>(), should_buy()).WillOnce(Return({true, {"APPL", 20}}));
+    GIVEN(mocks("MyShares"_s), get("APPL")).WillOnce(Return(100));
+
+    WHEN(ts.process());
+
+    THEN(mocks("exchange"_s), send({"APPL", 20}));
+  }
+};
 ```
-
-==============================================================================
-
-## Showcase (User Story -> ... -> Commit)
-
-----
-
-* Agile (Scrum Methodology)
-* UML 2.5 (design)
-* eXtreme Programming Techniques
-* Continous Integration (github/travis)
-* ATDD/BDD/TDD
-* C++17
-
-> All code compiles and pass tests.
-
-----
-
-1. Product backlog refinment
-
-Refinment
-  Priority: 
-    Story:  As a trading system I would like to send orders to the exchange
-
-  Acceptance critera
-    ...
-
-----
-
-Design/Workshop
-
-    Domains
-      decision engine <-> gateway <-> exchange
-
-    Cross functional:
-
-           decision engine
-          /
-         trigger order
-         /
-        has any oustanding orders
-    yes / \ no
-     X    gateway
-            \ send order
-        
-           exchange
-          /
-         confirmation
-         /
-      gateway
-      / send
-    decision engine
-
-----
-
-Tasks
-  1. decision... -> yes
-  2. decision... -> no
-  3. confirmation -> transfer
-
-----
-
-Planning
-  Estimates (poker, has to be understood by everyone)
-    * story points <- complexity of the task
-      1 sp -> transfer a message trhough all layers
-
-    1. decision... -> yes (2sp)
-    2. decision... -> no (1sp)
-    3. confirmation -> transfer (3sp)
-
- team velociy (avg. 20 sp)
- commitment -> 1/2/3
-
-----
-
-Sprint (1 week)
-
-  Story 1.
-    1.1 Acceptance driven development (ATDD with BDD)
-
-      given
-
-      when
-
-      then
-
-      > start from your expectatoins
-
-    Test Driven Development (unit testing)
-
-      TDD mantra
-      TDD real values
 
       should...
 
@@ -1442,20 +1544,13 @@ goto 4.
 
 ----
 
-# References
+### Proposals
 
-| | | |
-|-|-|-|
-| | | |
-[(SG8) Concepts lite](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3580.pdf) |
-[Virtual Concepts](https://github.com/andyprowl/virtual-concepts/blob/master/draft/Dynamic%20Generic%20Programming%20with%20Virtual%20Concepts.pdf) |
-[(SG7) Static reflection](www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0194r0.pdf)
-
-### STD 
-* concepts lite
-* virtual concepts
-* static reflection
-* source line info
+| | |
+|-|-|
+| Mocks Generation | [(SG7) Static reflection](www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0194r0.pdf) |
+| Type constraints | [(SG8) Concepts lite](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3580.pdf) |
+| Concepts based type erasure | [Virtual Concepts](https://github.com/andyprowl/virtual-concepts/blob/master/draft/Dynamic%20Generic%20Programming%20with%20Virtual%20Concepts.pdf) |
 
 ==============================================================================
 
@@ -1465,9 +1560,11 @@ goto 4.
 
 ### Good practises are good practices for a reason!
 
-----
-
-### TODO put all consider...
+* Consider using a good* testing framework
+* Consider using a good* Mocking framework
+* Consider writing `SOLID` instead of `STUPID` code
+* Consider using dependency injection framework
+* Consider test driving the implementation
 
 ----
 
