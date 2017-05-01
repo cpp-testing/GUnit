@@ -77,7 +77,7 @@ Kris Jusiak, Quantlab Financial
 
 ==============================================================================
 
-##Why we need to test?
+##Why testing is important?
 
 ![testing](images/cowboy.png)
 
@@ -126,16 +126,27 @@ Kris Jusiak, Quantlab Financial
 
 ### Testing - Goals
 
-* Testing can't be hard (simplicity)
-* Tests should not require tests for tests (declartivness)
-* Implementation details should not affect tests (reusability)
-* Testing code should be as good as production code (quality)
+| | |
+|-|-|
+| Simplicity | Testing can't be hard  |
+| Expressiveness | Tests should not have logic |
+| Reusability | Implementation details should not trigger tests changes |
+| Quality | Test code should be treated as production code |
 
-> To achieve those goals we need...
+> To achieve those goals...
 
 ==============================================================================
 
-### 1. We need a good* testing framework
+## Consider using a good* testing framework
+
+####good*
+* Easy to add and run new tests (automatic test registration)
+* Proper assertions system
+* Feature reach (test suites/fixtures/different outputs)
+
+----
+
+### Testing in C++ without a framework
 
 ```cpp
 #include <cassert> // no much testing facilities in the standard
@@ -203,20 +214,19 @@ GTEST("Can add numbers") {
 
 ----
 
-### Test-Frameworks references
+### Testing-Frameworks references
 
 | | |
 |-|-|
 | GUnit.GTest | https://github.com/cpp-testing/GUnit#GTest |
 | GUnit.GTest-Lite | https://github.com/cpp-testing/GUnit#GTest-Lite |
 
-
 ==============================================================================
 
-## 2. We need a good* Mocking framework
+## Consider using a good* Mocking framework
 
 ####good*
-* Easy to use
+* Easy to do to simple things but with possibility to do more complex too
 * Limited boilerplate (especially macros)
 * Mocking Interfaces/Concepts/Type-Erasure
 
@@ -297,6 +307,13 @@ auto read(TReader& reader) { return reader.read(); }
 ```
 
 ```cpp
+class MockReader : public IReader {
+public:
+  MOCK_CONST_METHOD1(read, int()); // See the bug?
+};
+```
+
+```cpp
 "should read 42"_test = [] {
   MockReader reader{};
   // At least we can use the same front-end
@@ -323,14 +340,14 @@ concept bool Readable =
 };
 ```
 
-#### But with concept emulation - yes, please!
+#### But with concept emulation (C++14) - yes!
 
 ```cpp
 template <class T>
-constexpr auto Readable =
+const auto Readable =
   CopyConstructible<T> &&
   CopyAssignable<T> &&
-  Callable<int(T::*)>($(read));
+  Callable<T, int()>($(read));
 ```
 
 ----
@@ -386,11 +403,37 @@ auto read(any<Readable> reader) {
 
 ==============================================================================
 
-## 3. We need to write a testable/'SOLID' code 
+### Consider writing `SOLID` instead of `STUPID` code
+
+<table><tr>
+ <td>
+  <table>
+    <tr><td><b>S</b></td><td><u>Single Responsibility</u></td></tr>
+    <tr><td><b>O</b></td><td>Open-close</td></tr>
+    <tr><td><b>L</b></td><td>Liskov substitution</td></tr>
+    <tr><td><b>I</b></td><td>Interface segregation</td></tr>
+    <tr><td><b>D</b></td><td><u>Dependency inversion</u></td></tr>
+  </table>
+ </td>
+
+ <td>
+  <table>
+    <tr><td><b>S</b></td><td><strike>Singleton</strike></td></tr>
+    <tr><td><b>T</b></td><td><strike>Tight Coupling</strike></td></tr>
+    <tr><td><b>U</b></td><td><strike>Untestability</strike></td></tr>
+    <tr><td><b>P</b></td><td><strike>Premature Optimization</strike></td></tr>
+    <tr><td><b>I</b></td><td><strike>Indescriptive Naming</strike></td></tr>
+    <tr><td><b>D</b></td><td><strike>Duplication</strike></td></tr>
+  </table>
+ </td>
+
+ </tr>
+</table>
+> "Clean Code" Uncle Bob
 
 ----
 
-##Story: Print a value from a file
+### Story: Print a value from a file
 
 ```
 Scenario 1: Value from a file is displayed
@@ -403,7 +446,7 @@ Scenario 1: Value from a file is displayed
 
 ----
 
-## KISS - ~~Keep it simple~~, STUPID
+### KISS - ~~Keep it simple~~, STUPID
 
 ```cpp
 int main() {
@@ -417,32 +460,549 @@ int main() {
 }
 ```
 
-----
-
-## Let's try to test it
-
-####It suppose to be easy!
-
-1. Unit-Tests - **Give me a break!**
-
-2. Acceptance-Tests
-  * Create a file and print a text into it?
-  * Redirect std::cout to some other file?
-  * Compare files?
-  * I give up, it's too difcult, it seems to WORK, I checked it manually!
-    * What about your future team members?
-
-3. Manual-Tests by some other team - **Yes, please!**
+Unit-Testing - **Give me a break!**
 
 ----
 
-###Solution -> Start form the test first!
+### A few iterations later...
+
+----
+
+#### **Stupid** vs <strike>SOLID</strike>
+
+```cpp
+class Manager { // Indescriptive Naming
+public:
+  Updater& getUpdater(); // Untestability
+  Reader& getReader();   // Untestability
+  Writer& getWriter();   // Untestability
+  Creator& getCreator(); // Untestability
+  void update(float);
+};
+```
+
+```cpp
+class App {
+public:
+  App() { manager = new Manager; } // Tight Coupling
+  ~App() { delete manager; }
+
+  __attribute__((always_inline)) void run() { // Premature Optimization
+    Logger::instance() // Singleton
+      << "run:" << manager.getReader().get()->getValue() << '\n';
+
+    manager.getWriter().getOutputter()->print(
+      manager.getReader().get()->getValue() // Duplication
+    )
+  }
+private:
+  Manager* manager;
+};
+```
+
+----
+
+#### **Stupid** vs <strike>SOLID</strike>
+
+#### Unit-testing?
+
+```cpp
+#define private public
+```
+
+```cpp
+struct ManagerStub {
+
+};
+```
+
+```cpp
+"should print read value"_test = [] {
+  //given
+  Logger::instance().disable(); // disable global logger
+  App app{};
+  auto manager = std::make_unique<FakeManager>();
+  app.manager = manager.get();
+
+  //when
+  app.run();
+
+  //then
+};
+```
+
+#### Let's just do Acceptance-testing instead!
+
+----
+
+### A few iterations later...
+####(after some SOLID courses)
+
+----
+
+#### <strike>Stupid</strike> vs **SOLID**
+
+```cpp
+/**
+ * Single Responsibility
+ * "A class should have only one reason to change" Uncle Bob
+ */
+class Reader { public: int read(); };
+class Printer { public: void print(int); };
+```
+
+```cpp
+class App {
+public:
+  // Dependency Inversion
+  App(Reader& reader, Printer& printer, Logger& logger)
+
+  void run() {
+    const auto value = reader.read();
+    Logger << "run:" << value << '\n';
+    printer.print(value); // Law of Demeter
+                          // "Only talk to your immediate friends"
+  }
+
+private:
+  Reader& reader;
+  Printer& printer;
+  Logger& logger;
+};
+```
+
+----
+
+TODO test
+
+----
+
+### A few more iterations...
+####(and after some MORE SOLID courses)
+
+----
+
+#### <strike>Stupid</strike> vs **SOLID** (Dependency Injection)
+
+```cpp
+/**
+ * "Depend on abstractions, not on concretions"
+ */
+class IReader {                     class IPrinter {
+public:                             public:
+  virtual ~IReader() = default;       virtual ~IPrinter() = default;
+  virtual int read() = 0;             virtual void print(int);
+};                                  };
+```
+
+```cpp
+class App {
+  IReader& reader;
+  IPrinter& printer;
+  ILogger& logger;
+
+public:
+  /**
+   * "Don't call us, we'll call you", Hollywood principle
+   */
+  App(IReader& reader, IPrinter& printer, ILogger& logger);
+
+  void run() {
+    const auto value = reader.read();
+    Logger << "run:" << value << '\n';
+    printer.print(value);
+  }
+};
+```
+
+----
+
+#### DI - Test
+
+```cpp
+"should print read value"_test = [] {
+  NiceGMock<ILogger> logger{};      // ignore an uninteresting call
+  StrictGMock<IReader> reader{};    // fail on uninteresting call
+  StrictGMock<IPrinter> printer{};  // wiring!
+  App app{reader, printer, logger}; // wiring!
+
+  EXPECT_CALL(reader, read).WillOnce(Return(42));
+  EXPECT_CALL(printer, print, 42);
+
+  app.run();
+};
+```
+
+----
+
+###Composition Root
+
+> Unique location in an application where modules are composed together
+
+#### Usage
+```cpp
+int main() {
+  auto file = std::fstream{"input.txt"};                // wiring!
+  auto reader = std::make_unique<FileReader>(file);     // wiring!
+  auto& out = std::cout;                                // wiring!
+  auto printer = std::make_unique<ConsolePrinter>(out); // wiring!
+  auto logger = std::make_unique<Logger>();             // wiring!
+  App app{reader, printer, logger};                     // wiring!
+  app.run();
+}
+```
+
+####Simplifies writing integration tests
+
+----
+
+### It works but, all in all, it's a <u>Java</u> approach
+
+* Heap
+* Reference/Pointer semantics
+* Inheritance
+  * "Inheritance Is The Base Class of Evil" Sean Parent
+* Dynamic Dispatch
+* Performance
+  * final keyword and devirtualization - https://godbolt.org/g/e8olYN
+
+----
+
+### Give me templates/concepts!
+
+<img src="images/java-vs-c.gif" width="65%" />
+
+----
+
+####Concepts
+
+```cpp
+template <class T>                  template <class T>
+const auto Readable =               const auto Printable =
+  CopyConstructible<T> &&             CopyConstructible<T> && 
+  CopyAssignable<T> &&                CopyAssignable<T> && 
+  Callable<T, int()>($(read));        Callable<T, void(int)>($(print));
+```
+
+```cpp
+// template<Readable TReader, Printable TPrinter> // Concepts-Lite
+template<class TReader, class TPrinter, class TLogger>
+class App {
+  TReader reader;   static_assert(Readable<TReader>());
+  TPrinter printer; static_assert(Printable<TPrinter>());
+  TLogger logger;   static_assert(Loggable<TLogger>());
+
+public:
+  App(TReader reader, TPrinter printer, TLogger logger);
+
+  void run() {
+    printer.print(reader.read());
+  }
+};
+```
+
+----
+
+#### and the test
+```cpp
+"should print read value"_test = [] {
+  NiceGMock<Loggable> logger{};      // ignore an uninteresting call
+  StrictGMock<Readable> reader{};    // fail on uninteresting call
+  StrictGMock<Printable> printer{};  // wiring!
+  App app{reader, printer, logger};  // C++17 template argument 
+                                     // deduction for class templates
+
+  EXPECT_CALL(reader, read).WillOnce(Return(42));
+  EXPECT_CALL(printer, print, 42);
+
+  app.run();
+};
+```
+
+----
+
+#### What about dynamic dispatch (not based on inheritance)?
+
+```cpp
+class App {
+  any<Readable> reader;   // `virtual Readable` with virtual concepts!
+  any<Printable> printer; // `virtual Readable` with virtual concepts!
+  any<Loggable> logger;   // `virtual Readable` with virtual concepts!
+
+public:
+  App(any<Readable> reader, any<Printable> printer, any<Loggable> logger)
+    : reader(reader), printer(printer)
+  { }
+
+  void run() {
+    printer.print(reader.read());
+  }
+};
+```
+
+----
+
+#### and the test (Same as with concepts!!!)
+```cpp
+"should print read value"_test = [] {
+  NiceGMock<Loggable> logger{};      // ignore an uninteresting call
+  StrictGMock<Readable> reader{};    // fail on uninteresting call
+  StrictGMock<Printable> printer{};  // wiring!
+  App app{reader, printer, logger};  // C++17 template argument 
+                                     // deduction for class templates
+
+  EXPECT_CALL(reader, read).WillOnce(Return(42));
+  EXPECT_CALL(printer, print, 42);
+
+  app.run();
+};
+```
+
+----
+
+### Manual Dependency Injection - Wiring Mess
+
+> Doesn't matter which option will be chosen the wiring will have to happen either way!
+
+```cpp
+"should print read value"_test = [] {
+  NiceGMock<Loggable> logger{};      // WIRING!
+  StrictGMock<Readable> reader{};    // WIRING!
+  StrictGMock<Printable> printer{};  // WIRING!
+  App app{reader, printer, logger};  // WIRING!
+  ...
+};
+```
+
+```cpp
+int main() {
+  auto file = std::fstream{"input.txt"};                // WIRING!
+  auto reader = std::make_unique<FileReader>(file);     // WIRING!
+  auto& out = std::cout;                                // WIRING!
+  auto printer = std::make_unique<ConsolePrinter>(out); // WIRING!
+  auto logger = std::make_unique<Logger>();             // WIRING!
+  App app{reader, printer, logger};                     // WIRING!
+  ...
+}
+```
+
+----
+
+###Manual DI - Wiring
+
+* ####Single Responsibility Principle
+  =>
+    * ####A lot of classes
+    =>
+      * ####Wiring Mess
+      =>
+        * ####Hard to maintain + Lazy programmers (99%)
+        =>
+          * ####Hacks/Workarounds (~~Single Responsibility~~)
+
+-----
+
+###Solution
+
+####Simplify/Remove the wiring mess
+  ####By Automating dependency injection?
+=>
+### [[Boost].DI](https://github.com/boost-experimental/di)
+
+----
+
+### `SOLID` references
+
+| | |
+|-|-|
+| VC | https://github.com/boost-experimental/vc |
+| Dyno | https://github.com/ldionne/dyno |
+| Virtual Concepts | [Virtual Concepts Proposal](https://github.com/andyprowl/virtual-concepts/blob/master/draft/Dynamic%20Generic%20Programming%20with%20Virtual%20Concepts.pdf) |
 
 ==============================================================================
 
-## 3.1. We need to test drive the code - Test Driven Development (the when)
+## Consider using dependency injection framework to avoid the wiring mess and inject mocks automatically
 
-> Unit Tests (the what)
+----
+
+###[[Boost].DI](https://github.com/boost-experimental/di) - Hello World
+
+```cpp
+#include <boost/di.hpp>
+namespace di = boost::di;
+```
+
+```cpp
+template<class TReader = Readable>
+class App {
+ public:
+  App(TReader&, const IPrinter&); // DI handles
+};        ^                 ^     // order and types
+          |                 \-------------------------\
+          \---------------------------------------\   |
+int main() {                                      |   |
+  const auto injector = di::make_injector(        |   |
+     di::bind<Readable>.to<FileReader>(),   ------/   |
+     di::bind<IPrinter>.to<ConsolePrinter>() ---------/
+  );
+
+  injector.create<App>().run();
+}
+```
+
+----
+
+###[[Boost].DI](https://github.com/boost-experimental/di) - Automatic Injection
+
+#####Manual DI - Wiring mess
+
+```cpp
+int main() {
+  auto reader = Reader{};          // WIRING!
+  auto printer = Printer{};        // WIRING!
+  auto app = App{reader, printer}; // WIRING!
+  app.run();
+}
+```
+
+#####[Boost].DI
+
+```cpp
+int main() {
+  di::make_injector().create<App>().run();
+}
+```
+
+----
+
+###[[Boost].DI](https://github.com/boost-experimental/di) - Refactoring for free!
+
+####Let's change `App` constructor
+
+######Before
+
+```cpp
+App(Reader& reader, Printer& printer)
+  : reader(reader))
+  , printer(printer)
+{ }
+```
+
+######After
+
+```cpp
+App(Printer& printer, std::unique_ptr<Reader> reader)
+ : printer(printer)
+ , reader(std::move(reader))
+{}
+```
+
+----
+
+###[[Boost].DI](https://github.com/boost-experimental/di) - Refactoring for free!
+
+#####Manual DI - Wiring mess
+
+```cpp
+int main() {
+  auto reader = std::make_unique<Reader>{};   // DIFF Wiring!
+  auto printer = Printer{};                   // Wiring
+  auto app = App{printer, std::move(reader)}; // DIFF Wiring!
+  app.run();
+}
+```
+
+#####[Boost].DI - No changes!
+
+```cpp
+int main() {
+  di::make_injector().create<App>().run(); // same as before!
+}
+```
+
+----
+
+### Automatic Mocks Injection
+
+* Write test easily and quickly
+* Implantation details, how deps are injected, should not affect the test
+* Isolate the word around us
+
+----
+
+####Test - Manual mocks injection
+
+```cpp
+"should print read value"_test = [] {
+  GMock<Readable> reader{};                       // Boilerplate
+  GMock<Printable> printer{};                     // Boilerplate
+  App<Readable, Printable> app{reader, printer};  // Boilerplate
+
+  EXPECT_CALL(reader, read).WillOnce(Return(42));
+  EXPECT_CALL(printer, print, 42);
+
+  app.run();
+};
+```
+
+####Test - Automatic mocks injection
+```cpp
+"should print read text"_test = [] {
+  auto [app, mocks] = testing::make<App>();
+
+  EXPECT_CALL(mocks<Readable)>(), read).WillOnce(Return(42));
+  EXPECT_CALL(mocks<Readable>(), print, 42);
+
+  app.run();
+};
+```
+
+----
+
+### Automatic Mocks Injection - Let's change App
+
+####Test - Manual mocks injection (LOC changed: 5/6, LOC added: 1)
+
+```cpp
+"should print read value"_test = [] {
+  auto reader = std::make_shared<GMock<Readable>>();        // Boilerplate
+  auto printer = std::make_unique<GMock<Printable>>();      // Boilerplate
+  auto printer_ptr = printer.get();                         // Boilerplate
+  App<Printable, Readable> app{reader, std::move(printer)}; // Boilerplate
+
+  EXPECT_CALL(*reader, read).WillOnce(Return(42)); // NOTICE, dereference
+  EXPECT_CALL(printer_ptr, print, 42);             // NOTICE, dereference
+
+  app.run();
+};
+```
+
+####Test - Automatic mocks injection (LOC changed: 0/6, LOC added: 0)
+```cpp
+"should print read text"_test = [] {
+  auto [app, mocks] = testing::make<App>(); // SAME OLD, SAME OLD!
+
+  EXPECT_CALL(mocks<Readable)>(), read).WillOnce(Return(42));
+  EXPECT_CALL(mocks<Readable>(), print, 42);
+
+  app.run();
+};
+```
+
+----
+
+### But how to produce testable code by default?
+
+### Solution -> Test Driven Development
+
+==============================================================================
+
+## Consider test driving implementation
+
+| | | |
+|-|-|-|
+| TDD | Test Driven Development | Unit Tests |
+| ATDD | Acceptance Test Driven Development | Acceptance Tests |
 
 ----
 
@@ -629,918 +1189,26 @@ private:
 
 * No need for the test coverage <- it implies 100%
 
-==============================================================================
-
-###3.2. We need to write `SOLID` instead of `STUPID` code
-
-<table><tr>
- <td>
-  <table>
-    <tr><td><b>S</b></td><td>Singleton</td></tr>
-    <tr><td><b>T</b></td><td>Tight Coupling</td></tr>
-    <tr><td><b>U</b></td><td>Untestability</td></tr>
-    <tr><td><b>P</b></td><td>Premature Optimization</td></tr>
-    <tr><td><b>I</b></td><td>Indescriptive Naming</td></tr>
-    <tr><td><b>D</b></td><td>Duplication</td></tr>
-  </table>
- </td>
-
- <td>
-  <table>
-    <tr><td><b>S</b></td><td><u>Single Responsibility</u></td></tr>
-    <tr><td><b>O</b></td><td>Open-close</td></tr>
-    <tr><td><b>L</b></td><td>Liskov substitution</td></tr>
-    <tr><td><b>I</b></td><td>Interface segregation</td></tr>
-    <tr><td><b>D</b></td><td><u>Dependency inversion</u></td></tr>
-  </table>
- </td>
-
- </tr>
-</table>
-> "Clean Code" Uncle Bob
+* How to know that code wasn't written in TDD?
+  * You comment some code and there is no failing test
+  * Singletons/Globals in the code (the root of all evil)
+  * God objects
+  * ...
 
 ----
 
-#### God object
-```cpp
-class Manager {
-public:
-  int read() const;
-  void write(int);
-  void open(std::string_view);
-  void update(float);
-  bool send(std::any);
-  std::any get();
-  ...
-};
-```
-
-###Single responsibility principle
-
-> "A class should have only one reason to change" Uncle Bob
-
-----
-
-###Single responsibility principle
-
-```cpp
-/**
- * Purpose: read (more generic istream)
- */
-class Reader {
-public: 
-  int read(); 
-};
-```
-
-```cpp
-/**
- * Purpose: print (more generic ostream)
- */
-class Printer {
-public: 
-  void print(int); 
-};
-```
-
-----
-
-###Single responsibility principle is needed but it's not enough for testable code!
-
-```cpp
-class App {
- Reader reader; // tightly coupling, no way to fake it for the test
- Printer printer; // tightly coupling, no way to fake it for the test
-
-public:
-  void run();
-};
-```
-
-> Code like that would never be written using TDD!
-
-----
-
-##We need more, we need to be able to inject fake implementations!
-
-##We need...
-
-----
-
-###The Dependency Inversion Principle	
-
-> "Don't call us, we'll call you", Hollywood principle
-
-```cpp
-// It's all about the construction
-App::App(std::istream& in, std::ostream& out); // DEPENDENCY INJECTION!
-```
-
-----
-
-###The Dependency Inversion Principle	
-
-> "Depend on abstractions, not on concretions"
-
-####What can we inject?
-
-| | |
-|-|-|
-| Compile-Time | Templates/Concepts |
-| Run-Time | Interfaces/Type-Erasure/Functions |
-
-----
-
-##Let's get back to our example
-
-----
-
-##Test - goal - sudo syntax
-
-```cpp
-"should print read text"_test = {
-  // given
-  [app, fakes] = make<App>(); // create an app and fakes for me, please
-
-  // when
-  fakes<Reader>.read().return(42);
-  fakes<Printer>.print(42);
-
-  // then
-  app.run();
-}
-```
-
-* Write test easily and quickly
-* Implantation details, how deps are injected, should not affect the test
-* Isolate the word around us
-
-----
-
-###Templates / Policy Design / Duck Typing
-
-```cpp
-template<class TReader, class TPrinter>
-class App {
-  TReader reader;
-  TPrinter printer;
-
-public:
-  App(TReader reader, TPrinter printer)
-    : reader(reader), printer(printer)
-  { }
-
-  void run() {
-    printer.print(reader.read());
-  }
-};
-```
-
-```cpp
-int main() {
-  Reader reader{};           // wiring
-  Printer printer{};         // wiring
-  App app{reader, printer};  // wiring
-  app.run();
-}
-```
-
-----
-
-###Composition Root
-
-> Unique location in an application where modules are composed together
-
-```cpp
-int main() {
-  App{...}.run();
-}
-```
-
-####Simplifies writing integration tests
-
-----
-
-###Concepts/C++2X?
-
-```cpp
-template <class T>
-concept bool Readable = requires(T reader) {
-  { reader.read() } -> int;
-};
-```
-
-```cpp
-template <class T>
-concept bool Printable = requires(T printer) {
-  { printer.print() } -> void;
-};
-```
-
-----
-
-###Concepts/C++2X?
-
-```cpp
-template<Readable TReader, Printable TPrinter> // concepts
-class App {
-  Readable reader;
-  Printable printer;
-
-public:
-  // Same as template<Readable, Printable>
-  App(Readable reader, Printable printer)
-    : reader(reader), printer(printer) {}
-
-  void run() {
-    printer.print(reader.read());
-  }
-};
-```
-
-```cpp
-int main() {
-  Readable reader = FileReader{"input.txt"}; // wiring
-  Printable printer = ConsolePrinter();      // wiring
-  App{reader, printer}.run();                // wiring
-}
-```
-
-----
-
-###Virtual functions/interfaces (V4)
-
-```cpp
-class IReader {
-public:
-  virtual ~IReader() noexcept = default;
-  virtual int read() = 0;
-};
-```
-
-```cpp
-class FileReader final : public IReader {
-  std::istream& input;
-
-public:
-  explicit FileReader(std::istream&);
-  void read() override;
-};
-```
-
-----
-
-###Virtual functions/interfaces (V4)
-
-```cpp
-class IPrinter {
-public:
-  virtual ~IPrinter() noexcept = default;
-  virtual void print(int) = 0;
-};
-```
-
-```cpp
-class ConsolePrinter final : public IPrinter {
-  std::ostream& output;
-
-public:
-  explicit ConsolePrinter(std::ostream&);
-  void print(int) override;
-};
-```
-
-----
-
-###Virtual functions/interfaces (V4)
-
-```cpp
-class App {
-  IReader& reader;
-  IPrinter& printer;
-
-public:
-  App(IReader& reader, IPrinter& printer)
-    : reader(reader), printer(printer) {}
-
-  void run() {
-    printer.print(reader.read());
-  }
-};
-```
-
-```cpp
-int main() {
-  auto file = std::fstream{"input.txt"}; // wiring!
-  auto reader = FileReader{file};        // wiring!
-  auto& out = std::cout;                 // wiring!
-  auto printer = ConsolePrinter{out};    // wiring!
-  App{reader, printer}.run();            // wiring!
-}
-```
-
-----
-
-###Virtual functions/interfaces - performance
-####final keyword and devirtualization
-
-![final](images/final.png)
-https://godbolt.org/g/e8olYN
-
-----
-
-###Virtual functions/interfaces - inheritance
-
-> "Inheritance Is The Base Class of Evil" Sean Parent
-
--
-
-https://channel9.msdn.com/Events/GoingNative/2013/Inheritance-Is-The-Base-Class-of-Evil
-
-----
-
-###Type erasure/Virtual Concepts/C++2X (V6)
-
-```cpp
-class App {
-  virtual Readable reader; // type erasure (concept from V3)
-  virtual Printable printer; // type erasure (concept from V3)
-
-public:
-  // Same as template<Readable, Printable>
-  App(Readable reader, Printable printer)
-    : reader(reader), printer(printer)
-  { }
-
-  void run() {
-    printer.print(reader.read());
-  }
-};
-```
-
-```cpp
-int main() {
-  Readable reader = FileReader{"input.txt"}; // wiring
-  Printable printer = ConsolePrinter();      // wiring
-  App{reader, printer}.run();                // wiring
-}
-```
-
-----
-
-* STL example: `std::shared_ptr deleter`
-* [(SG8) Virtual concepts](https://github.com/andyprowl/virtual-concepts/blob/master/draft/Dynamic%20Generic%20Programming%20with%20Virtual%20Concepts.pdf)
-
-----
-
-###Law of Demeter
-
-> "Only talk to your immediate friends"
-
-----
-
-###Doesn't matter which option will be chosen the wiring will have to happen either way!
-
-----
-
-Dependency Injection
-
-###Manual DI - Wiring
-
-* ####Single Responsibility Principle
-  =>
-    * ####A lot of classes
-    =>
-      * ####Wiring Mess
-      =>
-        * ####Hard to maintain + Lazy programmers (99%)
-        =>
-          * ####Hacks/Workarounds (~~Single Responsibility~~)
-
------
-
-###Solution
-
-####Simplify/Remove the wiring mess
-  ####By Automating dependency injection?
-=>
-### [[Boost].DI](https://github.com/boost-experimental/di)
-
-==============================================================================
-
-###[[Boost].DI](https://github.com/boost-experimental/di)
-
-* One header - 3k LOC - (boost/di.hpp) / generated
-* Neither Boost nor STL is required
-* No 'if's, 'virtual's, 'exception's (-fno-rtti, -fno-exceptions)
-* Non-intrusive (constructor/templates parameters deduction)
-* Compile-time creation guarantee (no run-time errors)
-* Supported compilers (C++14)
-  * [Clang-3.4+](https://travis-ci.org/boost-experimental/di), [XCode-6.1+](https://travis-ci.org/boost-experimental/di), [GCC-5.2+](https://travis-ci.org/boost-experimental/di), [MSVC-2015+](https://ci.appveyor.com/project/krzysztof-jusiak/di)
-
-> [Boost].DI is not an official Boost library, yet!
-
-----
-
-###[[Boost].DI](https://github.com/boost-experimental/di) - API
-
-####Injector
-```cpp
-template<class... TDeps> requires boundable<TDeps...>()
-class injector {
-public:
-  explicit injector(TDeps&&...) noexcept;
-  injector(injector&&) = default;
-  injector& operator=(injector&&) = default;
-
-  template<class T> requires creatable<T>()
-  constexpr T create() const;
-};
-```
-
-```cpp
-template<class TConfig = di::config, class... TDeps>
-  requires configurable<TConfig>() && boundable<TDeps...>()
-constexpr auto make_injector(TDeps&&...) noexcept;
-```
-
-####Bind
-```cpp
-template<class... Interfaces>
-  requires is_convertible<Interfaces..., Implementation>()
-di::bind<Interfaces...>.to<Implementation>()
-                       .to(Implementation&& value)
-```
-
-----
-
-###[[Boost].DI](https://github.com/boost-experimental/di) - Hello World
-
-```cpp
-#include <boost/di.hpp>
-namespace di = boost::di;
-```
-
-```cpp
-template<class TReader = class Readable>
-class App {
- public:
-  App(TReader&, const IPrinter&); // DI handles
-};        ^                 ^     // order and types
-          |                 \-------------------------\
-          \---------------------------------------\   |
-int main() {                                      |   |
-  const auto injector = di::make_injector(        |   |
-     di::bind<class Readable>.to<FileReader>(), --/   |
-     di::bind<IPrinter>.to<ConsolePrinter>() ---------/
-  );
-
-  injector.create<std::unique_ptr<App>>()->run();
-}
-```
-
-----
-
-###[[Boost].DI](https://github.com/boost-experimental/di) - Performance
-
-```sh
-time $CXX -std=c++14 app.cpp # 0.092s
-```
-
-#####ASM x86-64
+#### Acceptance Test Driven Development (ATDD)
 
 ```
-push   %rbx
-mov    %rdi,%rbx
-mov    $0x8,%edi
-callq  0x4009f0 <_Znwm@plt>
-movq   $0x400e78,(%rax)
-mov    %rax,(%rbx)
-mov    %rbx,%rax
-pop    %rbx
-retq
-```
-
-#####Same as
-
-```cpp
-return make_unique<App>(...);
-```
-
-----
-
-###[[Boost].DI](https://github.com/boost-experimental/di) - Benchmarks (GCC-7/Java8)
-
-| 64 types, 1-4 ctor params, 1024 iterations | **[Boost].DI** | **Guice** | **Dagger2** |
-| --------------------- | ------------ | ---------------- | ------------- |
-| Compilation time    | 0.376s       |  0.570s            | 1.411s        |
-| Execution time      | 0.002s       |  0.528s            | 0.157s        |
-
----
-
-| 256 types, 1-4 ctor params, 1024 iterations | **[Boost].DI** | **Guice** | **Dagger2** |
-| --------------------- | ------------ | ---------------- | ------------- |
-| Compilation time    | 0.706s       | 0.642s             | 1.903s        |
-| Execution time      | 0.002s       | 0.544s             | 0.210s        |
-
-----
-
-###[[Boost].DI](https://github.com/boost-experimental/di) - Compile-time errors
-
-```cpp
-const auto injector = di::make_injector(
-// di::bind<IPrinter>.to<ConsolePrinter>(), // missing wiring
-   di::bind<class Readable>.to<FileReader>()
-);
-auto app = injector.create<App>();
-```
-
-#####Full Compilation-Time Error Message
-
-```cpp
-error: 'create<App>' is deprecated: creatable constraint
-  injector.create<App>();           not satisfied
-           ^
-note 'create<App>' has been explicitly marked deprecated here
-  create
-  ^
-error: inline function 'abstract_type<IPrinter>::is_not_bound::error'
- error(_ = "type is not bound, did you forget to add:
-           'di::bind<interface>.to<implementation>()'?");
-```
-
-----
-
-
-
-==============================================================================
-
-###[[Boost].DI](https://github.com/boost-experimental/di) - Behaviour Driven Development (BDD)
-
-####Acceptance Tests
-
-```cpp
-"Given an input file
- When App is running
- Then value from input file should be printed"_test = [] {
-  mocks_t mocks;
-  {
-    std::ofstream file{"input.txt"};
-    file << 42;
-  }
-  const auto injector = di::make_injector(
-    config(), // production wiring
-    di::bind<IPrinter>.to(GMock<IPrinter>(mocks)) [di::override]
-  );
-
-  EXPECT_CALL(mocks<IPrinter>(), print(42));
-  injector.create<App>().run();
-};
-```
-
-----
-
-##The story so far - Virtual functions/interfaces
-
->[[Boost].DI](https://github.com/boost-experimental/di)
-```
-Automatic constructor injection
-```
-
-> [GUnit.GMock](https://github.com/cpp-testing/GUnit)
-```
-Easy mocking
-```
-```
-Automatic mocking injection
-```
-
-----
-
-##Concepts driven design with [[Boost].DI](https://github.com/boost-experimental/di)
-
-###Idea
-
-* Concepts checking (type constraints for templates)
-    * no more horrible error messages
-* Type erasure based on concepts (dynamic dispatch)
-    * 100% value semantics (no heap)
-* Mocking (automatic generation from concepts)
-    * Goal - write tests once, it shouldn't matter what and how is injected
-
-----
-
-##Concepts driven design / C++14
-
-####API (much more powerful than interfaces)
-```cpp
-const auto Concept = $requires(args...)(
-  expressions...
-);
-```
-
-####Example
-```cpp
-const auto Fooable =
-  $requires(auto&& t, std::ostream& os) (
-    T(t), // copy constructible
-    os << t // printable
-  ) &&
-  $(foo)<void(int, double)>();
-```
-
-http://ericniebler.com/2013/11/23/concept-checking-in-c11/
-
-----
-
-##Concepts driven design / C++14 (V7)
-
->Short `decltype` notation
-```cpp
-#define $ decltype
-```
-
->Alternative
-```cpp
-using Concept_t = decltype(Concept);
-```
-
-----
-
-##Concepts driven design / C++14
-
-####Concept checking (used when wiring)
-```cpp
-static_assert(requiers<Foo>(Fooable), "");
-static_assert(requires<Bar>(Fooable), "bar requires to be Fooable!");
-```
-
-####Concepts mocking
-```cpp
-GMock<$(Fooable)> mock;
-EXPECT_CALL(mock, (foo)(42));
-mock.read(42);
-```
-
-####Type erasure
-```cpp
-any<$(Fooable)> foo = Foo{}; // holds anything
-foo.foo(42, 77.0);           // Fooable (stack!)
-```
-
-####Type erasure mocking
-```cpp
-any<$(Fooable)> foo = GMock<$(Fooable)>();
-EXPECT_CALL(mock, (foo)(42, 77.0));
-foo.foo(42, 77.0);
-```
-
-----
-
-##Concepts driven design / C++14 (V7)
-
-```cpp
-const auto Readable =
-  $requires(auto&& t, std::ostream& os) (
-    T(t),    // copy constructible
-    os << t  // printable
-  ) &&
-  $(read)<int()>();
-```
-
-```cpp
-const auto Printable =
-  $requires(auto&& t, std::ostream& os) (
-    T(t),    // copy constructible
-    os << t  // printable
-  ) &&
-  $(print)<void(int)>();
-```
-
-----
-
-##Concepts driven design / C++14 (V7)
-
-```cpp
-template<class TReader  = $(Readable)   // TReader  = 'Concept'
-       , class TPrinter = $(Printable)> // TPrinter = 'Concept'
-class App {
-  TReader reader;
-  TPrinter printer;
-
-public:
-  App(TReader reader, TPrinter printer)
-    : reader(reader), printer(printer)
-  { }
-
-  void run() {
-    printer.print(reader.read());
-  }
-};
-```
-
-```cpp
-int main() {
-  const auto injector = di::make_injector(
-    di::bind<$(Readable)>.to<FileReader>(),
-    di::bind<$(Printable)>.to<ConsolePrinter>()
-  );
-
-  injector.create<App>().run();
-}
-```
-
-----
-
-##Concepts driven design / C++14 (V7)
-
-* (+) We can test it in isolation
-* (+) Short error messages (type constraints verification)
-* (+) Automatic mocks generation (GMock)
-* (+) Dynamic dispatch via type erasure supported out of the box
-* (+) Reader/Printer are not tightly coupled to the App
-* (+) Different Readers/Printers can be injected
-* (-) Header files only
-
-----
-
-###[[Boost].DI](https://github.com/boost-experimental/di) - Concepts driven design - Compile-time errors
-
-```cpp
-const auto injector = di::make_injector(
-  di::bind<$(Readable)>.to<Logger>(), // Logger isn't Readable!
-  di::bind<$(Printable)>.to<ConsolePrinter>()
-);
-```
-
-#####Full Compilation-Time Error Message
-
-```cpp
-di.hpp: error: static_assert failed "constraint not satisfied"
-
-di.hpp: note: in instantiation of template class
-  'concept_check<Readable>::is_not_satisfied_by<Logger>'
-
-app.cpp:: note: while substituting template 'to'
-  di::bind<Readable>.to<Logger>()
-
-app.cpp: error: 'class Logger' has no member named 'read'
-```
-
-----
-
-###Concepts driven design - Easy/Automatic Mocking
-
-####[GUnit.GMock](https://github.com/cpp-testing/GUnit)
-```cpp
-GMock<$(Readable)> readableMock;
-EXPECT_CALL(readableMock, read(_)).WillOnce(Return(42));
-```
-
-####Test (same as with interfaces)
-```cpp
-"should print read text"_test = [] {
-  constexpr auto value = 42;
-
-  auto [sut, mocks] = make<App>(); // creates System Under Test
-                                   // and mocks
-
-  InSequence sequence;
-  EXPECT_CALL(mocks<$(Readable)>(), read()).WillOnce(Return(value));
-  EXPECT_CALL(mocks<$(Printable)>(), print(value));
-
-  sut.run();
-};
-```
-
-----
-
-###Concepts driven design - switching to run-time - type erasure
-
-```cpp
-template<class TReader = $(Readable)>
-class App {
-  TReader reader;
-  any<$(Printable)> printer; // type erasure based on concepts
-
-public:
-  App(TReader reader, any<$(Printable)> printer)
-    : reader(reader), printer(printer)
-  { }
-
-  void run() {
-    printer.print(reader.read());
-  }
-};
-```
-
-* ####Wiring - NO CHANGES REQUIRED
-* ####Test - NO CHANGES REQUIRED ([GUnit.GMock](https://github.com/cpp-testing/GUnit))
-
-----
-
-###Concepts driven design - switching to run-time - type erasure
-
-####Implementing features by wiring
-
-```
-Scenario 2: Value from an input file is displayed on the QtWindow
- Given an 'input.txt' file with an integer value in it
-   And the first command line argument equals to "QtPrinter"
- When the App runs
- Then the integer value from 'input.txt' should
-      be printed on the QtWindow
-```
-
-----
-
-###Concepts driven design - switching to run-time - type erasure
-
-####Implementing features by wiring
-
-```cpp
-const auto config = [](std::string_view printer) {
-  return di::make_injector(
-     di::bind<$(Readable)>.to<FileReader>(),
-     di::bind<$(Printable)>.to([&](const auto& injector) {
-       return printer == "QtPrinter"
-         ? injector.create<QtPrinter>()
-         : injector.create<ConsolePrinter>();
-     })
-  );
-};
-```
-
-#####Usage
-```cpp
-int main(int argc, char** argv) {
-  config(argc == 2 ? argv[1] : nullptr).create<App>().run();
-}
-```
-
-----
-
-###Concepts driven design together with interfaces
-
-```cpp
-template<class TSynchronizer = $(Synchronizable)>
-class FileReader final {
-public:
-  FileReader(std::string_view path
-           , const std::shared_ptr<ILegacyInterface>&); // virtual
-  ...
-};
-```
-
-```cpp
-template<class TWriter = $(Writable)>
-class LegacyImplementation final : public ILegacyInterface {
-  LegacyImplementation(IFactory* factory      // interface
-                     , TWriter writer         // template/concept
-                     , any<$(Loggable)> logger); // type erasure
-  ...
-};
-```
-
-----
-
-###Concepts driven design together with interfaces
-
-```cpp
-int main() {
-  const auto injector = di::make_injector(
-    di::bind<$(Readable)>.to<FileReader>(),         // concept -> template class
-    di::bind<$(Synchronizable)>.to<Synchronizer>(), // concept -> class
-    di::bind<$(Loggable)>.to<Logger>(),             // concept -> type erasure
-    di::bind<ILegacyInterface>.
-          to<LegacyImplementation>()                // interface -> template class
-  );
-
-  injector.create<App>().run();
-}
-```
-<!-- .element: style="margin-left:-3%; width:105%" -->
-
-----
-
-###Concepts driven design with [[Boost].DI](https://github.com/boost-experimental/di)
-
-|  |  |
-| ------- | ------------- |
-| Try it online! | http://melpon.org/wandbox/permlink/UGaFDy2jaSCeksa1 |
-
-
-==============================================================================
-
-# Acceptance Test Driven Development (ATDD)
-
 Scenario 1: Value from a file is displayed
  Given an 'input.txt' file with an integer value in it
    And console terminal is ready
  When the App runs
  Then the integer value from 'input.txt'
    should be printed on the terminal console
+```
 
+ ```cpp
 GTEST(example) {
   namespace di = boost::di;
 
@@ -1558,12 +1226,11 @@ GTEST(example) {
     sut->update();
   }
 }
-
-
+```
 
 ==============================================================================
 
-# Showcase
+## Showcase (User Story -> ... -> Commit)
 
 ----
 
@@ -1585,19 +1252,9 @@ Refinment
     Story:  As a trading system I would like to send orders to the exchange
 
   Acceptance critera
+    ...
 
-    Scenario 1: 
-      Given an decision engine and a connection to the exchange
-      When the decision engine triggers an orders
-      And there is no other outstanding order
-      Then order should be send to the exchange
-
-    Scenario 2: 
-      Given an decision engine and a connection to the exchange
-      When the exchange confirmed the order
-      Then the confirmation should be sent to the decision engine
-
-    Scenario 3, Scenario 4, ...
+----
 
 Design/Workshop
 
@@ -1623,10 +1280,14 @@ Design/Workshop
       / send
     decision engine
 
+----
+
 Tasks
   1. decision... -> yes
   2. decision... -> no
   3. confirmation -> transfer
+
+----
 
 Planning
   Estimates (poker, has to be understood by everyone)
@@ -1639,6 +1300,8 @@ Planning
 
  team velociy (avg. 20 sp)
  commitment -> 1/2/3
+
+----
 
 Sprint (1 week)
 
@@ -1742,11 +1405,9 @@ Note: eXtreme programming techniques
 
 goto 4.
 
-
-
 ==============================================================================
 
-# Testing and C++2X...
+## C++2X...
 
 ----
 
@@ -1781,55 +1442,14 @@ goto 4.
 
 ----
 
-### Mocking interfaces
+# References
 
-```cpp
-class ifoo {
-public:
-  virtual ~ifoo() noexcept = default;
-  virtual int bar() = 0;
-};
-```
-
-```cpp
-std::testing::mock<ifoo> foo{};
-foo.expect_call(bar).will_once(return(42));
-std::testing::assert(42 == foo.bar());
-```
-
-### Mocking concepts
-
-```cpp
-template <class T>
-concept bool IFooable =
-  requires(T t) {
-    t.bar() -> int
-  };
-```
-
-```cpp
-std::testing::mock<IFooable> foo{};
-foo.expect_call(bar).will_once(return(42));
-std::testing::assert(42 == foo.bar());
-```
-
-----
-
-### Automatic mocks injection
-
-```cpp
-"App"_test_fixture = [] {
- constexpr auto value = 42;
- auto [sut, mocks] = std::testing::make<App>();
-
- mocks.expect_call<Readable>(read()).will_once(return(value));
- mocks.expect_call<Printable>(print(value));
-
- sut.run();
-};
-```
-
-----
+| | | |
+|-|-|-|
+| | | |
+[(SG8) Concepts lite](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3580.pdf) |
+[Virtual Concepts](https://github.com/andyprowl/virtual-concepts/blob/master/draft/Dynamic%20Generic%20Programming%20with%20Virtual%20Concepts.pdf) |
+[(SG7) Static reflection](www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0194r0.pdf)
 
 ### STD 
 * concepts lite
@@ -1839,13 +1459,7 @@ std::testing::assert(42 == foo.bar());
 
 ==============================================================================
 
-# Summary
-
-----
-
-### "If you liked it then you should have put a test on it" Beyonce rule
-
-----
+## Summary
 
 ----
 
@@ -1853,35 +1467,25 @@ std::testing::assert(42 == foo.bar());
 
 ----
 
-### Concepts and static reflection will be a game changer!
+### TODO put all consider...
 
 ----
 
-### Dependency Injection
+###Last but not least...
 
-* A powerful design pattern helping with producing
-  * Loosely coupled code
-  * Easy to test code (TDD/BDD)
+----
 
-* [[Boost].DI](https://github.com/boost-experimental/di)
-  * Removes/Cleanup the wiring mess (boilerplate code)
-  * Simplify refactoring (constructor parameters deduction)
-  * Make testing easier (automatic mocks injection)
-  * Supports templates/concepts injection
+### "If you liked it then you should have put a test on it" Beyonce rule
 
 ==============================================================================
 
 ## Questions?
 
-[(SG8) Concepts lite](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3580.pdf) |
-[Virtual Concepts](https://github.com/andyprowl/virtual-concepts/blob/master/draft/Dynamic%20Generic%20Programming%20with%20Virtual%20Concepts.pdf) |
-[(SG7) Static reflection](www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0194r0.pdf)
-
 | | |
 |-|-|
-|[Boost].DI | https://github.com/boost-experimental/di |
-| VC        | https://github.com/boost-experimental/vc |
 | GUnit     | https://github.com/cpp-testing/GUnit |
+| VC        | https://github.com/boost-experimental/vc |
+|[Boost].DI | https://github.com/boost-experimental/di |
 
 ---
 
