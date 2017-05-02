@@ -364,26 +364,35 @@ const auto Readable =
 
 ----
 
-### Virtual Concepts - Implementation details
+### Virtual Concepts - Some insides
 
 ```cpp
-$(name) [] {
-  return [](auto t, auto r, auto... args) {
-   struct { // inherit from this...
-    static auto expr() {
-     return [](const auto &self, decltype(args)... args) 
-       -> decltype(self.name(std::forward<decltype(args)>(args)...)) 
-     {};
-    }
-    auto name(decltype(args)... args) {
-     return static_cast<decltype(t) *>(this)
-       ->template call<name, typename decltype(r)::type>(
-           std::forward<decltype(args)>(args)...);
-    }
-   } _;
-   return _; // local struct
-  };
- }
+Callable<T, int()>($(read)) ]--> Constraint
+          \_  \_____   \___-> name
+            \       \
+$(name) [](auto t, auto r, auto... args) { // expression
+ struct { // inherit from 
+  static auto constraint() {
+   return [](const auto &self, decltype(args)... args) 
+     -> decltype(self.name(std::forward<decltype(args)>(args)...)) 
+   {};
+  }
+  auto name(decltype(args)... args) {
+   return static_cast<decltype(t) *>(this) // static polymorphism
+     ->template call<name, typename decltype(r)::type>( // call me...
+         std::forward<decltype(args)>(args)...);
+  }
+ } _; return _; // local struct
+}
+```
+
+```cpp
+template<class... TConstraints>
+struct gmock_impl : decltype(std::declval<TConstraints::expression>()(
+                             TConstraints::args...))... (
+ template <class TName, class R, class... TArgs>
+ decltype(auto) call(TArgs &&... args); // calls mocked impl...
+};
 ```
 
 ----
