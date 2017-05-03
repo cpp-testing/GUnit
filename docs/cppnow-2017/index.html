@@ -67,11 +67,11 @@ Kris Jusiak, Quantlab Financial
   * How And When?
     * Frameworks
     * Mocking
-    * Writing A Testable Code (Unit Testing)
+    * Writing A Testable Code
         * Single Responsibility Principle
         * Dependency Injection
-    * Automatic Mocks Injection
-    * Test Driven Development
+          * Automatic Mocks Injection
+        * Test Driven Development
 * Showcase (User Story -> ... -> Commit)
 * C++2X...
 
@@ -207,8 +207,8 @@ GTEST("Can add numbers") {
 
 #### <p align="left">GUnit.GTest-Lite (it will be used on the slides)</p>
 ```cpp
-"should add 2 numbers"_test = [] {
-  EXPECT(4 == add(2, 2));
+"should add 2 numbers"_test = [] { // -gnu-string-literal-
+  EXPECT(4 == add(2, 2));          // -operator-template
 };
 ```
 
@@ -228,7 +228,7 @@ GTEST("Can add numbers") {
 ####good*
 * Easy to do to simple things but with possibility to do more complex too
 * Limited boilerplate (especially macros)
-* Mocking Interfaces/Concepts/Type-Erasure
+* Mocking Interfaces/Templates/Concepts/Type-Erasure
 
 ----
 
@@ -427,9 +427,17 @@ auto read(any<Readable> reader) {
 | | |
 |-|-|
 | GoogleMock | https://github.com/google/googletest |
-| GUnit.GMock | https://github.com/cpp-testing/GUnit#GMock |
 | Dyno (Type-Erasure) | https://github.com/ldionne/dyno |
-
+| GUnit.GMock | https://github.com/cpp-testing/GUnit#GMock |
+<!-- .element: style="margin-left:-13%; width:125%" -->
+  * Features
+    * No more hand written mocks!
+    * Support for more than 10 parameters
+    * Support for std::unique_ptr without any tricks
+    * Support for overloaded operators
+    * Support for mocking classes with constructors
+    * 100% Compatible with Google Mocks
+    * Quicker compilation times
 ==============================================================================
 
 ### Consider writing `SOLID` instead of `STUPID` code
@@ -759,8 +767,10 @@ class App {
   any<Loggable> logger;   // `virtual Readable` with virtual concepts!
 
 public:
-  App(any<Readable> reader, any<Printable> printer, any<Loggable> logger)
-    : reader(reader), printer(printer)
+  App(any<Readable> reader
+    , any<Printable> printer
+    , any<Loggable> logger)
+    : reader(reader), printer(printer), logger(logger)
   { }
 
   void run() {
