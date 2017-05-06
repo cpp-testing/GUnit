@@ -472,7 +472,7 @@ auto read(any<Readable> reader) {
 
 ### Feature: Print a value from a file
 
-### KISS - ~~Keep it simple~~, STUPID
+#### KISS - ~~Keep it simple~~, STUPID
 
 ```cpp
 int main() {
@@ -486,7 +486,7 @@ int main() {
 }
 ```
 
-##### Unit-Testing - **Give me a break!**
+##### Unit-Testing? - Give me a break!
 
 ----
 
@@ -494,7 +494,7 @@ int main() {
 
 ----
 
-#### **Stupid** vs <strike>SOLID</strike>
+#### Stupid vs <strike>SOLID</strike>
 
 ```cpp
 class Manager { // Indescriptive Naming
@@ -510,8 +510,9 @@ public:
 ```cpp
 class App {
 public:
-  App() { manager = new Manager; } // Tight Coupling
-  ~App() { delete manager; }
+  App() 
+    : manager(std::make_unique<Manager>()); // Tight Coupling
+  { }
 
   __attribute__((always_inline)) void run() { // Premature Optimization
     Logger::instance() // Singleton
@@ -522,13 +523,13 @@ public:
     )
   }
 private:
-  Manager* manager;
+  std::unique_ptr<Manager> manager;
 };
 ```
 
 ----
 
-#### **Stupid** vs <strike>SOLID</strike>
+#### Stupid vs <strike>SOLID</strike>
 
 #### Unit-testing?
 
@@ -566,7 +567,7 @@ struct ManagerStub {
 
 ----
 
-#### <strike>Stupid</strike> vs **SOLID**
+#### <strike>Stupid</strike> vs SOLID
 
 ```cpp
 /**
@@ -608,11 +609,12 @@ TODO test
 
 ----
 
-#### <strike>Stupid</strike> vs **SOLID** (Dependency Injection)
+#### <strike>Stupid</strike> vs SOLID
 
 ```cpp
 /**
- * "Depend on abstractions, not on concretions"
+ * Dependency Inversion
+ *   "Depend on abstractions, not on concretions"
  */
 class IReader {                     class IPrinter {
 public:                             public:
@@ -626,10 +628,10 @@ class App {
   IReader& reader;
   IPrinter& printer;
   ILogger& logger;
-
 public:
   /**
-   * "Don't call us, we'll call you", Hollywood principle
+   * Dependency Injection
+   *   "Don't call us, we'll call you", Hollywood principle
    */
   App(IReader& reader, IPrinter& printer, ILogger& logger);
 
@@ -997,6 +999,24 @@ int main() {
 
 ----
 
+### Automatic Mocks Injection - MAKE API
+
+```cpp
+namespace testing {
+  /**
+   * [Proposal - generic factories]
+   *   http://.../wg21/docs/papers/2016/p0338r0.pdf
+   */
+  template <class T, class... TArgs>
+  auto make(TArgs&&... args);
+
+  template <template<auto...> class T, ... TArgs>
+  auto make(TArgs&&... args);
+}
+```
+
+----
+
 ####Test - Manual mocks injection
 
 ```cpp
@@ -1183,13 +1203,10 @@ THEN("^The (\\d+) should be printed") {
 
 ```cpp
 "[scenario] Value from a file is displayed"_test {
-  GIVEN("Hhe App is created") {
-    auto [app, mocks] = testing::make<App>()
-  }
+  auto [app, mocks] = testing::make<App>()
+
   GIVEN(mocks<Readable>(), read().WillOnce(Return(42));
-
   WHEN(app.run());
-
   THEN(mocks<Printable>(), print(42));
 }
 ```
@@ -1237,7 +1254,7 @@ Scenario 1: Trading System requests to buy shares
 
   When at least 1000 shares of GOOGL were bought at price $950
 
-  Then A buy order for 100 shares of GOOGL should be executed
+  Then A buy order for 100 shares of GOOGL should've be executed
    And The TS should own 100 shares of GOOGL
    And The TS should have $90'000
 ```
@@ -1249,7 +1266,7 @@ Scenario 2: Trading System requests to sell shares
 
   When 50 shares of MSFT were sold 
 
-  Then A sell order for 50 shares of MSFT stock should have been executed
+  Then A sell order for 50 shares of MSFT stock should've been executed
    And The TS should own 50 shares of APPL stock
 ```
 
@@ -1310,14 +1327,7 @@ Scenario 4: ...
 
 ----
 
-TDD
-eXtreme programming -> pairing, one test one implementation
-
-> Always start from the expections (express intentions!)
-----
-
-
-#### 1. TDD/RED - Write a bit of test (start from expectations, intentions)
+### 1. TDD/RED - Write a bit of test (start from expectations, intentions)
 
 ```cpp
 "should not print anything when the input is empty" = [] {
@@ -1327,6 +1337,16 @@ eXtreme programming -> pairing, one test one implementation
 ```
 
 ----
+
+## TDD and eXtreme programming / Pairing
+
+<img src="images/pair.png" width="85%" />
+
+> 1. One dev is writing a test and the other is making it pass (the simplest way)
+> 2. Switch the rules!
+
+----
+
 #### 2. TDD/GREEN - Make it compile/pass (the simpler way)
 #### 3. TDD/REFECTOR - Remove duplicates/extract
 
@@ -1433,8 +1453,10 @@ struct trading_system {
 
 ----
 
-  Take the next story... 
-    * Pair with someone else of the team!
+<img style="background:none; border:none; box-shadow:none;" src="images/done.png" />
+
+* #### Take the next story... 
+* #### Pair with someone else of the team! (knowledge sharing)
 
 ==============================================================================
 
