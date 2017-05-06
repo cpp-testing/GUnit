@@ -1,0 +1,17 @@
+@startuml
+
+package "Trading System" {
+    component [Feed Parser] as FP
+    component [Decision Engine] as DE
+    component [Shares Executor] as SE
+}
+
+cloud Exchange {
+}
+ 
+Exchange -- FP
+FP - DE
+DE -- SE
+SE -- Exchange
+
+@enduml

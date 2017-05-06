@@ -1,0 +1,28 @@
+@startuml
+
+start
+
+:Initialize Decision Engine;
+
+:Connect to the Exchange;
+
+while (There are Feeds?) is (yes)
+    :Process Feeds;
+
+    if (Desired shares were sold/bougth?) then (bought)
+        if (There is enoguh to buy shares?) then (yes)
+            :Get Shares to buy;
+            :Execute order!;
+        endif
+    else (sold)
+        :Get shares to sell;
+        :Execute order;
+    endif
+endwhile (no)
+
+:Disconnect from the Exchange;
+
+stop
+
+@enduml
+

@@ -97,11 +97,11 @@ Kris Jusiak, Quantlab Financial
 
 * Unit-Tests - 70-85% 
   * Testing in isolation (mocking)
-  * Easy to write
+  * Easy to write (graniuality)
   * Quick to run (immediate feedback)
-  * Find code issues quickly 
+  * Find code issues quickly (regression)
   * Test corner cases
-  * Documentation (requirements)
+  * Documentation (requirements/specification)
   * Refactoring without worries
 
 * Integration-Tests - 10-20% (between classes)
@@ -470,18 +470,7 @@ auto read(any<Readable> reader) {
 
 ----
 
-### Story: Print a value from a file
-
-```
-Scenario 1: Value from a file is displayed
- Given an 'input.txt' file with an integer value in it
-   And console terminal is ready
- When the App runs
- Then the integer value from 'input.txt' file
-   should be printed on the terminal console
-```
-
-----
+### Feature: Print a value from a file
 
 ### KISS - ~~Keep it simple~~, STUPID
 
@@ -497,7 +486,7 @@ int main() {
 }
 ```
 
-Unit-Testing - **Give me a break!**
+##### Unit-Testing - **Give me a break!**
 
 ----
 
@@ -705,9 +694,11 @@ int main() {
 
 ----
 
-### Give me templates/concepts!
+### C++ ain't java - Zero overhead abstractions, please!
 
 <img src="images/java-vs-c.gif" width="65%" />
+
+#### Templates/Concepts
 
 ----
 
@@ -824,6 +815,31 @@ int main() {
   ...
 }
 ```
+
+----
+
+### What about Factories?
+
+```cpp
+class ReaderFactory {
+  static auto create(std::string_view file) {
+    return std::make_unique<FileReader>(file);
+  }
+};
+```
+
+##### Test
+```cpp
+"should create a file reader"_test = [] {
+  ReaderFactory factory{};
+  auto reader = factory.create("test_file.txt");
+
+  EXPECT(reader.get()); // Is that enough?
+  ...
+};
+```
+
+#### Factories are really hard to test!
 
 ----
 
@@ -1079,72 +1095,95 @@ int main() {
 * All benefits of Unit-Testing!
 
 * TDD drives the design by producing
-  * Loosely coupled code
-  * Easy to test code
+  * Loosely coupled code (no globals/singletons)
+  * Easy to test code (no god objects)
 
 * No need for the test coverage <- it implies 100%
 
-* How to know that code wasn't written in TDD?
-  * You comment some code and there is no failing test
-  * Singletons/Globals in the code (the root of all evil)
-  * God objects
-  * ...
-
 ----
 
-#### Behaviour Test Driven Development (BDD)
+## Behaviour Driven Development (BDD)
 
-1. Language
+#### Language
 
-calculator c;
-EXPECT_CALL(c, add(2, 2)).WillOnce(Return(4));
-c.add(2, 2);
-EXPECT(count == 4); 
-vs
-GIVEN(calcualtor, add(2, 2)).WillOnce(Return(4));
-WHEN(c.add(2, 2));
-THEN(count).should_be(4);
-
-2. Scope
-Unit-testing
-  1. specificatoin.
-  2 feedback
-  3. Regression
-  4. Graniuality (why did it fail from higher perspective)
-
-Locked implementation instead of behaviour!
-
-Focus on customer needs
-
-Sorting
-  * Bubble/Quick/merge/inerstion/... sort
-
-TDD
-
-Cucumber - https://github.com/cucumber/cucumber-cpp
-
-BDD
-  Given a list of numbers
-  When I sort the list
-  Then the list will be in numerical order
-
-
-
-----
-
-#### Scenario
+```cpp
+"[TDD] add numbers"_test = [] { "[BDD} should add 2 numbers" = [] {
+  EXPECT_CALL(sum, add(2, 2)).    GIVEN(sum, add(2, 2)).
+    WillOnce(Return(4));          WillOnce(Return(4));
+  c.add(2, 2);                    WHEN(calc.add(2, 2));
+  EXPECT(count == 4);             THEN(count).should_be(4);
+};                              };
 ```
+
+
+#### Scope
+| | Test | Focus |
+|-|-|-|
+| TDD | Unit Testing | Locked Implementation |
+| BDD | Unit/Integration Testing | Locked Behaviour |
+
+----
+
+## BDD (Given/When/Then) - Example
+
+[Gherkin/Cucumber](https://github.com/cucumber/cucumber-cpp)
+
+```cpp
+Feature: File Viewer
+
 Scenario 1: Value from a file is displayed
- Given an file with an 42 value in it
+ Given I have a file with a 42 value in it
    And the App is created
- When the App runs
- Then the 42 should be printed
+ When The App runs
+ Then The 42 should be printed
 ```
 
-#### Test
+
+```
+```
+
+----
+
+### BDD - Gherkin/Cucumber (Integration Testing)
+
+```cpp
+GIVEN("^I have a file with a (\\d+) in it$") {
+  REGEX_PARAM(int, n);
+  ScenarioScope<AppCtx> context{};
+  context->app.push(n);
+}
+```
+
+```cpp
+GIVEN("^The App is created$") {
+  ScenarioScope<AppCtx> context{};
+  std::cout.rdbuf(context->app.buffer.rdbuf()); // redirect cout
+  context->app = di::make<App>(production_wiring);
+}
+```
+
+```cpp
+WHEN("^The App runs") {
+  ScenarioScope<AppCtx> context{};
+  context->app.run();
+}
+```
+
+```cpp
+THEN("^The (\\d+) should be printed") {
+  REGEX_PARAM(int, expected);
+  ScenarioScope<AppCtx> context{};
+  specify(context->buffer, should.equal(expected));
+}
+```
+
+----
+
+## BDD - DI/Mocking (Unit Testing)
+
 ```cpp
 "[scenario] Value from a file is displayed"_test {
-  GIVEN("the App is created") {
+  GIVEN("Hhe App is created") {
     auto [app, mocks] = testing::make<App>()
   }
   GIVEN(mocks<Readable>(), read().WillOnce(Return(42));
@@ -1157,45 +1196,10 @@ Scenario 1: Value from a file is displayed
 
 ----
 
-```cpp
-"[scenario] Value from a file is displayed"_test {
-  GIVEN("the App is created") {
-    mocks_t mocks{};
-    auto app = di::make<App>(
-       production_wiring(), // wiring used by the app in-service
-     , di::bind<FileLocator>.to(mocks) [di::override]
-     , di::bind<Output>.to(mocks) [di::override]
-    )
-  }
-  GIVEN(mocks<FileLocator>(), find("input.txt").WillOnce(Return("42"));
+## Behaviour Driven Development
 
-  WHEN(app.run());
-
-  THEN(mocks<Output>(), print(42));
-}
-```
-
-----
-
-```cpp
-"[scenario] Value from a file is displayed"_test {
-  GIVEN("the App is created") {
-    auto app = di::make<App>(production_wiring());
-    std::stringstream buffer{};
-    std::cout.rdbuf(buffer.rdbuf()); // redirect cout
-  }
-  GIVEN("an file with an 42 value in it") {
-    std::fstream file{"input.txt"};
-    file << 42;
-  }
-
-  WHEN(app.run());
-
-  THEN("the 42 should be printed") {
-    EXPECT("42" == buffer);
-  }
-}
-```
+* Complemenary with TDD! 
+* Focus on customer needs (behaviours)
 
 ==============================================================================
 
@@ -1203,106 +1207,115 @@ Scenario 1: Value from a file is displayed
 
 ----
 
-### Tools
+## Tools
 
 * Agile (Scrum)
 * UML 2.5 (design)
 * eXtreme Programming
 * Continous Integration
-* ATDD/BDD/TDD
-* C++17
+* BDD/TDD
 
 ----
 
-1. Product backlog refinment
+## Product backlog refinment
 
-Refinment
-  Priority: 
-    Story:  As a trading system I would like to send orders to the exchange
+#### Story / Priority
+> #### As an user of the trading system I would like to trade stocks
 
-  Acceptance critera
+----
 
-  ```
-Feature: User trades stocks
-  Scenario: User requests a sell before close of trading
-    Given I have 100 shares of MSFT stock
-       And the decision makers decides to sell 50 APPL stock
-       And the time is before close of trading
+### Product backlog refinment - Acceptance critera (BDD)
 
-    When I ask to sell 20 shares of MSFT stock
+```
+Feature: Automatic Trading System
+```
 
-     Then I should have 80 shares of MSFT stock
-      And I should have 150 shares of APPL stock
-      And a sell order for 20 shares of MSFT stock should have been executed
+```
+Scenario 1: Trading System requests to buy shares
+  Given The Trading System is up and running
+    And The TS has at least $100'000 to buy shares
+
+  When at least 1000 shares of GOOGL were bought at price $950
+
+  Then A buy order for 100 shares of GOOGL should be executed
+   And The TS should own 100 shares of GOOGL
+   And The TS should have $90'000
+```
+
+```
+Scenario 2: Trading System requests to sell shares
+  Given The Trading System is up and running
+    And The TS owns 100 shares of APPL stock
+
+  When 50 shares of MSFT were sold 
+
+  Then A sell order for 50 shares of MSFT stock should have been executed
+   And The TS should own 50 shares of APPL stock
+```
+
+```
+Scenario 3: ...
+Scenario 4: ...
+...
 ```
 
 ----
 
-Design/Workshop
-
-    Domains
-      decision engine <-> gateway <-> exchange
-
-    Cross functional:
-
-           decision engine
-          /
-         trigger order
-         /
-        has any oustanding orders
-    yes / \ no
-     X    gateway
-            \ send order
-        
-           exchange
-          /
-         confirmation
-         /
-      gateway
-      / send
-    decision engine
+### If we use Cucumber we already have our BDD tests!
 
 ----
 
-Tasks
-  1. decision... -> yes
-  2. decision... -> no
-  3. confirmation -> transfer
+## Design/Workshop
+
+#### Domains/Components
+![design](images/design.png)
 
 ----
 
-Planning
-  Estimates (poker, has to be understood by everyone)
-    * story points <- complexity of the task
-      1 sp -> transfer a message trhough all layers
+## Design/Workshop
 
-    1. decision... -> yes (2sp)
-    2. decision... -> no (1sp)
-    3. confirmation -> transfer (3sp)
-
- team velociy (avg. 20 sp)
- commitment -> 1/2/3
+#### Activities
+![ad](images/ad.png)
 
 ----
 
-Sprint (1 week)
+## Stories/Tasks - Cross functional
 
-  Story 1.
-    1.1 Acceptance driven development (ATDD with BDD)
+![ad](images/ad_tasks.png)
 
-      given
-
-      when
-
-      then
-
-      > start from your expectatoins
-
-    Test Driven Development (unit testing)
-
-##Let's start all over again with TDD
+#### Tasks
+  1. [1.0]  (delivrable!)
+  1. [1.1]  (delivrable!)
 
 ----
+
+## Planning
+
+#### Estimetes (Common SP definition required)
+  * [1.0]  (5SP)
+  * [1.1]  (8SP)
+
+  * Team velocity (avg. 15 SP)
+  * Commitment ->  [1.0] and [1/1]
+
+----
+
+## Sprint
+
+| | | |
+|-|-|-|
+| TODO | WIP | DONE |
+|  | [1.0] | |
+| [1.1] | | |
+
+----
+
+TDD
+eXtreme programming -> pairing, one test one implementation
+
+> Always start from the expections (express intentions!)
+----
+
 
 #### 1. TDD/RED - Write a bit of test (start from expectations, intentions)
 
@@ -1314,145 +1327,8 @@ Sprint (1 week)
 ```
 
 ----
-
 #### 2. TDD/GREEN - Make it compile/pass (the simpler way)
-
-```cpp
-"should not print anythinig when the input is empty" = [] {
-  std::stringstream out{};
-  struct {
-    void run() { }
-    std::ostream& os;
-  } app{out};
-  app.run();
-  EXPECT("" == out.str());
-};
-```
-
-----
-
 #### 3. TDD/REFECTOR - Remove duplicates/extract
-
-```cpp
-class App {
-public:
-  explicit App(std::ostream& os)
-    : os(os)
-  { }
-
-  void run() { }
-
-private:
-  std::ostream& os;
-};
-```
-
-```cpp
-"should not print anythinig when the input is empty" = [] {
-  // given (arrange)
-  std::stringstream out{};
-  App app{};
-
-  // when (act)
-  app.run();
-
-  // then (assert)
-  EXPECT("" == out.str());
-};
-```
-
-----
-
-#### 1. TDD/RED - Write a bit of the next test
-
-```cpp
-"should print value 42 when the input is 42" = [] {
-  // given
-  std::stringstream out{};
-  std::stringstream in{};
-
-  // when
-  app.run();
-
-  // then
-  EXPECT("42" == out.str());
-};
-```
-
-----
-
-#### 2. TDD/GREEN - Make it compile/pass (the simpler way)
-
-```cpp
-"should print value 42 when the input is 42" = [] {
-  // given
-  std::stringstream in{}, out{};
-  struct { 
-    void run() { out << "42"; }
-    std::ostream& out;
-    std::istream& in;
-  } app{in, out};
-  
-  // when
-  app.run();
-  
-  // then
-  EXPECT("42" == out.str());
-};
-```
-
-----
-
-#### 3. TDD/REFECTOR - remove duplicates (across all tests)
-
-```cpp
-"should not print anythinig when the input is empty" = [] {
-  // given (arrange)
-  std::stringstream in{}, out{};
-  App app{in, out};
-
-  // when (act)
-  app.run();
-
-  // then (assert)
-  EXPECT("" == out.str());
-};
-```
-
-```cpp
-"should print value 42 when the input is 42" = [] {
-  // given (arrange)
-  const auto value = "42";
-  std::stringstream in, out{};
-  App app{in, out};
-  in << value;
-
-  // when (act)
-  app.run();
-
-  // then (assert)
-  EXPECT(value == out.str());
-};
-```
-
-----
-
-#### 3. TDD/REFECTOR - remove duplicates (across the implementation)
-
-```cpp
-class App {
-public:
-  App(std::istream& in, std::oustream& out)
-    : in(in), out(out)
-  { }
-
-  void run() { out << in.rdbuf(); }
-
-private:
-  std::istream& in;
-  std::ostream& out;
-};
-```
 
 ----
 
@@ -1527,14 +1403,9 @@ struct trading_system {
 };
 ```
 
-      should...
+----
 
-      eXtreme programming -> pairing, one test one implementation
-
-
-      write a bit more of test
-
-    Commit each time 
+#### Commit
 
       * rebase or merge or branch with history how tthe test eveolved
 
@@ -1548,68 +1419,22 @@ struct trading_system {
 
     Commit content: acceptance test + unit tests + cross functional
 
+----
+
+#### Code Review/Merge Requeest
+
     Create a merge request
       github
 
     Code review
       Did you consider...?
 
-
     Someone else is accepting your merge requests
 
-    Take the next story... 
-      * Pair with someone else of the team!
+----
 
-As a I would like to 
-
-Artifacts
-  * Acceptance criteria (BDD style)
-
-  Scenario 1: Value from a file is displayed
-   Given an 'input.txt' file with an integer value in it
-     And console terminal is ready
-   When the App runs
-   Then the integer value from 'input.txt'
-     should be printed on the terminal console
-
-  Scenario 1: Value from a file is displayed
-   Given an 'input.txt' file with an integer value in it
-     And console terminal is ready
-   When the App runs
-   Then the integer value from 'input.txt'
-     should be printed on the terminal console
-
-
-     NOTE
-> Always start from the expections (express intentions!)
-Treat code as production code!
-* refactor (remove duplicates)
-
-
-Example (Print read text app)
-1. User story
-2. Scenarios (BDD style)
-3. Design
-    o
-   / \
-  o   o cross-functional tasks
-     /
-    o
-
-4. Acceptance driven (per task)
- iteration
-  * a bit of BDD test
-  * a bit of TDD
-  * a bit of implementation
-
-Note: eXtreme programming techniques
-* pair programming
-  * one dev is writing a test, another one is implementing it
-
-5. Commit (cross functional - AT, UT, impl)
-6. Merge request / review
-
-goto 4.
+  Take the next story... 
+    * Pair with someone else of the team!
 
 ==============================================================================
 
