@@ -290,7 +290,7 @@ public:
 };
 ```
 
-* No hand written macros :)
+* No hand written macros
 * No boilerplate code
 * Not a standard solution either!
   * vtable manipulation involved
@@ -872,21 +872,30 @@ namespace di = boost::di;
 ```
 
 ```cpp
-template<class TReader = Readable>
-class App {
- public:
-  App(TReader&, const IPrinter&); // DI handles
-};        ^                 ^     // order and types
-          |                 \-------------------------\
-          \---------------------------------------\   |
-int main() {                                      |   |
-  const auto injector = di::make_injector(        |   |
-     di::bind<Readable>.to<FileReader>(),   ------/   |
-     di::bind<IPrinter>.to<ConsolePrinter>() ---------/
+template<class TReader = Readable, class TSize = class Size>
+class App {                                               ^
+ public:                                                  |
+  App(const TReader&, std::unique_ptr<IPrinter>, config); |
+};           ^                            ^          ^    |
+             |                            \-------\  |    |
+             \--------------------------------\   |  |    |
+int main() {                                  |   |  |    |
+  const auto injector = di::make_injector(    |   |  |    |
+     di::bind<Readable>.to<FileReader>(),   --/   |  |    |
+     di::bind<IPrinter>.to<ConsolePrinter>(), ----/  |    |
+     config{"127.0.0.1", 8080}, ---------------------/    |
+     di::bind<class Size>.to<int_<42>>() -----------------/
   );
-
-  injector.create<App>().run();
+  injector.create<App>().run(); // or di::make<App>(...).run();
 }
+```
+
+```cpp
+// App<FileReader<...>, int_<42>>{
+//   FileReader<...>{}, 
+//   std::make_unique<ConsolePrinter>(), 
+//   config{"127.0.0.1", 8080}
+// }.run();
 ```
 
 ----
@@ -1044,7 +1053,7 @@ int main() {
 | | | |
 |-|-|-|
 | TDD | Test Driven Development | Unit Tests |
-| ATDD | Acceptance Test Driven Development | Acceptance Tests |
+| BDD | Behaviour Test Driven Development | Unit/Integration Tests |
 
 ----
 
@@ -1083,33 +1092,107 @@ int main() {
 
 ----
 
-#### Acceptance Test Driven Development (ATDD)
+#### Behaviour Test Driven Development (BDD)
 
+1. Language
+
+calculator c;
+EXPECT_CALL(c, add(2, 2)).WillOnce(Return(4));
+c.add(2, 2);
+EXPECT(count == 4); 
+vs
+GIVEN(calcualtor, add(2, 2)).WillOnce(Return(4));
+WHEN(c.add(2, 2));
+THEN(count).should_be(4);
+
+2. Scope
+Unit-testing
+  1. specificatoin.
+  2 feedback
+  3. Regression
+  4. Graniuality (why did it fail from higher perspective)
+
+Locked implementation instead of behaviour!
+
+Focus on customer needs
+
+Sorting
+  * Bubble/Quick/merge/inerstion/... sort
+
+TDD
+
+Cucumber - https://github.com/cucumber/cucumber-cpp
+
+BDD
+  Given a list of numbers
+  When I sort the list
+  Then the list will be in numerical order
+
+
+
+----
+
+#### Scenario
 ```
 Scenario 1: Value from a file is displayed
- Given an 'input.txt' file with an integer value in it
-   And console terminal is ready
+ Given an file with an 42 value in it
+   And the App is created
  When the App runs
- Then the integer value from 'input.txt'
-   should be printed on the terminal console
+ Then the 42 should be printed
 ```
 
- ```cpp
-GTEST(example) {
-  namespace di = boost::di;
+#### Test
+```cpp
+"[scenario] Value from a file is displayed"_test {
+  GIVEN("the App is created") {
+    auto [app, mocks] = testing::make<App>()
+  }
+  GIVEN(mocks<Readable>(), read().WillOnce(Return(42));
 
-  SHOULD("create example") {
-    const auto injector = di::make_injector(
-      di::bind<interface>.to(di::NiceGMock{mocks})
-    , di::bind<interface2>.to(di::StrictGMock{mocks})
-    );
+  WHEN(app.run());
 
-    sut = testing::make<SUT>(injector);
+  THEN(mocks<Printable>(), print(42));
+}
+```
 
-    EXPECT_CALL(mock<interface>(), (get)(_)).WillOnce(Return(123));
-    EXPECT_CALL(mock<interface2>(), (f2)(123));
+----
 
-    sut->update();
+```cpp
+"[scenario] Value from a file is displayed"_test {
+  GIVEN("the App is created") {
+    mocks_t mocks{};
+    auto app = di::make<App>(
+       production_wiring(), // wiring used by the app in-service
+     , di::bind<FileLocator>.to(mocks) [di::override]
+     , di::bind<Output>.to(mocks) [di::override]
+    )
+  }
+  GIVEN(mocks<FileLocator>(), find("input.txt").WillOnce(Return("42"));
+
+  WHEN(app.run());
+
+  THEN(mocks<Output>(), print(42));
+}
+```
+
+----
+
+```cpp
+"[scenario] Value from a file is displayed"_test {
+  GIVEN("the App is created") {
+    auto app = di::make<App>(production_wiring());
+    std::stringstream buffer{};
+    std::cout.rdbuf(buffer.rdbuf()); // redirect cout
+  }
+  GIVEN("an file with an 42 value in it") {
+    std::fstream file{"input.txt"};
+    file << 42;
+  }
+
+  WHEN(app.run());
+
+  THEN("the 42 should be printed") {
+    EXPECT("42" == buffer);
   }
 }
 ```
@@ -1217,7 +1300,6 @@ Sprint (1 week)
 
     Test Driven Development (unit testing)
 
-inline auto __attribute__((optimize("O0"))) dtor_offset() {
 ##Let's start all over again with TDD
 
 ----
