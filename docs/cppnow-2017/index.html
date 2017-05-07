@@ -128,10 +128,10 @@ Kris Jusiak, Quantlab Financial
 
 | | |
 |-|-|
-| Simplicity | Testing can't be hard  |
-| Expressiveness | Tests should not have logic |
-| Reusability | Implementation details should not trigger tests changes |
+| Simplicity | Testing can't be hard |
+| Expressiveness | Tests should express `what` and not `how` |
 | Quality | Test code should be treated as production code |
+| Performance | Testable code should not be a reason for performance degradation |
 
 > To achieve those goals...
 
@@ -1084,7 +1084,7 @@ namespace testing {
 
 ==============================================================================
 
-## Consider test driving the implementation
+## Consider writing tests before the implementation
 
 | | | |
 |-|-|-|
@@ -1215,16 +1215,18 @@ THEN("^The (\\d+) should be printed") {
 
 ## Behaviour Driven Development
 
-* Complemenary with TDD! 
+* Complementary with TDD! 
 * Focus on customer needs (behaviours)
 
 ==============================================================================
 
 ## Showcase (User Story -> ... -> Commit)
 
+![ats](images/ats.png)
+
 ----
 
-## Tools
+### Tools
 
 * Agile (Scrum)
 * UML 2.5 (design)
@@ -1234,14 +1236,14 @@ THEN("^The (\\d+) should be printed") {
 
 ----
 
-## Product backlog refinment
+### Product backlog refinement
 
 #### Story / Priority
 > #### As an user of the trading system I would like to trade stocks
 
 ----
 
-### Product backlog refinment - Acceptance critera (BDD)
+### Product backlog refinement - Acceptance criteria (BDD)
 
 ```
 Feature: Automatic Trading System
@@ -1282,33 +1284,38 @@ Scenario 4: ...
 
 ----
 
-## Design/Workshop
+### Design/Workshop - Domains/Components
 
-#### Domains/Components
 ![design](images/design.png)
 
 ----
 
-## Design/Workshop
+### Design/Workshop - Activities
 
-#### Activities
-![ad](images/ad.png)
+---
 
-----
-
-## Stories/Tasks - Cross functional
-
-![ad](images/ad_tasks.png)
-
-#### Tasks
-  1. [1.0]  (delivrable!)
-  1. [1.1]  (delivrable!)
+<img style="background:none; border:none; box-shadow:none;" src="images/ad.png" width="45%" />
 
 ----
 
-## Planning
+### Stories -> Tasks
 
-#### Estimetes (Common SP definition required)
+| | |
+|-|-|
+| <img src="images/ad_tasks.png" width="75%" /> | <img style="background:none; border:none; box-shadow:none;" src="images/cf.png" width="75%" /> |
+
+----
+
+### Stories -> Tasks
+
+  1. [1.0]  (deliverable!)
+  1. [1.1]  (deliverable!)
+
+----
+
+### Planning
+
+#### Estimates (Common SP definition is required)
   * [1.0]  (5SP)
   * [1.1]  (8SP)
 
@@ -1317,7 +1324,7 @@ Scenario 4: ...
 
 ----
 
-## Sprint
+### Sprint - Let's do it!
 
 | | | |
 |-|-|-|
@@ -1330,9 +1337,11 @@ Scenario 4: ...
 ### 1. TDD/RED - Write a bit of test (start from expectations, intentions)
 
 ```cpp
-"should not print anything when the input is empty" = [] {
-  app.run();
-  EXPECT("" == out.str());
+"should initialize the decision engine" = [] {
+
+  de.inititalize();
+
+  EXPECT(de.initialize
 };
 ```
 
@@ -1460,7 +1469,10 @@ struct trading_system {
 
 ==============================================================================
 
-## C++2X...
+## Testing and C++ 2X
+<table>
+<img style="background:none; border:none; box-shadow:none;" src="images/cpp_logo.png" />
+</table>
 
 ----
 
@@ -1515,7 +1527,7 @@ struct trading_system {
 * Consider using a good* Mocking framework
 * Consider writing `SOLID` instead of `STUPID` code
 * Consider using dependency injection framework
-* Consider test driving the implementation
+* Consider writing tests before the implementation
 
 ----
 
