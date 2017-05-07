@@ -69,9 +69,9 @@ Kris Jusiak, Quantlab Financial
     * Mocking
     * Writing A Testable Code
         * Single Responsibility Principle
-        * Dependency Injection
+        * Dependency Inversion
           * Automatic Mocks Injection
-        * Test Driven Development
+        * TDD/BDD
 * Showcase (User Story -> ... -> Commit)
 * C++2X...
 
@@ -87,34 +87,29 @@ Kris Jusiak, Quantlab Financial
 
 ![cost](images/cost.png)
 
-----
-
-##Different types of tests have different costs
-
-![pyramid](images/pyramid.png)
+#### Finding bugs in production is REALLY expensive!
 
 ----
 
-* Unit-Tests - 70-85% 
-  * Testing in isolation (mocking)
-  * Easy to write (graniuality)
-  * Quick to run (immediate feedback)
-  * Find code issues quickly (regression)
-  * Test corner cases
-  * Documentation (requirements/specification)
-  * Refactoring without worries
+##First-Class Tests
 
-* Integration-Tests - 10-20% (between classes)
-  * Integration between classes
+<img style="float: right;" src="images/pyramid.png" />
+<ul style="display: block">
+    <li>Acceptance-Tests - 5-10%</li>
+      Written by the business
+      <hr />
 
-* Acceptance-Tests - 5-10%
-  * Slower to run
-  * Harder to write
-  * In some cases might be manual
+    <li>Integration-Tests - 10-20%</li>
+      Written by architects
+      <hr />
+
+    <li>Unit-Tests (70-85%)</li>
+      Written by programmers
+</ul>
 
 ----
 
-##Test your code and save more money!
+##Costs associated with First-Class Tests
 
 ![cost_testing](images/cost_testing.png)
 
@@ -130,7 +125,7 @@ Kris Jusiak, Quantlab Financial
 |-|-|
 | Simplicity | Testing can't be hard |
 | Expressiveness | Tests should express `what` and not `how` |
-| Quality | Test code should be treated as production code |
+| Quality | Test code is `production code` |
 | Performance | Testable code should not be a reason for performance degradation |
 
 > To achieve those goals...
@@ -1137,10 +1132,10 @@ namespace testing {
 
 
 #### Scope
-| | Test | Focus |
-|-|-|-|
-| TDD | Unit Testing | Locked Implementation |
-| BDD | Unit/Integration Testing | Locked Behaviour |
+| | Test |
+|-|-|
+| TDD | Locked Implementation |
+| BDD | Locked Behaviour |
 
 ----
 
@@ -1280,7 +1275,8 @@ Scenario 4: ...
 
 ----
 
-### If we use Cucumber we already have our BDD tests!
+### If we use Cucumber we already have Acceptance Tests!
+> Acceptance Tests are written by the business for the purpose of ensuring that the production code does what the business expects it to do
 
 ----
 
@@ -1352,7 +1348,7 @@ Scenario 4: ...
 <img src="images/pair.png" width="85%" />
 
 > 1. One dev is writing a test and the other is making it pass (the simplest way)
-> 2. Switch the rules!
+> 2. Switch the roles!
 
 ----
 
