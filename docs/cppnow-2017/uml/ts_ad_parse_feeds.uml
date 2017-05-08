@@ -2,36 +2,41 @@
 
 start
 
+note right
+  [0.0.1] Parse feeds
+endnote
 :Connect to the MarketData and the Exchange;
+note right
+  [0.0.1] Parse feeds
+endnote
+
 :Process Feeds;
 note right
-  parse and update feeds
+  [0.0.1] Parse feeds
 endnote
 
 while (There are new feeds?) is (yes)
-
-    note 
-      average of last 10
-              >
-      average of previous 10
-    endnote
     if (Subscribed stock is rising?) then (yes)
         :Get Shares to buy;
     else (no)
         :Get shares to sell;
-        note right
-          predefined in the strategy
-        endnote
     endif
+note left
+  [0.0.1] Parse feeds
+endnote
     :Execute order;
-    note right
-      send to the exchange
-    endnote
 endwhile (no)
 
 :Disconnect;
+note right
+  [0.0.1] Parse feeds
+endnote
 
 stop
+note right
+  [0.0.1] Parse feeds
+endnote
 
 @enduml
+
 

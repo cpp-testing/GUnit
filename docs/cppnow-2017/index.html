@@ -125,8 +125,8 @@ Kris Jusiak, Quantlab Financial
 |-|-|
 | Simplicity | Testing can't be hard |
 | Expressiveness | Tests should express `what` and not `how` |
-| Quality | Test code is `production code` |
-| Performance | Testable code should not be a reason for performance degradation |
+| Quality | Test code should be treated as `production code` |
+| Performance | Testable code should not affect runtime performance |
 
 > To achieve those goals...
 
@@ -136,7 +136,7 @@ Kris Jusiak, Quantlab Financial
 
 ####good*
 * Easy to add and run new tests (automatic test registration)
-* Proper assertions system
+* Proper assertions system (useful output / support for non-trivial comparisons)
 * Feature reach (test suites/fixtures/different outputs)
 
 ----
@@ -221,9 +221,10 @@ GTEST("Can add numbers") {
 ## Consider using a good* Mocking framework
 
 ####good*
-* Easy to do to simple things but with possibility to do more complex too
+* Has to be easier to use than hand written stubs/fakes!
 * Limited boilerplate (especially macros)
-* Mocking Interfaces/Templates/Concepts/Type-Erasure
+* Useful error messages in case of unexpected calls
+* Support for mocking Interfaces/Templates/Concepts/Type-Erasure
 
 ----
 
@@ -271,30 +272,85 @@ public:
 
 ----
 
-###Mocking interfaces - better alternatives
+###Mocking interfaces - modern alternatives
 
 * HippoMocks
 * FakeIt
-* **GUnit.GMock** (based on GoogleMock)
+* ...
+* **GUnit.GMock (based on GoogleMock)**
+
+----
+
+### Mocking Interfaces - GUnit.GMock
 
 ```cpp
 "should read 42"_test = [] {
-  GMock<IReader> reader{};
+  GMock<IReader> reader{}; // no hand written macros (no boilerplate)
+                           // Not a standard solution
+                           //   (vtable manipulation involved)
+
   EXPECT_CALL(reader, read).WillOnce(Return(42));
+
   EXPECT(42 == reader.read());
 };
 ```
 
-* No hand written macros
-* No boilerplate code
-* Not a standard solution either!
-  * vtable manipulation involved
+----
+
+### Mocking Interfaces - GUnit.GMock - How?
+
+```cpp
+template <class T>
+class GMock { // no inheritance
+ static_assert(is_complete<T>{} && is_polymorphic<T>{} &&
+               has_virtual_destructor<T>{});
+
+ detail::vtable<T> vtable{};
+ detail::byte _[sizeof(T)]{};
+
+public:
+ template <class TName, class R, class B, class... TArgs>
+ decltype(auto) call_(R (B::*f)(TArgs...), Matcher<TArgs>&&... args);
+
+private:
+ flat_map<string, unique_ptr<UntypedFunctionMockerBase>> fs{};
+};
+```
 
 ----
 
-### Mocking templates
+### Mocking Interfaces - GUnit.GMock - How?
 
-#### We are back to square one <- macros
+#### Vtable
+```cpp
+/**
+ * Itanium C++ ABI - https://mentorembedded.github.io/cxx-abi/abi.html
+ * @tparam T interface type
+ */
+template <class T>
+class vtable {
+ public:
+  vtable(void *f, void *dtor);
+  ~vtable();
+  void set(std::size_t offset, void *f);
+
+ private:
+  void **vptr{};
+}
+```
+
+#### Usage
+```cpp
+#define EXPECT_CALL(obj, call)
+  ((obj).template call_<#call>().
+    InternalExpectedAt(__FILE__, __LINE__, #obj, #call)
+```
+
+----
+
+### Mocking templates - GUnit.GMock
+
+#### We are back to square one -> macros
 
 ```cpp
 template<class TReader>
@@ -302,9 +358,9 @@ auto read(TReader& reader) { return reader.read(); }
 ```
 
 ```cpp
-class MockReader : public IReader {
+class MockReader { // no inheritance
 public:
-  MOCK_CONST_METHOD1(read, int()); // See the bug?
+  MOCK_CONST_METHOD1(read, int());
 };
 ```
 
@@ -312,15 +368,18 @@ public:
 "should read 42"_test = [] {
   MockReader reader{};
   // At least we can use the same front-end
+
   EXPECT_CALL(reader, read).WillOnce(Return(42));
+
   read(reader);
+
   EXPECT(42 == reader.read);
 };
 ```
 
 ----
 
-### Mocking concepts
+### Mocking concepts - GUnit.GMock
 
 #### Concepts lite - not yet :(
 
@@ -342,40 +401,55 @@ template <class T>
 const auto Readable =
   CopyConstructible<T> &&
   CopyAssignable<T> &&
-  Callable<T, int()>($(read));
+  Callable<T, int()>($(read)); // expose read for mocking!
 ```
 
 ----
 
-### Mocking concepts
+### Mocking concepts - GUnit.GMock
+
+#### Virtual Concepts
+
+| Functionality | Description |
+|-|-|
+| Constraint checking | Like Concepts-Lite |
+| Type-Erasure | Like Boost.TypeErasure |
+| Mocking | Like GoogleMock just for concepts |
+
+https://github.com/boost-experimental/vc
+
+----
+
+### Mocking concepts - GUnit.GMock
 
 ```cpp
 "should read 42"_test = [] {
   GMock<Readable> reader{}; // concept based!
+
   EXPECT_CALL(reader, read).WillOnce(Return(42));
+
   EXPECT(42 == reader.read());
 };
 ```
+#### Exactly the same as with interfaces!
 
 ----
 
-### Virtual Concepts - Some insides
+### Mocking concepts - GUnit.GMock - How?
 
 ```cpp
 Callable<T, int()>($(read)) ]--> Constraint
           \_  \_____   \___-> name
             \       \
 $(name) [](auto t, auto r, auto... args) { // expression
- struct { // inherit from 
+ struct { // inherit from
   static auto constraint() {
-   return [](const auto &self, decltype(args)... args) 
-     -> decltype(self.name(std::forward<decltype(args)>(args)...)) 
-   {};
+   return [](const auto &self, decltype(args)... args)
+     -> decltype(self.name(args...)){};
   }
   auto name(decltype(args)... args) {
    return static_cast<decltype(t) *>(this) // static polymorphism
-     ->template call<name, typename decltype(r)::type>( // call me...
-         std::forward<decltype(args)>(args)...);
+     ->template call_<name, typename decltype(r)::type>(args...);
   }
  } _; return _; // local struct
 }
@@ -383,37 +457,78 @@ $(name) [](auto t, auto r, auto... args) { // expression
 
 ```cpp
 template<class... TConstraints>
-struct gmock_impl : decltype(std::declval<TConstraints::expression>()(
+class gmock_impl : decltype(std::declval<TConstraints::expression>()(
                              TConstraints::args...))... (
+public:
+ gmock_impl() = default;
+
  template <class TName, class R, class... TArgs>
- decltype(auto) call(TArgs &&... args); // calls mocked impl...
+ decltype(auto) call_(TArgs &&... args); // calls mocked impl...
 };
+```
+
+----
+
+### Type-erasure (dynamic dispatch without inheritance)
+
+```cpp
+class FileReader { // no inheritance
+public:
+  explicit FileReader(std::string_view);
+  int read();
+};
+
+class StreamReader { // no inheritance
+public:
+  int read();
+};
+```
+
+#### Any - can store anything which satisfies the concept
+```cpp
+any<Readable> reader = FileReader{"file.txt"};
+reader = StreamReader{};
 ```
 
 ----
 
 ### Mocking type-erasure
 
-##### Type Erasure (dynamic dispatch without inheritance)
-```cpp
-any<Readable> reader = FileReader{"file.txt"};
-reader = StreamReader{};
-```
-
-```cpp
-auto read(any<Readable> reader) {
-  return reader.read();
-}
-```
-
 ```cpp
 "should read 42"_test = [] {
   GMock<Readable> reader{}; // concept based
-                            // the same as with concepts!
+
   EXPECT_CALL(reader, read).WillOnce(Return(42));
+
   EXPECT(42 == reader.read());
 };
 ```
+#### Exactly the same as with interfaces and concepts!
+
+----
+
+### Mocking type-erasure - How?
+
+```cpp
+template <class TConcept, class... Ts>
+class any_impl : decltype(std::declval<TConstraints::expression>()(
+                             TConstraints::args...))... (
+public:
+  template <class T>
+  any_impl(T t) : poly_{
+    t, dyno::make_concept_map(Ts::name{} = Ts::expr()...)
+  } {}
+
+  template <class TName, class R, class... TArgs>
+  auto call(TArgs&&... args) {
+    return poly_.virtual_(TName{})(poly_, args...);
+  }
+
+private:
+  dyno::poly<Tconcept> poly_{};
+};
+```
+https://github.com/ldionne/dyno
 
 ----
 
@@ -422,7 +537,6 @@ auto read(any<Readable> reader) {
 | | |
 |-|-|
 | GoogleMock | https://github.com/google/googletest |
-| Dyno (Type-Erasure) | https://github.com/ldionne/dyno |
 | GUnit.GMock | https://github.com/cpp-testing/GUnit#GMock |
 <!-- .element: style="margin-left:-13%; width:125%" -->
   * Features
@@ -492,7 +606,7 @@ int main() {
 #### Stupid vs <strike>SOLID</strike>
 
 ```cpp
-class Manager { // Indescriptive Naming
+class Manager { // Indescriptive Naming (God object)
 public:
   Updater& getUpdater(); // Untestability
   Reader& getReader();   // Untestability
@@ -505,7 +619,7 @@ public:
 ```cpp
 class App {
 public:
-  App() 
+  App()
     : manager(std::make_unique<Manager>()); // Tight Coupling
   { }
 
@@ -524,36 +638,22 @@ private:
 
 ----
 
-#### Stupid vs <strike>SOLID</strike>
-
-#### Unit-testing?
-
-```cpp
-#define private public
-```
-
-```cpp
-struct ManagerStub {
-
-};
-```
+### App - Unit-testing?
 
 ```cpp
 "should print read value"_test = [] {
-  //given
-  Logger::instance().disable(); // disable global logger
+  // given
   App app{};
-  auto manager = std::make_unique<FakeManager>();
-  app.manager = manager.get();
 
-  //when
+  // when
   app.run();
 
-  //then
+  // then
+  // Ideas? How to fake manager? #define private public?
 };
 ```
 
-#### Let's just do Acceptance-testing instead!
+#### We can only do Integration-tests or black box tests here!
 
 ----
 
@@ -562,49 +662,21 @@ struct ManagerStub {
 
 ----
 
-#### <strike>Stupid</strike> vs SOLID
+### Single Responsibility
 
 ```cpp
 /**
- * Single Responsibility
  * "A class should have only one reason to change" Uncle Bob
  */
-class Reader { public: int read(); };
-class Printer { public: void print(int); };
-```
-
-```cpp
-class App {
-public:
-  // Dependency Inversion
-  App(Reader& reader, Printer& printer, Logger& logger)
-
-  void run() {
-    const auto value = reader.read();
-    Logger << "run:" << value << '\n';
-    printer.print(value); // Law of Demeter
-                          // "Only talk to your immediate friends"
-  }
-
-private:
-  Reader& reader;
-  Printer& printer;
-  Logger& logger;
-};
+class Reader {        class Printer {
+ public:               public:
+   int read();           void print(int);
+};                    };
 ```
 
 ----
 
-TODO test
-
-----
-
-### A few more iterations...
-####(and after some MORE SOLID courses)
-
-----
-
-#### <strike>Stupid</strike> vs SOLID
+### Dependency Inversion
 
 ```cpp
 /**
@@ -618,11 +690,12 @@ public:                             public:
 };                                  };
 ```
 
+----
+
+### <strike>Stupid</strike> vs SOLID
+
 ```cpp
 class App {
-  IReader& reader;
-  IPrinter& printer;
-  ILogger& logger;
 public:
   /**
    * Dependency Injection
@@ -633,20 +706,23 @@ public:
   void run() {
     const auto value = reader.read();
     Logger << "run:" << value << '\n';
-    printer.print(value);
+    printer.print(value); // Law of Demeter
+                          // "Only talk to your immediate friends"
   }
+private:
+  IReader& reader; IPrinter& printer; ILogger& logger;
 };
 ```
 
 ----
 
-#### DI - Test
+### App - Unit-testing - Simple!
 
 ```cpp
 "should print read value"_test = [] {
   NiceGMock<ILogger> logger{};      // ignore an uninteresting call
   StrictGMock<IReader> reader{};    // fail on uninteresting call
-  StrictGMock<IPrinter> printer{};  // wiring!
+  StrictGMock<IPrinter> printer{};  // fail on uninteresting call
   App app{reader, printer, logger}; // wiring!
 
   EXPECT_CALL(reader, read).WillOnce(Return(42));
@@ -658,27 +734,6 @@ public:
 
 ----
 
-###Composition Root
-
-> Unique location in an application where modules are composed together
-
-#### Usage
-```cpp
-int main() {
-  auto file = std::fstream{"input.txt"};                // wiring!
-  auto reader = std::make_unique<FileReader>(file);     // wiring!
-  auto& out = std::cout;                                // wiring!
-  auto printer = std::make_unique<ConsolePrinter>(out); // wiring!
-  auto logger = std::make_unique<Logger>();             // wiring!
-  App app{reader, printer, logger};                     // wiring!
-  app.run();
-}
-```
-
-####Simplifies writing integration tests
-
-----
-
 ### It works but, all in all, it's a <u>Java</u> approach
 
 * Heap
@@ -686,7 +741,7 @@ int main() {
 * Inheritance
   * "Inheritance Is The Base Class of Evil" Sean Parent
 * Dynamic Dispatch
-* Performance
+* ~Performance
   * final keyword and devirtualization - https://godbolt.org/g/e8olYN
 
 ----
@@ -695,17 +750,17 @@ int main() {
 
 <img src="images/java-vs-c.gif" width="65%" />
 
-#### Templates/Concepts
+### Templates/Concepts
 
 ----
 
-####Concepts
+### App - Concepts
 
 ```cpp
 template <class T>                  template <class T>
 const auto Readable =               const auto Printable =
-  CopyConstructible<T> &&             CopyConstructible<T> && 
-  CopyAssignable<T> &&                CopyAssignable<T> && 
+  CopyConstructible<T> &&             CopyConstructible<T> &&
+  CopyAssignable<T> &&                CopyAssignable<T> &&
   Callable<T, int()>($(read));        Callable<T, void(int)>($(print));
 ```
 
@@ -713,9 +768,9 @@ const auto Readable =               const auto Printable =
 // template<Readable TReader, Printable TPrinter> // Concepts-Lite
 template<class TReader, class TPrinter, class TLogger>
 class App {
-  TReader reader;   static_assert(Readable<TReader>());
-  TPrinter printer; static_assert(Printable<TPrinter>());
-  TLogger logger;   static_assert(Loggable<TLogger>());
+  static_assert(Readable<TReader>() &&
+                Printable<TPrinter>() &&
+                Loggable<TLogger>());
 
 public:
   App(TReader reader, TPrinter printer, TLogger logger);
@@ -723,18 +778,22 @@ public:
   void run() {
     printer.print(reader.read());
   }
+
+private:
+  TReader reader; TPrinter printer; TLogger logger;
 };
 ```
 
 ----
 
-#### and the test
+### App - Unit-Testing - Concepts
+
 ```cpp
 "should print read value"_test = [] {
   NiceGMock<Loggable> logger{};      // ignore an uninteresting call
   StrictGMock<Readable> reader{};    // fail on uninteresting call
-  StrictGMock<Printable> printer{};  // wiring!
-  App app{reader, printer, logger};  // C++17 template argument 
+  StrictGMock<Printable> printer{};  // fail on uninteresting call
+  App app{reader, printer, logger};  // C++17 template argument
                                      // deduction for class templates
 
   EXPECT_CALL(reader, read).WillOnce(Return(42));
@@ -743,39 +802,39 @@ public:
   app.run();
 };
 ```
+#### Pretty much the same as for interfaces!
 
 ----
 
-#### What about dynamic dispatch (not based on inheritance)?
+### App - Type-Erasure - Virtual Concepts
 
 ```cpp
 class App {
-  any<Readable> reader;   // `virtual Readable` with virtual concepts!
-  any<Printable> printer; // `virtual Readable` with virtual concepts!
-  any<Loggable> logger;   // `virtual Readable` with virtual concepts!
-
 public:
   App(any<Readable> reader
     , any<Printable> printer
-    , any<Loggable> logger)
-    : reader(reader), printer(printer), logger(logger)
-  { }
+    , any<Loggable> logger);
 
   void run() {
     printer.print(reader.read());
   }
+
+private:
+  any<Readable> reader;   // `virtual Readable` with virtual concepts!
+  any<Printable> printer; // `virtual Readable` with virtual concepts!
+  any<Loggable> logger;   // `virtual Readable` with virtual concepts!
 };
 ```
 
 ----
 
-#### and the test (Same as with concepts!!!)
+### App - Unit-Testing -  Type-Erasure
 ```cpp
 "should print read value"_test = [] {
   NiceGMock<Loggable> logger{};      // ignore an uninteresting call
   StrictGMock<Readable> reader{};    // fail on uninteresting call
-  StrictGMock<Printable> printer{};  // wiring!
-  App app{reader, printer, logger};  // C++17 template argument 
+  StrictGMock<Printable> printer{};  // fail on uninteresting call
+  App app{reader, printer, logger};  // C++17 template argument
                                      // deduction for class templates
 
   EXPECT_CALL(reader, read).WillOnce(Return(42));
@@ -784,38 +843,41 @@ public:
   app.run();
 };
 ```
+#### The same test as with concepts!
+
+----
+
+### Are there any problems with `SOLID` approach?
 
 ----
 
 ### Manual Dependency Injection - Wiring Mess
 
-> Doesn't matter which option will be chosen the wiring will have to happen either way!
+> `SOLID` allows testable design but it moves the problem to the caller!
 
+#### Test
 ```cpp
 "should print read value"_test = [] {
   NiceGMock<Loggable> logger{};      // WIRING!
   StrictGMock<Readable> reader{};    // WIRING!
   StrictGMock<Printable> printer{};  // WIRING!
   App app{reader, printer, logger};  // WIRING!
-  ...
 };
 ```
 
+#### Composition root - Unique location where  modules are composed together
 ```cpp
 int main() {
-  auto file = std::fstream{"input.txt"};                // WIRING!
-  auto reader = std::make_unique<FileReader>(file);     // WIRING!
-  auto& out = std::cout;                                // WIRING!
-  auto printer = std::make_unique<ConsolePrinter>(out); // WIRING!
-  auto logger = std::make_unique<Logger>();             // WIRING!
-  App app{reader, printer, logger};                     // WIRING!
-  ...
+  auto file = std::fstream{"input.txt"};               // WIRING!
+  auto reader = std::make_unique<FileReader>(file);    // WIRING!
+  auto printer = std::make_shared<Printer>(std::cout); // WIRING!
+  App app{reader, printer};                            // WIRING!
 }
 ```
 
 ----
 
-### What about Factories?
+### Factories can fix it, right?
 
 ```cpp
 class ReaderFactory {
@@ -825,22 +887,49 @@ class ReaderFactory {
 };
 ```
 
-##### Test
+#### Usage
+```cpp
+class App {
+public:
+  // Carry dependencies which doesn't use
+  explicit App(std::string_view file)
+    : reader{ReaderFactory::create(file)} // Tight coupling again!
+  { }
+
+  void run();
+
+private:
+  Reader reader{};
+};
+```
+
+```cpp
+int main() {
+  App app{"file.txt"}; // short and sweat !/?
+  ...
+}
+```
+
+----
+
+### ReaderFactory - Unit-Testing
 ```cpp
 "should create a file reader"_test = [] {
   ReaderFactory factory{};
   auto reader = factory.create("test_file.txt");
 
   EXPECT(reader.get()); // Is that enough?
-  ...
+  EXPECT("test_file.txt", ...) // How to test what was passed?
 };
 ```
 
-#### Factories are really hard to test!
+#### Static factories MUST go! (Abstract factories are okay-ish)
 
 ----
 
-###Manual DI - Wiring
+###SOLID - Produces testable code and better design
+
+####BUT
 
 * ####Single Responsibility Principle
   =>
@@ -861,23 +950,13 @@ class ReaderFactory {
 =>
 ### [[Boost].DI](https://github.com/boost-experimental/di)
 
-----
-
-### `SOLID` references
-
-| | |
-|-|-|
-| VC | https://github.com/boost-experimental/vc |
-| Dyno | https://github.com/ldionne/dyno |
-| Virtual Concepts | [Virtual Concepts Proposal](https://github.com/andyprowl/virtual-concepts/blob/master/draft/Dynamic%20Generic%20Programming%20with%20Virtual%20Concepts.pdf) |
-
 ==============================================================================
 
 ## Consider using dependency injection framework to avoid the wiring mess and inject mocks automatically
 
 ----
 
-###[[Boost].DI](https://github.com/boost-experimental/di) - Hello World
+###[[Boost].DI](https://github.com/boost-experimental/di) - Dependency Injection Framework
 
 ```cpp
 #include <boost/di.hpp>
@@ -903,13 +982,9 @@ int main() {                                  |   |  |    |
 }
 ```
 
-```cpp
-// App<FileReader<...>, int_<42>>{
-//   FileReader<...>{}, 
-//   std::make_unique<ConsolePrinter>(), 
-//   config{"127.0.0.1", 8080}
-// }.run();
-```
+----
+
+### How is that helping with the Wiring Mess?
 
 ----
 
@@ -986,33 +1061,50 @@ int main() {
 
 ----
 
-### Automatic Mocks Injection
+### [[Boost].DI](https://github.com/boost-experimental/di) - Integration testing for free!
 
-* Write test easily and quickly
-* Implantation details, how deps are injected, should not affect the test
-* Isolate the word around us
-
-----
-
-### Automatic Mocks Injection - MAKE API
-
+#### Production
 ```cpp
-namespace testing {
-  /**
-   * [Proposal - generic factories]
-   *   http://.../wg21/docs/papers/2016/p0338r0.pdf
-   */
-  template <class T, class... TArgs>
-  auto make(TArgs&&... args);
-
-  template <template<auto...> class T, ... TArgs>
-  auto make(TArgs&&... args);
+const auto config = [] {
+  return di::make_injector(
+    di::bind<Readable>.to<FileReader>(),
+    di::bind<Printable>.to<ConsolePrinter>(),
+    di::bind<Loggable>.to<StreamLogger>(),
+    ...
+  );
+};
+int main() {
+  di::make<App>(config)().run();
 }
+```
+
+#### integration-testing
+```cpp
+"should"_test = [] {
+  auto app = di::make<App>(config,
+    di::bind<Loggable>.to<FakeLogger>() [di::override]
+  );
+
+  app.run(); // only fake logger will be used!
+
+  ...
+};
 ```
 
 ----
 
-####Test - Manual mocks injection
+### [[Boost].DI](https://github.com/boost-experimental/di)/GUnit.GMock - Automatic Mocks Injection
+
+#### Let's get rid off some boilerplate!
+```cpp
+NiceGMock<Loggable> logger{};      // WIRING!
+StrictGMock<Readable> reader{};    // WIRING!
+StrictGMock<Printable> printer{};  // WIRING!
+```
+
+----
+
+###Test - Manual mocks injection
 
 ```cpp
 "should print read value"_test = [] {
@@ -1027,7 +1119,7 @@ namespace testing {
 };
 ```
 
-####Test - Automatic mocks injection
+###Test - Automatic mocks injection
 ```cpp
 "should print read text"_test = [] {
   auto [app, mocks] = testing::make<App>();
@@ -1041,19 +1133,19 @@ namespace testing {
 
 ----
 
-### Automatic Mocks Injection - Let's change App
+### Let's change the App a bit
 
 ####Test - Manual mocks injection (LOC changed: 5/6, LOC added: 1)
 
 ```cpp
 "should print read value"_test = [] {
-  auto reader = std::make_shared<GMock<Readable>>();        // Boilerplate
-  auto printer = std::make_unique<GMock<Printable>>();      // Boilerplate
-  auto printer_ptr = printer.get();                         // Boilerplate
-  App<Printable, Readable> app{reader, std::move(printer)}; // Boilerplate
+  auto reader = std::make_shared<GMock<Readable>>(); // DIFF!
+  auto printer = std::make_unique<GMock<Printable>>(); // DIFF!
+  auto printer_ptr = printer.get(); // HACK!
+  App<Printable, Readable> app{reader, std::move(printer)}; // DIFF!
 
-  EXPECT_CALL(*reader, read).WillOnce(Return(42)); // NOTICE, dereference
-  EXPECT_CALL(printer_ptr, print, 42);             // NOTICE, dereference
+  EXPECT_CALL(*reader, read).WillOnce(Return(42)); // Dereference!
+  EXPECT_CALL(*printer_ptr, print, 42); // HACK!
 
   app.run();
 };
@@ -1073,7 +1165,42 @@ namespace testing {
 
 ----
 
-### But how to produce testable code by default?
+###Automatic mocks injection - How?
+
+```cpp
+struct mocker {
+  mocks_t& mocks;
+  args_t& args;
+
+  template<class T, REQUIRES(std::is_polymorphic<raw_t<T>>{})>
+  operator T() const {
+    return mocks.add<T>(); // create a new GMock<T>
+  }
+
+  template<class T, REQUIRES(!std::is_polymorphic<raw_t<T>>{})>
+  operator T() const {
+    return args.get<T>(); // get the arg
+  }
+};
+```
+
+```cpp
+template <class T, class... TMocks>
+auto make(TArgs &&... args) {
+  std::tuple<TArgs...> args{args...};
+  mocks_t mocks{};
+
+  return std::pair{
+    T{mocker{args, mocks}...} // depends on sizeof of
+  , mocks_t                   // is_constructible<T, mocker...>
+  };
+}
+
+```
+
+----
+
+### Okay, that's fancy, but how testable code might be produced by default?
 
 ### Solution -> Test Driven Development
 
@@ -1201,7 +1328,9 @@ THEN("^The (\\d+) should be printed") {
   auto [app, mocks] = testing::make<App>()
 
   GIVEN(mocks<Readable>(), read().WillOnce(Return(42));
+
   WHEN(app.run());
+
   THEN(mocks<Printable>(), print(42));
 }
 ```
@@ -1210,7 +1339,7 @@ THEN("^The (\\d+) should be printed") {
 
 ## Behaviour Driven Development
 
-* Complementary with TDD! 
+* Complementary with TDD!
 * Focus on customer needs (behaviours)
 
 ==============================================================================
@@ -1223,25 +1352,30 @@ THEN("^The (\\d+) should be printed") {
 
 ### Tools
 
-* Agile (Scrum)
-* UML 2.5 (design)
-* eXtreme Programming
-* Continous Integration
-* BDD/TDD
+| |  |
+|-|-|
+| Methodology | Agile (Scrum) |
+| Design      | UML 2.5 |
+| Development | BDD/TDD/eXtreme Programming |
+| Delivery    | Continuous Integration |
 
 ----
 
 ### Product backlog refinement
 
-#### Story / Priority
-> #### As an user of the trading system I would like to trade stocks
+| | | |
+|-|-|-|
+| Priority | Story | Description |
+| 1.       | Automated Trading System | A trading system should trade stocks automatically |
+| 2.       | ... | ... |
+
 
 ----
 
 ### Product backlog refinement - Acceptance criteria (BDD)
 
 ```
-Feature: Automatic Trading System
+Feature: Automated Trading System
 ```
 
 ```
@@ -1261,7 +1395,7 @@ Scenario 2: Trading System requests to sell shares
   Given The Trading System is up and running
     And The TS owns 100 shares of APPL stock
 
-  When 50 shares of MSFT were sold 
+  When 50 shares of MSFT were sold
 
   Then A sell order for 50 shares of MSFT stock should've been executed
    And The TS should own 50 shares of APPL stock
@@ -1282,7 +1416,7 @@ Scenario 4: ...
 
 ### Design/Workshop - Domains/Components
 
-![design](images/design.png)
+<img style="background:none; border:none; box-shadow:none;" src="images/ts_cd.png" width="90%" />
 
 ----
 
@@ -1290,33 +1424,37 @@ Scenario 4: ...
 
 ---
 
-<img style="background:none; border:none; box-shadow:none;" src="images/ad.png" width="45%" />
+<img style="background:none; border:none; box-shadow:none;" src="images/ts_ad.png" width="90%" />
+
+----
+
+### Stories -> Tasks (cross functional)
+
+<img src="images/ts_ad_parse_feeds.png" width="80%" />
 
 ----
 
 ### Stories -> Tasks
 
-| | |
-|-|-|
-| <img src="images/ad_tasks.png" width="75%" /> | <img style="background:none; border:none; box-shadow:none;" src="images/cf.png" width="75%" /> |
+#### Priority order
+
+[0.0.1] Parse feeds (deliverable)
+  * Connect to the MarketData
+  * Process feeds
+  * There are feeds? -> no
+  * Disconnect
+
+[0.0.2] Handle buy (deliverable)
+
+[0.0.3] Handle sell (deliverable)
 
 ----
 
-### Stories -> Tasks
+### Planning (Team velocity ~5 Story Points)
 
-  1. [1.0]  (deliverable!)
-  1. [1.1]  (deliverable!)
-
-----
-
-### Planning
-
-#### Estimates (Common SP definition is required)
-  * [1.0]  (5SP)
-  * [1.1]  (8SP)
-
-  * Team velocity (avg. 15 SP)
-  * Commitment ->  [1.0] and [1/1]
+  * [0.0.1] Parse feeds (3SP) <- COMMIT
+  * [0.0.2] Handle buy  (8SP)
+  * [0.0.3] Handle sell (2SP)
 
 ----
 
@@ -1324,22 +1462,121 @@ Scenario 4: ...
 
 | | | |
 |-|-|-|
-| TODO | WIP | DONE |
-|  | [1.0] | |
-| [1.1] | | |
+| TODO                  | WIP                     | DONE |
+|                       | [0.0.1] Parse Feeds     |      |
+| [0.0.2] Handle Buy    |                         |      |
+| [0.0.3] Handle Sell   |                         |      |
 
 ----
 
-### 1. TDD/RED - Write a bit of test (start from expectations, intentions)
+### BDD/RED - Write a bit of test
 
 ```cpp
-"should initialize the decision engine" = [] {
+"[0.0.1] Parse feeds [empty stream of feeds]"_test = [] {
+  GIVEN("A trading system",
+    auto [ts, mocks] = testing::make<trading_system>()
+  );
 
-  de.inititalize();
+  WHEN("TS is started", ts.start() );
 
-  EXPECT(de.initialize
+  THEN(mocks<Streamable(class MarketData)>(), connect());
 };
 ```
+
+----
+
+### BDD/GREEN - Make it pass
+
+```cpp
+template<class TMarketData = Streamable(class MarketData)>
+class trading_system {
+public:
+  explicit trading_system(TMarketData& marketData) {
+    : marketData(marketData) {
+    marketData.connect();
+  }
+
+  void process() {}
+
+private:
+  TMarketData& marketData;
+};
+```
+
+----
+
+### BDD/RED - Write a bit more test
+
+```cpp
+"[0.0.1] Parse feeds [empty stream of feeds]"_test = [] {
+  GIVEN("A trading system",
+    auto [ts, mocks] = testing::make<trading_system>());
+  WHEN("TS is started", ts.start() );
+  THEN(mocks<Streamable(class MarketData)>(), connect());
+
+  GIVEN(mocks<Streamable(class MarketData)>(), read()).
+    WillOnce(Return(""));
+  WHEN("TS is processed", ts.process());
+  THEN(mocks<Streamable(class MarketData)>(), disconnect());
+};
+```
+
+----
+
+### BDD/GREEN - Make it pass
+
+```cpp
+template<...>
+class trading_system {
+public:
+  ...
+  void process() {
+    auto buffer = marketData.read();
+    if (buffer.empty()) {
+      marketData.disconnect();
+    }
+  }
+};
+```
+
+----
+
+### BDD/REFACTOR - with TDD
+
+----
+
+----
+
+### Commit
+
+```
+[0.0.1] :new: Parse feeds - Ability to parse feeds from MarketData
+
+Problem:
+- Trading system has to connect to the market data
+- Trading system is required to subscribe for market
+  data feeds in order to receive data to make decisions
+- Trading system has to disconnect from the market data
+
+Solution:
+- Connect to the market data on startup of the trading system
+- Implement feed handler which can parse feeds from the market data
+- Disconnect from the market data when there is no more feeds
+```
+
+```
+Content
+  Cross functional delivarable with all tests
+```
+
+----
+
+### Merge request/Code Review
+
+-----
+
+#### 2. TDD/GREEN - Make it compile/pass (the simpler way)
+#### 3. TDD/REFECTOR - Remove duplicates/extract
 
 ----
 
@@ -1352,115 +1589,9 @@ Scenario 4: ...
 
 ----
 
-#### 2. TDD/GREEN - Make it compile/pass (the simpler way)
-#### 3. TDD/REFECTOR - Remove duplicates/extract
-
-----
-
-```cpp
-template<class TStream>
-struct exchange {
-  void receive();
-  void send();
-};
-
-struct shares {
-  int get(std::string_view share);
-};
-
-template<class TShares>
-struct decision_maker {
-  std::pair<bool, what> should_by();
-  void update(T);
-};
-
-template<class TDecisionMaker, class TExchange, class Translactor>
-struct trading_system {
-  TDecisionMaker& dm;
-  TExchange& exchange;
-
-  void process() {
-    if (auto buffer = exchange.receive(); buffer > 0) {
-      dm.update(translator.translate(buffer));
-    } eles if (auto [fire, what] = dm.should_buy(); fire) {
-      exchange.send(translator.translate(what));
-    }
-  }
-};
-
-"User request a sell before close of trading"_test = [] {
-
-  auto [ts, mocks] = testing::make<trading_system>(); // creates sut and mocks
-
-  GIVEN(mocks<DecisionMaker>(), should_buy()).WillOnce(Return({true, {"APPL", 20}}));
-  GIVEN(mocks("MyShares"_s), get("APPL")).WillOnce(Return(100));
-
-  WHEN(ts.process());
-
-  THEN(mocks("exchange"_s), send({"APPL", 20}));
-};
-
-
-"User request a sell before close of trading"_test = [] {
-  testing::mocks mocks{};
-  const auto injector = di::make_injector(
-    di::bind<Stremable>.to(mocks) [di::override]
-  );
-  auto ts = injector.create<trading_system>();
-
-  "my first"_scenario = [&] {
-    GIVEN(mocks<DecisionMaker>(), should_buy()).WillOnce(Return({true, {"APPL", 20}}));
-    GIVEN(mocks("MyShares"_s), get("APPL")).WillOnce(Return(100));
-
-    WHEN(ts.process());
-
-    THEN(mocks("exchange"_s), send({"APPL", 20}));
-  }
-
-  "second"_scenario = [&] {
-    GIVEN(mocks<DecisionMaker>(), should_buy()).WillOnce(Return({true, {"APPL", 20}}));
-    GIVEN(mocks("MyShares"_s), get("APPL")).WillOnce(Return(100));
-
-    WHEN(ts.process());
-
-    THEN(mocks("exchange"_s), send({"APPL", 20}));
-  }
-};
-```
-
-----
-
-#### Commit
-
-      * rebase or merge or branch with history how tthe test eveolved
-
-      [Story.1] Add
-      
-      Problem:
-        - fdsalfdlsa
-
-      Solution:
-        - fdsalfjdsalfjdlsaj
-
-    Commit content: acceptance test + unit tests + cross functional
-
-----
-
-#### Code Review/Merge Requeest
-
-    Create a merge request
-      github
-
-    Code review
-      Did you consider...?
-
-    Someone else is accepting your merge requests
-
-----
-
 <img style="background:none; border:none; box-shadow:none;" src="images/done.png" />
 
-* #### Take the next story... 
+* #### Take the next story...
 * #### Pair with someone else of the team! (knowledge sharing)
 
 ==============================================================================

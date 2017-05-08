@@ -1,17 +1,24 @@
 @startuml
 
 package "Trading System" {
-    component [Feed Parser] as FP
-    component [Decision Engine] as DE
-    component [Shares Executor] as SE
+  component [Handler] as Handler
+  component [Engine] as Engine
+  component [Executor] as Executor
+  component [Feeds] as Feeds
+  component [Strategy] as Strategy
 }
 
-cloud Exchange {
+cloud MarketData { 
+}
+
+cloud Exchange { 
 }
  
-Exchange -- FP
-FP - DE
-DE -- SE
-SE -- Exchange
+MarketData -- Handler
+Handler -- Feeds
+Engine -- Strategy
+Engine -- Executor
+Strategy -- Feeds
+Executor -- Exchange
 
 @enduml
