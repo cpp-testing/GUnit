@@ -109,7 +109,7 @@ Kris Jusiak, Quantlab Financial
 
 ----
 
-##Costs associated with First-Class Tests
+##Cost per defect and First-Class Tests
 
 ![cost_testing](images/cost_testing.png)
 
@@ -367,8 +367,8 @@ public:
 ```cpp
 "should read 42"_test = [] {
   MockReader reader{};
-  // At least we can use the same front-end
 
+  // At least we can use the same front-end
   EXPECT_CALL(reader, read).WillOnce(Return(42));
 
   read(reader);
@@ -520,7 +520,7 @@ public:
   } {}
 
   template <class TName, class R, class... TArgs>
-  auto call(TArgs&&... args) {
+  auto call_(TArgs&&... args) {
     return poly_.virtual_(TName{})(poly_, args...);
   }
 
@@ -653,7 +653,7 @@ private:
 };
 ```
 
-#### We can only do Integration-tests or black box tests here!
+#### We can only do Integration-testing or black box testing here!
 
 ----
 
@@ -690,6 +690,14 @@ public:                             public:
 };                                  };
 ```
 
+```cpp
+class Reader final                  class Printer final
+ : public IReader {                   : public IPrinter {
+public:                             public:
+  int read() override;                void print(int) override;
+};                                  };
+```
+
 ----
 
 ### <strike>Stupid</strike> vs SOLID
@@ -720,10 +728,11 @@ private:
 
 ```cpp
 "should print read value"_test = [] {
-  NiceGMock<ILogger> logger{};      // ignore an uninteresting call
-  StrictGMock<IReader> reader{};    // fail on uninteresting call
-  StrictGMock<IPrinter> printer{};  // fail on uninteresting call
-  App app{reader, printer, logger}; // wiring!
+  // Some boilerplate introduced!
+  NiceGMock<ILogger> logger{};      // Ignore an uninteresting call
+  StrictGMock<IReader> reader{};    // Fail on uninteresting call
+  StrictGMock<IPrinter> printer{};  // Fail on uninteresting call
+  App app{reader, printer, logger}; // Wiring!
 
   EXPECT_CALL(reader, read).WillOnce(Return(42));
   EXPECT_CALL(printer, print, 42);
@@ -790,9 +799,9 @@ private:
 
 ```cpp
 "should print read value"_test = [] {
-  NiceGMock<Loggable> logger{};      // ignore an uninteresting call
-  StrictGMock<Readable> reader{};    // fail on uninteresting call
-  StrictGMock<Printable> printer{};  // fail on uninteresting call
+  NiceGMock<Loggable> logger{};      // Ignore an uninteresting call
+  StrictGMock<Readable> reader{};    // Fail on uninteresting call
+  StrictGMock<Printable> printer{};  // Fail on uninteresting call
   App app{reader, printer, logger};  // C++17 template argument
                                      // deduction for class templates
 
@@ -806,7 +815,7 @@ private:
 
 ----
 
-### App - Type-Erasure - Virtual Concepts
+### App - Type-Erasure - Virtual Concepts (Dynamic Dispatch without inheritance)
 
 ```cpp
 class App {
@@ -831,9 +840,9 @@ private:
 ### App - Unit-Testing -  Type-Erasure
 ```cpp
 "should print read value"_test = [] {
-  NiceGMock<Loggable> logger{};      // ignore an uninteresting call
-  StrictGMock<Readable> reader{};    // fail on uninteresting call
-  StrictGMock<Printable> printer{};  // fail on uninteresting call
+  NiceGMock<Loggable> logger{};      // Ignore an uninteresting call
+  StrictGMock<Readable> reader{};    // Fail on uninteresting call
+  StrictGMock<Printable> printer{};  // Fail on uninteresting call
   App app{reader, printer, logger};  // C++17 template argument
                                      // deduction for class templates
 
@@ -847,11 +856,11 @@ private:
 
 ----
 
-### Are there any problems with `SOLID` approach?
+### So far so good, but are there any problems with `SOLID` approach?
 
 ----
 
-### Manual Dependency Injection - Wiring Mess
+### Wiring Mess
 
 > `SOLID` allows testable design but it moves the problem to the caller!
 
@@ -1168,9 +1177,10 @@ StrictGMock<Printable> printer{};  // WIRING!
 ###Automatic mocks injection - How?
 
 ```cpp
+template<class TArgs, class TMocks>
 struct mocker {
-  mocks_t& mocks;
-  args_t& args;
+  const TArgs& args;
+  TMocks& mocks;
 
   template<class T, REQUIRES(std::is_polymorphic<raw_t<T>>{})>
   operator T() const {
@@ -1200,7 +1210,7 @@ auto make(TArgs &&... args) {
 
 ----
 
-### Okay, that's fancy, but how testable code might be produced by default?
+### Okay, that's fancy, but how it can be used to produce a testable code by default?
 
 ### Solution -> Test Driven Development
 
@@ -1472,7 +1482,7 @@ Scenario 4: ...
 ### BDD/RED - Write a bit of test
 
 ```cpp
-"[0.0.1] Parse feeds [empty stream of feeds]"_test = [] {
+"[0.0.1] Parse feeds [should connect on start]"_test = [] {
   GIVEN("A trading system",
     auto [ts, mocks] = testing::make<trading_system>()
   );
@@ -1485,7 +1495,7 @@ Scenario 4: ...
 
 ----
 
-### BDD/GREEN - Make it pass
+### BDD/GREEN - Make it compile/pass (The simplest way)
 
 ```cpp
 template<class TMarketData = Streamable(class MarketData)>
@@ -1523,7 +1533,7 @@ private:
 
 ----
 
-### BDD/GREEN - Make it pass
+### BDD/GREEN - Make it pass again...
 
 ```cpp
 template<...>
@@ -1531,8 +1541,7 @@ class trading_system {
 public:
   ...
   void process() {
-    auto buffer = marketData.read();
-    if (buffer.empty()) {
+    if (auto buffer = marketData.read(); buffer.empty()) {
       marketData.disconnect();
     }
   }
@@ -1544,6 +1553,81 @@ public:
 ### BDD/REFACTOR - with TDD
 
 ----
+
+#### 1. TDD/RED - Write a bit of test (expectations/intentions)
+
+```cpp
+"should connect to the stream on creation"_test = [] {
+  auto [fh, mocks] = testing::make<feed_handler()>(mocks);
+  EXPECT_CALL(mocks<Streamable>(), connect);
+  fh(); // create feed_handler
+};
+```
+
+----
+
+#### 2. TDD/GREEN - Make it compile/pass (the simpler way)
+
+```cpp
+template<class TStream = Streamable>
+class feed_handler {
+public:
+  explicit feed_handler(TStream& stream) {
+    stream.connect();
+  }
+};
+```
+
+----
+
+## TDD and eXtreme programming / Pairing
+
+<img src="images/pair.png" width="85%" />
+
+> 1. One dev is writing a test and the other is making it pass (the simplest way)
+> 2. Switch the roles!
+
+----
+
+#### 1. TDD/RED - Write another test
+
+```cpp
+"should disconnect when read an empty stream"_test = [] {
+  auto [fh, mocks] = testing::make<feed_handler()>();
+
+  InSequence sequence;
+  EXPECT_CALL(mocks<Streamable>(), connect());
+  EXPECT_CALL(mocks<Streamable>(), read()).WillOnce(Return(""));
+  EXPECT_CALL(mocks<Streamable>(), disconnect());
+
+  EXPECT(not fh().process());
+};
+```
+
+----
+
+#### 2. TDD/GREEN - Make all tests pass
+
+```cpp
+template<class TStream = Streamable>
+class feed_handler {
+public:
+  explicit feed_handler(TStream& stream) {
+    stream.connect();
+  }
+
+  auto process() {
+    if (auto buffer = stream.read(); buffer.empty()) {
+      stream.disconnect();
+      return false;
+    }
+    return true;
+  }
+
+private:
+  TStream& stream;
+};
+```
 
 ----
 
@@ -1577,15 +1661,6 @@ Content
 
 #### 2. TDD/GREEN - Make it compile/pass (the simpler way)
 #### 3. TDD/REFECTOR - Remove duplicates/extract
-
-----
-
-## TDD and eXtreme programming / Pairing
-
-<img src="images/pair.png" width="85%" />
-
-> 1. One dev is writing a test and the other is making it pass (the simplest way)
-> 2. Switch the roles!
 
 ----
 
