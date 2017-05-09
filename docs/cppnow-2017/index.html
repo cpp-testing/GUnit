@@ -1182,12 +1182,12 @@ struct mocker {
   const TArgs& args;
   TMocks& mocks;
 
-  template<class T, REQUIRES(std::is_polymorphic<raw_t<T>>{})>
+  template<class T> requires std::is_polymorphic<raw_t<T>>{}
   operator T() const {
     return mocks.add<T>(); // create a new GMock<T>
   }
 
-  template<class T, REQUIRES(!std::is_polymorphic<raw_t<T>>{})>
+  template<class T> requires !std::is_polymorphic<raw_t<T>>{}
   operator T() const {
     return args.get<T>(); // get the arg
   }
