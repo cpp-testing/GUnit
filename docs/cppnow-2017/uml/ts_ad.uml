@@ -8,19 +8,13 @@ note right
   parse and update feeds
 endnote
 
-while (There are new feeds?) is (yes)
-
-    note 
-      average of last 10
-              >
-      average of previous 10
-    endnote
+while (Feeds?) is (yes)
     if (Subscribed stock is rising?) then (yes)
         :Get Shares to buy;
     else (no)
         :Get shares to sell;
         note right
-          predefined in the strategy
+          strategy
         endnote
     endif
     :Execute order;

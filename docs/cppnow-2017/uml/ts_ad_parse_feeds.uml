@@ -7,7 +7,7 @@ note right
 endnote
 :Connect to the MarketData and the Exchange;
 note right
-  [0.0.1] Parse feeds
+  [0.0.1] Parse feeds (MarketData only)
 endnote
 
 :Process Feeds;
@@ -15,7 +15,7 @@ note right
   [0.0.1] Parse feeds
 endnote
 
-while (There are new feeds?) is (yes)
+while (Feeds?) is (yes)
     if (Subscribed stock is rising?) then (yes)
         :Get Shares to buy;
     else (no)
@@ -38,5 +38,3 @@ note right
 endnote
 
 @enduml
-
-

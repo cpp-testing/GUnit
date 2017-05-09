@@ -123,9 +123,10 @@ Kris Jusiak, Quantlab Financial
 
 | | |
 |-|-|
+| Quality | Testing has to improve the quality of the software |
 | Simplicity | Testing can't be hard |
 | Expressiveness | Tests should express `what` and not `how` |
-| Quality | Test code should be treated as `production code` |
+| Equality | Test code should be treated as `production code` |
 | Performance | Testable code should not affect runtime performance |
 
 > To achieve those goals...
@@ -682,6 +683,7 @@ class Reader {        class Printer {
 /**
  * Dependency Inversion
  *   "Depend on abstractions, not on concretions"
+ *   "Seperates business logic from object creation"
  */
 class IReader {                     class IPrinter {
 public:                             public:
@@ -997,7 +999,7 @@ int main() {                                  |   |  |    |
 
 ----
 
-###[[Boost].DI](https://github.com/boost-experimental/di) - Automatic Injection
+###[[Boost].DI](https://github.com/boost-experimental/di) - Automatic Injection (Object graph)
 
 #####Manual DI - Wiring mess
 
@@ -1014,7 +1016,7 @@ int main() {
 
 ```cpp
 int main() {
-  di::make_injector().create<App>().run();
+  di::make<App>().run();
 }
 ```
   * [Boost].DI will also boost your performance
@@ -1064,7 +1066,7 @@ int main() {
 
 ```cpp
 int main() {
-  di::make_injector().create<App>().run(); // same as before!
+  di::make<App>().run(); // same as before!
 }
 ```
 
@@ -1210,9 +1212,9 @@ auto make(TArgs &&... args) {
 
 ----
 
-### Okay, that's fancy, but how it can be used to produce a testable code by default?
+### Okay, but isn't that hiding a bad design (too many dependencies)?
 
-### Solution -> Test Driven Development
+### Solution -> Combine it with Test Driven Development
 
 ==============================================================================
 
@@ -1244,13 +1246,11 @@ auto make(TArgs &&... args) {
 
 ##Test Driven Development (TDD)
 
-* All benefits of Unit-Testing!
-
-* TDD drives the design by producing
-  * Loosely coupled code (no globals/singletons)
-  * Easy to test code (no god objects)
-
-* No need for the test coverage <- it implies 100%
+* We only implement what we needed (no over engineering)
+* There is no untested code (it implies 100% coverage)
+* We ALWAYS know that the code works (regression, refactoring)
+* Unit tests are runnable documentation of the code (requirements, example usage)
+* Loosely coupled code (no globals/singletons)
 
 ----
 
@@ -1261,7 +1261,7 @@ auto make(TArgs &&... args) {
 ```cpp
 "[TDD] add numbers"_test = [] { "[BDD} should add 2 numbers" = [] {
   EXPECT_CALL(sum, add(2, 2)).    GIVEN(sum, add(2, 2)).
-    WillOnce(Return(4));          WillOnce(Return(4));
+    WillOnce(Return(4));            WillOnce(Return(4));
   c.add(2, 2);                    WHEN(calc.add(2, 2));
   EXPECT(count == 4);             THEN(count).should_be(4);
 };                              };
@@ -1391,30 +1391,30 @@ Feature: Automated Trading System
 ```
 Scenario 1: Trading System requests to buy shares
   Given The Trading System is up and running
-    And The TS has at least $100'000 to buy shares
 
-  When at least 1000 shares of GOOGL were bought at price $950
+  When GOOGL stock is rising (last 1000 transactions)
 
-  Then A buy order for 100 shares of GOOGL should've be executed
-   And The TS should own 100 shares of GOOGL
-   And The TS should have $90'000
+  Then A buy order for 100 shares of APPL should have been executed
+   And The TS should own 100 shares of APPL
 ```
 
 ```
 Scenario 2: Trading System requests to sell shares
   Given The Trading System is up and running
-    And The TS owns 100 shares of APPL stock
+    And The TS owns 50 shares of APPL stock
 
-  When 50 shares of MSFT were sold
+  When GOOGL stock is falling (last 1000 transactions)
 
-  Then A sell order for 50 shares of MSFT stock should've been executed
-   And The TS should own 50 shares of APPL stock
+  Then A sell order for 25 shares of APPL stock should
+       have been executed
+   And The TS should own 25 shares of APPL stock
 ```
 
 ```
-Scenario 3: ...
-Scenario 4: ...
+Scenario 3: Trading system requests to hold shares
+Scenario 4: Trading system disconnects from the exchange
 ...
+Scenario N: ...
 ```
 
 ----
@@ -1426,7 +1426,7 @@ Scenario 4: ...
 
 ### Design/Workshop - Domains/Components
 
-<img style="background:none; border:none; box-shadow:none;" src="images/ts_cd.png" width="90%" />
+<img style="background:none; border:none; box-shadow:none;" src="images/ts_cd.png" width="75%" />
 
 ----
 
@@ -1434,7 +1434,7 @@ Scenario 4: ...
 
 ---
 
-<img style="background:none; border:none; box-shadow:none;" src="images/ts_ad.png" width="90%" />
+<img style="background:none; border:none; box-shadow:none;" src="images/ts_ad.png" width="55%" />
 
 ----
 
@@ -1451,7 +1451,7 @@ Scenario 4: ...
 [0.0.1] Parse feeds (deliverable)
   * Connect to the MarketData
   * Process feeds
-  * There are feeds? -> no
+  * Feeds? -> no
   * Disconnect
 
 [0.0.2] Handle buy (deliverable)
@@ -1460,10 +1460,10 @@ Scenario 4: ...
 
 ----
 
-### Planning (Team velocity ~5 Story Points)
+### Planning (Team velocity ~12 Story Points)
 
   * [0.0.1] Parse feeds (3SP) <- COMMIT
-  * [0.0.2] Handle buy  (8SP)
+  * [0.0.2] Handle buy  (8SP) <- COMMIT
   * [0.0.3] Handle sell (2SP)
 
 ----
@@ -1479,34 +1479,129 @@ Scenario 4: ...
 
 ----
 
-### BDD/RED - Write a bit of test
+## TDD and eXtreme programming / Pairing
+
+<img style="background:none; border:none; box-shadow:none;" width="85%" src="images/pair.png" />
+
+> 1. One dev is writing a test and the other is making it pass (the simplest way)
+> 2. Switch the roles!
+
+----
+
+### TDD/RED - Write a bit of test (expectations/intentions first)
 
 ```cpp
-"[0.0.1] Parse feeds [should connect on start]"_test = [] {
-  GIVEN("A trading system",
-    auto [ts, mocks] = testing::make<trading_system>()
-  );
+"should connect to the market data on startup"_test = [] {
+  auto [ts, mocks] = testing::make<trading_system>();
 
-  WHEN("TS is started", ts.start() );
+  EXPECT_CALL(mocks<MarketData>(), connect);
 
-  THEN(mocks<Streamable(class MarketData)>(), connect());
+  ts.start();
 };
 ```
 
 ----
 
-### BDD/GREEN - Make it compile/pass (The simplest way)
+### TDD/GREEN - Make it compile/pass (the simplest way)
 
 ```cpp
-template<class TMarketData = Streamable(class MarketData)>
-class trading_system {
-public:
-  explicit trading_system(TMarketData& marketData) {
-    : marketData(marketData) {
-    marketData.connect();
+// Concept and Mock!
+const auto MarketData = Callable<_1, void()>($(connect));
+```
+
+```cpp
+template<class TMarketData = decltype(MarketData)>
+struct trading_system {
+  MarketData& marketData;
+  void start() { marketData.connect(); }
+};
+```
+
+----
+
+### TDD/RED - Write another test (Switch roles!)
+
+```cpp
+"should disconnect on process"_test = [] {
+  auto [ts, mocks] = testing::make<trading_system>();
+
+  EXPECT_CALL(mocks<MarketData>(), disconnect);
+
+  ts.process();
+};
+```
+
+----
+
+### TDD/GREEN - Make ALL tests pass
+
+```cpp
+// Concept and Mock!
+const auto MarketData = Callable<_1, void()>($(connect)) &&
+                        Callable<_1, void()>($(disconnect));
+```
+
+```cpp
+template<class TMarketData = decltype(MarketData)>
+struct trading_system {
+  MarketData& marketData;
+
+  void start() { marketData.connect(); }
+  void process() { marketData.disconnect(); }
+};
+```
+
+----
+
+### TDD - Refactor (In both, code and tests)
+  * Remove duplicates
+  * Fix indescriptive namings
+  * Fix magic numbers and other hacks (Due to the simplest way)
+
+----
+
+### TDD/Refactor - Remove duplication of creating a trading_system and mocks
+```cpp
+"Trading System [Parse Feeds]"_test = [] {
+  auto [ts, mocks] = testing::make<trading_system>(); // DRY, setup
+
+  SHOULD("connect to the market data on startup") {
+    EXPECT_CALL(mocks<MarketData>(), connect);
+    ts.start();
   }
 
-  void process() {}
+  SHOULD("disconnect on process") {
+    EXPECT_CALL(mocks<MarketData>(), disconnect);
+    ts.process();
+  };
+};
+```
+
+----
+
+### TDD/Refactor - Fix Naming and add Encapsulation
+
+```cpp
+struct Connectable {
+  template<class T>
+  auto operator()() {
+    return Callable<T, void()>($(connect)) &&
+           Callable<T, void()>($(disconnect));
+  };
+};
+```
+
+```cpp
+template<class TMarketData = Connectable>
+class trading_system {
+public:
+  explicit trading_system(TMarketData& marketData)
+    : marketData(marketData)
+  { }
+
+public:
+  void start() { marketData.connect(); }
+  void process() { marketData.disconnect(); }
 
 private:
   TMarketData& marketData;
@@ -1515,119 +1610,66 @@ private:
 
 ----
 
-### BDD/RED - Write a bit more test
+### TDD/RED - Expand the test
 
 ```cpp
-"[0.0.1] Parse feeds [empty stream of feeds]"_test = [] {
-  GIVEN("A trading system",
-    auto [ts, mocks] = testing::make<trading_system>());
-  WHEN("TS is started", ts.start() );
-  THEN(mocks<Streamable(class MarketData)>(), connect());
+"Trading System [Parse Feeds]"_test = [] {
+  auto [ts, mocks] = testing::make<trading_system>();
 
-  GIVEN(mocks<Streamable(class MarketData)>(), read()).
-    WillOnce(Return(""));
-  WHEN("TS is processed", ts.process());
-  THEN(mocks<Streamable(class MarketData)>(), disconnect());
+  SHOULD("connect to the market data on startup") { ... }
+
+  SHOULD("disconnect on process when read returned an empty stream") {
+    InSequence sequence;
+    {
+      EXPECT_CALL(mocks<Connectable>(), read).WillOnce(Return(""));
+      EXPECT_CALL(mocks<Connectable>(), disconnect);
+    }
+    ts.process();
+  }
 };
 ```
 
 ----
 
-### BDD/GREEN - Make it pass again...
+```cpp
+struct Connectable {
+  template<class T>
+  auto operator()() {
+    return Callable<T, void()>($(connect)) &&
+           Callable<T, void()>($(disconnect));
+           Callable<T, buffer()>($(read)); // Single Responsibility?
+  };
+};
+```
 
 ```cpp
-template<...>
+template<class TMarketData = Connectable>
 class trading_system {
 public:
-  ...
+  explicit trading_system(TMarketData& marketData)
+    : marketData(marketData)
+  { }
+
+public:
+  void start() { marketData.connect(); }
   void process() {
     if (auto buffer = marketData.read(); buffer.empty()) {
       marketData.disconnect();
     }
   }
-};
-```
-
-----
-
-### BDD/REFACTOR - with TDD
-
-----
-
-#### 1. TDD/RED - Write a bit of test (expectations/intentions)
-
-```cpp
-"should connect to the stream on creation"_test = [] {
-  auto [fh, mocks] = testing::make<feed_handler()>(mocks);
-  EXPECT_CALL(mocks<Streamable>(), connect);
-  fh(); // create feed_handler
-};
-```
-
-----
-
-#### 2. TDD/GREEN - Make it compile/pass (the simpler way)
-
-```cpp
-template<class TStream = Streamable>
-class feed_handler {
-public:
-  explicit feed_handler(TStream& stream) {
-    stream.connect();
-  }
-};
-```
-
-----
-
-## TDD and eXtreme programming / Pairing
-
-<img src="images/pair.png" width="85%" />
-
-> 1. One dev is writing a test and the other is making it pass (the simplest way)
-> 2. Switch the roles!
-
-----
-
-#### 1. TDD/RED - Write another test
-
-```cpp
-"should disconnect when read an empty stream"_test = [] {
-  auto [fh, mocks] = testing::make<feed_handler()>();
-
-  InSequence sequence;
-  EXPECT_CALL(mocks<Streamable>(), connect());
-  EXPECT_CALL(mocks<Streamable>(), read()).WillOnce(Return(""));
-  EXPECT_CALL(mocks<Streamable>(), disconnect());
-
-  EXPECT(not fh().process());
-};
-```
-
-----
-
-#### 2. TDD/GREEN - Make all tests pass
-
-```cpp
-template<class TStream = Streamable>
-class feed_handler {
-public:
-  explicit feed_handler(TStream& stream) {
-    stream.connect();
-  }
-
-  auto process() {
-    if (auto buffer = stream.read(); buffer.empty()) {
-      stream.disconnect();
-      return false;
-    }
-    return true;
-  }
 
 private:
-  TStream& stream;
+  TMarketData& marketData;
 };
 ```
+
+----
+
+### And so on...
+
+----
+
+### When all tests for the story "[0.0.1] Parse feeds" are passing then...
 
 ----
 
@@ -1650,17 +1692,12 @@ Solution:
 
 ```
 Content
-  Cross functional delivarable with all tests
+  Cross functional deliverable with all tests
 ```
 
 ----
 
-### Merge request/Code Review
-
------
-
-#### 2. TDD/GREEN - Make it compile/pass (the simpler way)
-#### 3. TDD/REFECTOR - Remove duplicates/extract
+merge request/code review/rebase
 
 ----
 

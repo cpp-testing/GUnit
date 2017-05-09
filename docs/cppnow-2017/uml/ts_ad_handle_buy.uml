@@ -6,7 +6,7 @@ start
 
 :Process Feeds;
 
-while (There are new feeds?) is (yes)
+while (Feeds?) is (yes)
     note right
       [0.0.2] Handle buy
     endnote
