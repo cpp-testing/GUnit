@@ -69,7 +69,7 @@ Kris Jusiak, Quantlab Financial
     * Mocking
     * Writing A Testable Code
         * Single Responsibility Principle
-        * Dependency Inversion
+        * Dependency  Inversion Principle
           * Automatic Mocks Injection
         * TDD/BDD
 * Showcase (User Story -> ... -> Commit)
@@ -177,7 +177,9 @@ BOOST_AUTO_TEST_CASE(should_add_2_numbers) {
 
 ```cpp
 TEST_CASE("Numbers can be added", "[add]") {
+  // set-up
   SECTION("should add 2 numbers") { REQUIRE(4 == add(2, 2)); }
+  // tear-down
 }
 ```
 
@@ -197,7 +199,9 @@ TEST(AddTest, should_add_2_numbers) {
 
 ```cpp
 GTEST("Can add numbers") {
+  // set-up
   SHOULD("add 2 numbers") { EXPECT_EQ(4, add(2, 2)); }
+  // tear-down
 }
 ```
 
@@ -576,7 +580,6 @@ https://github.com/ldionne/dyno
 
  </tr>
 </table>
-> "Clean Code" Uncle Bob
 
 ----
 
@@ -609,11 +612,11 @@ int main() {
 ```cpp
 class Manager { // Indescriptive Naming (God object)
 public:
-  Updater& getUpdater(); // Untestability
-  Reader& getReader();   // Untestability
-  Writer& getWriter();   // Untestability
-  Creator& getCreator(); // Untestability
-  void update(float);
+  void printValue(int);
+  int readValue();
+  void update();
+  void reset();
+  ...
 };
 ```
 
@@ -621,15 +624,15 @@ public:
 class App {
 public:
   App()
-    : manager(std::make_unique<Manager>()); // Tight Coupling
-  { }
+    : manager(std::make_unique<Manager>()); // Untestability
+  { }                                       // Tight Coupling
 
   __attribute__((always_inline)) void run() { // Premature Optimization
     Logger::instance() // Singleton
-      << "run:" << manager.getReader().get()->getValue() << '\n';
+      << "run:" << manager()->readValue() << '\n';
 
-    manager.getWriter().getOutputter()->print(
-      manager.getReader().get()->getValue() // Duplication
+    manager->printValue(
+      manager->readValue() // Duplication
     )
   }
 private:
@@ -663,46 +666,43 @@ private:
 
 ----
 
-### Single Responsibility
+### Single Responsibility Principle
 
-```cpp
-/**
- * "A class should have only one reason to change" Uncle Bob
- */
-class Reader {        class Printer {
- public:               public:
-   int read();           void print(int);
-};                    };
-```
+####A class should have only one reason to change
+
+<img style="background:none; border:none; box-shadow:none;" src="images/single_responsibility_principle.jpg" width="65%" />
 
 ----
 
-### Dependency Inversion
+### App - Single Responsibility Principle
 
 ```cpp
 /**
- * Dependency Inversion
- *   "Depend on abstractions, not on concretions"
- *   "Seperates business logic from object creation"
+ * Responsibility: Can read a value
  */
-class IReader {                     class IPrinter {
-public:                             public:
-  virtual ~IReader() = default;       virtual ~IPrinter() = default;
-  virtual int read() = 0;             virtual void print(int);
-};                                  };
+class Reader {
+ public:
+   virtual ~Reader() = default;
+   virtual int read() const { implementation... }
+};
 ```
 
 ```cpp
-class Reader final                  class Printer final
- : public IReader {                   : public IPrinter {
-public:                             public:
-  int read() override;                void print(int) override;
-};                                  };
+/**
+ * Responsibility: Can print a value
+ */
+class Printer {
+ public:
+   virtual ~Printer() = default;
+   virtual void print(int i) { implementation... }
+};
 ```
+
+> `virtual` just for testing, for now!
 
 ----
 
-### <strike>Stupid</strike> vs SOLID
+### <strike>Stupid</strike> vs SOLID - Single Responsibility Principle
 
 ```cpp
 class App {
@@ -710,6 +710,84 @@ public:
   /**
    * Dependency Injection
    *   "Don't call us, we'll call you", Hollywood principle
+   */
+  App(Reader& reader, Printer& printer, Logger& logger);
+
+  void run() {
+    const auto value = reader.read();
+    Logger << "run:" << value << '\n';
+    printer.print(value); // Law of Demeter
+                          // "Only talk to your immediate friends"
+  }
+private:
+  Reader& reader; Printer& printer; Logger& logger;
+};
+```
+
+----
+
+### App - Unit-testing - Simpler!
+
+```cpp
+"should print read value"_test = [] {
+  // Some boilerplate introduced!
+  NiceGMock<ILogger> logger{};      // Ignore an uninteresting call
+  StrictGMock<Reader> reader{};     // Fail on uninteresting call
+  StrictGMock<Printer> printer{};   // Fail on uninteresting call
+  App app{reader, printer, logger}; // Wiring!
+
+  EXPECT_CALL(reader, read).WillOnce(Return(42));
+  EXPECT_CALL(printer, print, 42);
+
+  app.run();
+};
+```
+
+----
+
+### But we can have different implementations of readers/printers/loggers!
+
+----
+
+### A few iterations later...
+####(after some more SOLID courses)
+
+----
+
+### Dependency Inversion Principle
+#### High-level modules should not depend on low-level modules. Both should depend on abstractions, not on implementations
+
+<img style="background:none; border:none; box-shadow:none;" src="images/dependency_inversion_principle.jpg" width="65%" />
+
+----
+
+### App - Dependency Inversion Principle
+
+```cpp
+class IReader {                     class IPrinter {
+public:                             public:
+  virtual ~IReader() = default;       virtual ~IPrinter() = default;
+  virtual int read() const = 0;       virtual void print(int);
+};                                  };
+```
+
+```cpp
+class FileReader final              class ConsolePrinter final
+ : public IReader {                   : public IPrinter {
+public:                             public:
+  int read() const override;          void print(int) override;
+};                                  };
+```
+
+----
+
+### <strike>Stupid</strike> vs SOLID - Dependency Inversion Principle
+
+```cpp
+class App {
+public:
+  /**
+   * Dependency Injection with abstractions, not implementations
    */
   App(IReader& reader, IPrinter& printer, ILogger& logger);
 
@@ -726,7 +804,7 @@ private:
 
 ----
 
-### App - Unit-testing - Simple!
+### App - Unit-testing - Clean and simple!
 
 ```cpp
 "should print read value"_test = [] {
@@ -745,7 +823,7 @@ private:
 
 ----
 
-### It works but, all in all, it's a <u>Java</u> approach
+### It works but it's <u>Java-ish</u>
 
 * Heap
 * Reference/Pointer semantics
@@ -817,6 +895,12 @@ private:
 
 ----
 
+### But what if don't know the dependency at compile-time?
+
+> Note, that most dependencies are known at compile time
+
+----
+
 ### App - Type-Erasure - Virtual Concepts (Dynamic Dispatch without inheritance)
 
 ```cpp
@@ -858,13 +942,11 @@ private:
 
 ----
 
-### So far so good, but are there any problems with `SOLID` approach?
+### But what about all this wiring/plumbing boilerplate introduced by `SOLID`?
 
 ----
 
-### Wiring Mess
-
-> `SOLID` allows testable design but it moves the problem to the caller!
+### DI - Wiring Mess
 
 #### Test
 ```cpp
@@ -876,7 +958,7 @@ private:
 };
 ```
 
-#### Composition root - Unique location where  modules are composed together
+#### Main - Composition root (Unique location where  modules are composed together)
 ```cpp
 int main() {
   auto file = std::fstream{"input.txt"};               // WIRING!
@@ -885,56 +967,6 @@ int main() {
   App app{reader, printer};                            // WIRING!
 }
 ```
-
-----
-
-### Factories can fix it, right?
-
-```cpp
-class ReaderFactory {
-  static auto create(std::string_view file) {
-    return std::make_unique<FileReader>(file);
-  }
-};
-```
-
-#### Usage
-```cpp
-class App {
-public:
-  // Carry dependencies which doesn't use
-  explicit App(std::string_view file)
-    : reader{ReaderFactory::create(file)} // Tight coupling again!
-  { }
-
-  void run();
-
-private:
-  Reader reader{};
-};
-```
-
-```cpp
-int main() {
-  App app{"file.txt"}; // short and sweat !/?
-  ...
-}
-```
-
-----
-
-### ReaderFactory - Unit-Testing
-```cpp
-"should create a file reader"_test = [] {
-  ReaderFactory factory{};
-  auto reader = factory.create("test_file.txt");
-
-  EXPECT(reader.get()); // Is that enough?
-  EXPECT("test_file.txt", ...) // How to test what was passed?
-};
-```
-
-#### Static factories MUST go! (Abstract factories are okay-ish)
 
 ----
 
@@ -954,7 +986,7 @@ int main() {
 
 -----
 
-###Solution
+###Solution (World without static factories)
 
 ####Simplify/Remove the wiring mess
   ####By Automating dependency injection?
@@ -1004,9 +1036,13 @@ int main() {                                  |   |  |    |
 #####Manual DI - Wiring mess
 
 ```cpp
+App::App(const TReader&, IPrinter&);
+```
+
+```cpp
 int main() {
-  auto reader = Reader{};          // WIRING!
-  auto printer = Printer{};        // WIRING!
+  auto reader = MyReader{};        // WIRING!
+  auto printer = ConsolePrinter{}; // WIRING!
   auto app = App{reader, printer}; // WIRING!
   app.run();
 }
@@ -1032,7 +1068,7 @@ int main() {
 ######Before
 
 ```cpp
-App(Reader& reader, Printer& printer)
+App(const Reader& reader, Printer& printer)
   : reader(reader))
   , printer(printer)
 { }
@@ -1055,8 +1091,8 @@ App(Printer& printer, std::unique_ptr<Reader> reader)
 
 ```cpp
 int main() {
-  auto reader = std::make_unique<Reader>{};   // DIFF Wiring!
-  auto printer = Printer{};                   // Wiring
+  auto reader = std::make_unique<MyReader>{}; // DIFF Wiring!
+  auto printer = ConsolePrinter{};            // Wiring
   auto app = App{printer, std::move(reader)}; // DIFF Wiring!
   app.run();
 }
@@ -1080,10 +1116,10 @@ const auto config = [] {
   return di::make_injector(
     di::bind<Readable>.to<FileReader>(),
     di::bind<Printable>.to<ConsolePrinter>(),
-    di::bind<Loggable>.to<StreamLogger>(),
-    ...
+    di::bind<Loggable>.to<StreamLogger>()
   );
 };
+
 int main() {
   di::make<App>(config)().run();
 }
@@ -1097,9 +1133,6 @@ int main() {
   );
 
   app.run(); // only fake logger will be used!
-
-  ...
-};
 ```
 
 ----
@@ -1133,7 +1166,8 @@ StrictGMock<Printable> printer{};  // WIRING!
 ###Test - Automatic mocks injection
 ```cpp
 "should print read text"_test = [] {
-  auto [app, mocks] = testing::make<App>();
+  auto [app, mocks] = testing::make<App>();// creates System Under Test
+                                           // and mocks
 
   EXPECT_CALL(mocks<Readable)>(), read).WillOnce(Return(42));
   EXPECT_CALL(mocks<Readable>(), print, 42);
@@ -1212,9 +1246,11 @@ auto make(TArgs &&... args) {
 
 ----
 
-### Okay, but isn't that hiding a bad design (too many dependencies)?
+> Okay, but isn't that hiding a bad design (too many dependencies)?
 
-### Solution -> Combine it with Test Driven Development
+### Solution
+=>
+### Combine it with Test Driven Development
 
 ==============================================================================
 
@@ -1230,8 +1266,6 @@ auto make(TArgs &&... args) {
 ##TDD Mantra - Red-Green-Refactor
 
 <img src="images/tdd.gif" width="40%" />
-
-> Refactor => remove duplicates!
 
 ----
 
@@ -1250,7 +1284,7 @@ auto make(TArgs &&... args) {
 * There is no untested code (it implies 100% coverage)
 * We ALWAYS know that the code works (regression, refactoring)
 * Unit tests are runnable documentation of the code (requirements, example usage)
-* Loosely coupled code (no globals/singletons)
+* Loosely coupled code (no globals/singletons/god objects)
 
 ----
 
@@ -1365,7 +1399,8 @@ THEN("^The (\\d+) should be printed") {
 | |  |
 |-|-|
 | Methodology | Agile (Scrum) |
-| Design      | UML 2.5 |
+| Modeling    | UML 2.5 |
+| Design      | Concepts Driven |
 | Development | BDD/TDD/eXtreme Programming |
 | Delivery    | Continuous Integration |
 
@@ -1428,11 +1463,12 @@ Scenario N: ...
 
 <img style="background:none; border:none; box-shadow:none;" src="images/ts_cd.png" width="75%" />
 
+#### Loosely coupled components (it's not a class diagram)
+
+
 ----
 
 ### Design/Workshop - Activities
-
----
 
 <img style="background:none; border:none; box-shadow:none;" src="images/ts_ad.png" width="55%" />
 
@@ -1505,12 +1541,12 @@ Scenario N: ...
 ### TDD/GREEN - Make it compile/pass (the simplest way)
 
 ```cpp
-// Concept and Mock!
-const auto MarketData = Callable<_1, void()>($(connect));
+// Concept and Mock! (It's not our API, yet!)
+using MarketData = decltype( Callable<void()>($(connect)) );
 ```
 
 ```cpp
-template<class TMarketData = decltype(MarketData)>
+template<class TMarketData = MarketData>
 struct trading_system {
   MarketData& marketData;
   void start() { marketData.connect(); }
@@ -1522,12 +1558,12 @@ struct trading_system {
 ### TDD/RED - Write another test (Switch roles!)
 
 ```cpp
-"should disconnect on process"_test = [] {
+"should not disconnect on stop if it wasn't connected"_test = [] {
   auto [ts, mocks] = testing::make<trading_system>();
 
-  EXPECT_CALL(mocks<MarketData>(), disconnect);
+  EXPECT_CALL(mocks<MarketData>(), disconnect).Times(0);
 
-  ts.process();
+  ts.stop();
 };
 ```
 
@@ -1536,27 +1572,26 @@ struct trading_system {
 ### TDD/GREEN - Make ALL tests pass
 
 ```cpp
-// Concept and Mock!
-const auto MarketData = Callable<_1, void()>($(connect)) &&
-                        Callable<_1, void()>($(disconnect));
+// Disconnect needed to verify that it wasn't called
+using MarketData = decltype( Callable<void()>($(connect)) &&
+                             Callable<void()>($(disconnect)) );
 ```
 
 ```cpp
-template<class TMarketData = decltype(MarketData)>
+template<class TMarketData = MarketData>
 struct trading_system {
   MarketData& marketData;
 
   void start() { marketData.connect(); }
-  void process() { marketData.disconnect(); }
+  void stop() { } // The simplest implementation!
 };
 ```
 
 ----
 
 ### TDD - Refactor (In both, code and tests)
-  * Remove duplicates
-  * Fix indescriptive namings
-  * Fix magic numbers and other hacks (Due to the simplest way)
+
+#### Remove duplicates
 
 ----
 
@@ -1570,96 +1605,98 @@ struct trading_system {
     ts.start();
   }
 
-  SHOULD("disconnect on process") {
-    EXPECT_CALL(mocks<MarketData>(), disconnect);
-    ts.process();
+  SHOULD("not disconnect on stop if it wasn't connected") {
+    EXPECT_CALL(mocks<MarketData>(), disconnect).Times(0);
+    ts.stop();
   };
 };
 ```
 
 ----
 
-### TDD/Refactor - Fix Naming and add Encapsulation
-
-```cpp
-struct Connectable {
-  template<class T>
-  auto operator()() {
-    return Callable<T, void()>($(connect)) &&
-           Callable<T, void()>($(disconnect));
-  };
-};
-```
-
-```cpp
-template<class TMarketData = Connectable>
-class trading_system {
-public:
-  explicit trading_system(TMarketData& marketData)
-    : marketData(marketData)
-  { }
-
-public:
-  void start() { marketData.connect(); }
-  void process() { marketData.disconnect(); }
-
-private:
-  TMarketData& marketData;
-};
-```
-
-----
-
-### TDD/RED - Expand the test
+### TDD/RED - Write another test (Switch roles again!)
 
 ```cpp
 "Trading System [Parse Feeds]"_test = [] {
-  auto [ts, mocks] = testing::make<trading_system>();
+  auto [ts, mocks] = testing::make<trading_system>(); // DRY, setup
 
   SHOULD("connect to the market data on startup") { ... }
+  SHOULD("not disconnect on stop if it wasn't connected") { ... }
 
-  SHOULD("disconnect on process when read returned an empty stream") {
-    InSequence sequence;
+  SHOULD("disconnect on stop if it was connected") { 
+    InSequence sequence{};
     {
-      EXPECT_CALL(mocks<Connectable>(), read).WillOnce(Return(""));
-      EXPECT_CALL(mocks<Connectable>(), disconnect);
+      EXPECT_CALL(mocks<MarketData>(), connect);
+      EXPECT_CALL(mocks<MarketData>(), disconnect);
     }
-    ts.process();
+
+    ts.start();
+    ts.stop();
   }
 };
 ```
 
 ----
 
-```cpp
-struct Connectable {
-  template<class T>
-  auto operator()() {
-    return Callable<T, void()>($(connect)) &&
-           Callable<T, void()>($(disconnect));
-           Callable<T, buffer()>($(read)); // Single Responsibility?
-  };
-};
-```
+### TDD/GREEN - Make it pass!
 
 ```cpp
-template<class TMarketData = Connectable>
-class trading_system {
-public:
-  explicit trading_system(TMarketData& marketData)
-    : marketData(marketData)
-  { }
+template<class TMarketData = MarketData>
+struct trading_system {
+  MarketData& marketData;
 
-public:
-  void start() { marketData.connect(); }
-  void process() {
-    if (auto buffer = marketData.read(); buffer.empty()) {
+  void start() { marketData.connect(); connected = true; }
+
+  void stop() { 
+    if (connected) {
       marketData.disconnect();
     }
   }
 
+  bool connected{};
+};
+```
+
+----
+
+### TDD/Refactor - Extract to separate files if needed
+
+```cpp
+#ifndef CONCEPTS_MARKET_DATA_HPP
+#define CONCEPTS_MARKET_DATA_HPP // concepts/market_data.hpp
+
+namespace trading_system::concepts {
+inline namespace v1 {
+
+using MarketData = decltype( Callable<void()>($(connect)) &&
+                             Callable<void()>($(disconnect)) );
+} // v1
+}} // trading_system::concepts
+
+#endif
+```
+
+----
+
+### TDD/Refactor - Cleanup the code
+
+```cpp
+template<class TMarketData = MarketData>
+class trading_system {
+public:
+  explicit trading_system(TMarketData& marketData)
+    : marketData(marketData)
+  { }
+
+  void start() { marketData.connect(); connected = true; }
+  void stop() {
+    if (connected) {
+      marketData.disconnect();
+    }
+  }
 private:
   TMarketData& marketData;
+  bool connected{};
 };
 ```
 
@@ -1669,12 +1706,13 @@ private:
 
 ----
 
-### When all tests for the story "[0.0.1] Parse feeds" are passing then...
+### When all tasks for the story "[0.0.1] Parse feeds" are implemented (implies that all tests are passing!) then...
 
 ----
 
-### Commit
+### Commit (Rebase if needed)
 
+#### Message
 ```
 [0.0.1] :new: Parse feeds - Ability to parse feeds from MarketData
 
@@ -1690,20 +1728,42 @@ Solution:
 - Disconnect from the market data when there is no more feeds
 ```
 
+#### Content (Cross functional deliverable with all tests)
 ```
-Content
-  Cross functional deliverable with all tests
+- include/concepts/market_data.hpp
+- include/trading_system.hpp
+- test/unit/trading_system.cpp
+- test/integration/trading_system.cpp // plumbing tests
+- test/acceptance_tests/parse_feeds.cpp // cucumber scenarios
 ```
 
 ----
 
-merge request/code review/rebase
+### Code Review (Did you consider...?)
+
+<img style="background:none; border:none; box-shadow:none;" src="images/review.png" />
 
 ----
+
+### Merge/Pull Request
+
+<img style="background:none; border:none; box-shadow:none;" src="images/checks.png" />
+
+#### Merged by a team member, only if:
+  * All code review dicussions were resolved
+  * All checks are passing 
+    * all tests/static,dynamic analysis, etc...
+
+----
+
+| | | |
+|-|-|-|
+| TODO                  | WIP                     | DONE |
+|                       |                         | [0.0.1] Parse Feeds     |
 
 <img style="background:none; border:none; box-shadow:none;" src="images/done.png" />
 
-* #### Take the next story...
+* #### Take the next story... (Priority order)
 * #### Pair with someone else of the team! (knowledge sharing)
 
 ==============================================================================
