@@ -72,7 +72,7 @@ Kris Jusiak, Quantlab Financial
         * Dependency  Inversion Principle
           * Automatic Mocks Injection
         * TDD/BDD
-* Showcase (User Story -> ... -> Commit)
+* Showcase
 * C++2X...
 
 ==============================================================================
@@ -200,7 +200,7 @@ TEST(AddTest, should_add_2_numbers) {
 ```cpp
 GTEST("Can add numbers") {
   // set-up
-  SHOULD("add 2 numbers") { EXPECT_EQ(4, add(2, 2)); }
+  SHOULD("add 2 numbers") { EXPECT(4 == add(2, 2)); }
   // tear-down
 }
 ```
@@ -365,7 +365,7 @@ auto read(TReader& reader) { return reader.read(); }
 ```cpp
 class MockReader { // no inheritance
 public:
-  MOCK_CONST_METHOD1(read, int());
+  MOCK_CONST_METHOD0(read, int());
 };
 ```
 
@@ -1388,7 +1388,7 @@ THEN("^The (\\d+) should be printed") {
 
 ==============================================================================
 
-## Showcase (User Story -> ... -> Commit)
+## Showcase (User Story -> ... -> Merge Request)
 
 ![ats](images/ats.png)
 
@@ -1752,7 +1752,7 @@ Solution:
 #### Merged by a team member, only if:
   * All code review dicussions were resolved
   * All checks are passing 
-    * all tests/static,dynamic analysis, etc...
+    * All tests/static,dynamic analysis, etc...
 
 ----
 
@@ -1806,13 +1806,34 @@ Solution:
 
 ----
 
+### Static reflection - Mocks generation
+
+```cpp
+template<class T>
+$class GMock {
+public:
+    virtual ~GMock() noexcept { }
+    constexpr {
+      for... (auto f: $GMock.functions()) {
+        f.make([] { fs...; });
+      }
+    }
+
+private:
+ flat_map<string, unique_ptr<UntypedFunctionMockerBase>> fs{};
+};
+```
+
+----
+
 ### Proposals
 
 | | |
 |-|-|
-| Mocks Generation | [(SG7) Static reflection](www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0194r0.pdf) |
-| Type constraints | [(SG8) Concepts lite](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3580.pdf) |
-| Concepts based type erasure | [Virtual Concepts](https://github.com/andyprowl/virtual-concepts/blob/master/draft/Dynamic%20Generic%20Programming%20with%20Virtual%20Concepts.pdf) |
+| [(SG7) Static reflection](www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0194r0.pdf) | Mocks Generation |
+| [(SG8) Concepts lite](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3580.pdf) | Type constraints |
+| [Virtual Concepts](https://github.com/andyprowl/virtual-concepts/blob/master/draft/Dynamic%20Generic%20Programming%20with%20Virtual%20Concepts.pdf) | Concepts based type erasure |
+| ? | Testing/Assertions |
 
 ==============================================================================
 
@@ -1825,7 +1846,7 @@ Solution:
 * Consider using a good* testing framework
 * Consider using a good* Mocking framework
 * Consider writing `SOLID` instead of `STUPID` code
-* Consider using dependency injection framework
+* Consider using dependency injection framework to avoid the wiring mess and inject mocks automatically
 * Consider writing tests before the implementation
 
 ----
