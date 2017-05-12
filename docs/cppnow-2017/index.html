@@ -115,7 +115,10 @@ Kris Jusiak, Quantlab Financial
 
 ----
 
-### "Don't cling to a mistake just because you spent a lot of time and money making it!"
+### "Don't cling to a mistake just because you spent a lot of time and money making it!" 
+#### And Test your code!
+
+<img style="background:none; border:none; box-shadow:none;" src="images/chuck_testing.jpg" width="50%" />
 
 ==============================================================================
 
@@ -1115,7 +1118,7 @@ const auto config = [] {
   return di::make_injector(
     di::bind<Readable>.to<FileReader>(),
     di::bind<Printable>.to<ConsolePrinter>(),
-    di::bind<Loggable>.to<StreamLogger>()
+    di::bind<DataBase>.to<SQL>()
   );
 };
 
@@ -1127,11 +1130,12 @@ int main() {
 #### integration-testing
 ```cpp
 "should"_test = [] {
-  auto app = di::make<App>(config,
-    di::bind<Loggable>.to<FakeLogger>() [di::override]
+  auto app = di::make<App>(
+    config, // production config
+    di::bind<DataBase>.to<FakeDataBase>() [di::override]
   );
 
-  app.run(); // only fake logger will be used!
+  app.run(); // fake data base will be used!
 ```
 
 ----
