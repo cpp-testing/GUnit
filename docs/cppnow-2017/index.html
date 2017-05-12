@@ -1035,13 +1035,13 @@ int main() {                                  |   |  |    |
 #####Manual DI - Wiring mess
 
 ```cpp
-App::App(const TReader&, IPrinter&);
+App::App(const Reader& reader, Printer& printer);
 ```
 
 ```cpp
 int main() {
-  auto reader = MyReader{};        // WIRING!
-  auto printer = ConsolePrinter{}; // WIRING!
+  auto reader = Reader{};          // WIRING!
+  auto printer = Printer{};        // WIRING!
   auto app = App{reader, printer}; // WIRING!
   app.run();
 }
@@ -1258,7 +1258,7 @@ auto make(TArgs &&... args) {
 | | | |
 |-|-|-|
 | TDD | Test Driven Development | Unit Tests |
-| BDD | Behaviour Test Driven Development | Unit/Integration Tests |
+| BDD | Behaviour Test Driven Development | Integration/Acceptance Tests |
 
 ----
 
@@ -1323,13 +1323,11 @@ Scenario 1: Value from a file is displayed
  Then The 42 should be printed
 ```
 
-
-```
-```
+`test/features/file_viewer`
 
 ----
 
-### BDD - Gherkin/Cucumber (Integration Testing)
+### BDD - Gherkin/Cucumber (Acceptance Testing)
 
 ```cpp
 GIVEN("^I have a file with a (\\d+) in it$") {
@@ -1362,20 +1360,33 @@ THEN("^The (\\d+) should be printed") {
 }
 ```
 
+`file_viewer.cpp`
+
 ----
 
-## BDD - DI/Mocking (Unit Testing)
+### BDD - Gherkin/Cucumber
+
+#### Run
+```sh
+./cucumber test/features/file_viewer
+```
 
 ```cpp
-"[scenario] Value from a file is displayed"_test {
-  auto [app, mocks] = testing::make<App>()
+Feature: File Viewer
 
-  GIVEN(mocks<Readable>(), read().WillOnce(Return(42));
+Scenario 1: Value from a file is displayed # test/.../file_viewer:12
+ Given I have a file with a 42 value in it # file_viewer.cpp:22
+   And the App is created                  # file_viewer.cpp:33
+ When The App runs                         # file_viewer.cpp:34
+ Then The 42 should be printed             # file_viewer.cpp:48
 
-  WHEN(app.run());
+```
 
-  THEN(mocks<Printable>(), print(42));
-}
+#### Output
+```cpp
+1 scenario (1 passed)
+4 steps (4 passed)
+0m0.015s
 ```
 
 ----
@@ -1462,7 +1473,7 @@ Scenario N: ...
 
 <img style="background:none; border:none; box-shadow:none;" src="images/ts_cd.png" width="75%" />
 
-#### Loosely coupled components (it's not a class diagram)
+#### Loosely coupled components (VISION)
 
 ----
 
@@ -1494,11 +1505,20 @@ Scenario N: ...
 
 ----
 
-### Planning (Team velocity ~12 Story Points)
+### Planning (No design/workshop)
 
-  * [0.0.1] Parse feeds (3SP) <- COMMIT
-  * [0.0.2] Handle buy  (8SP) <- COMMIT
+#### Estimates
+  * [0.0.1] Parse feeds (3SP)
+  * [0.0.2] Handle buy  (8SP) (~3x more complex than [0.0.1])
   * [0.0.3] Handle sell (2SP)
+
+---
+
+#### Commitment (Team velocity ~12 Story Points)
+  * [0.0.1] Parse feeds <- COMMIT (3SP)
+  * [0.0.2] Handle buy  <- COMMIT (3SP + 8SP)
+
+> Story Point - a number that tells the team how hard the story is
 
 ----
 
@@ -1657,25 +1677,6 @@ struct trading_system {
 
 ----
 
-### TDD/Refactor - Extract to separate files if needed
-
-```cpp
-#ifndef CONCEPTS_MARKET_DATA_HPP
-#define CONCEPTS_MARKET_DATA_HPP // concepts/market_data.hpp
-
-namespace trading_system::concepts {
-inline namespace v1 {
-
-using MarketData = decltype( Callable<void()>($(connect)) &&
-                             Callable<void()>($(disconnect)) );
-} // v1
-}} // trading_system::concepts
-
-#endif
-```
-
-----
-
 ### TDD/Refactor - Cleanup the code
 
 ```cpp
@@ -1696,6 +1697,25 @@ private:
   TMarketData& marketData;
   bool connected{};
 };
+```
+
+----
+
+### TDD/Refactor - Extract to separate files if needed
+
+```cpp
+#ifndef CONCEPTS_MARKET_DATA_HPP
+#define CONCEPTS_MARKET_DATA_HPP // concepts/market_data.hpp
+
+namespace trading_system::concepts {
+inline namespace v1 {
+
+using MarketData = decltype( Callable<void()>($(connect)) &&
+                             Callable<void()>($(disconnect)) );
+} // v1
+}} // trading_system::concepts
+
+#endif
 ```
 
 ----
@@ -1747,7 +1767,7 @@ Solution:
 
 <img style="background:none; border:none; box-shadow:none;" src="images/checks.png" />
 
-#### Merged by a team member, only if:
+#### Merged by a team member, only if DOD is satisfied:
   * All code review dicussions were resolved
   * All checks are passing
     * All tests/static,dynamic analysis, etc...
@@ -1761,7 +1781,7 @@ Solution:
 |                       |  [0.0.2] Handle Buy     | <- Take the next story... (in priority order) |
 
 <img style="background:none; border:none; box-shadow:none;" src="images/done.png" />
-* #### Pair with someone else of the team! (knowledge sharing)
+#### Pair with someone else of the team! (knowledge sharing)
 
 ==============================================================================
 
