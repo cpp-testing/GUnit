@@ -223,7 +223,7 @@ GTEST("Can add numbers") {
 
 ==============================================================================
 
-## Consider using a good* Mocking framework
+## Consider using a good* mocking framework
 
 ####good*
 * Has to be easier to use than hand written stubs/fakes!
@@ -239,7 +239,7 @@ GTEST("Can add numbers") {
 |-|-|
 |Fake|An object with limited capabilities|
 |Stubs|An object that provides predefined answers to method calls and record calls|
-|Mocks|An object on which you set expectations which are verified by the mock|
+|Mocks|An object on which you set expectations which are verified by itself|
 
 ---
 
@@ -862,14 +862,14 @@ class App {
                 Loggable<TLogger>());
 
 public:
-  App(TReader reader, TPrinter printer, TLogger logger);
+  App(TReader& reader, TPrinter& printer, TLogger& logger);
 
   void run() {
     printer.print(reader.read());
   }
 
 private:
-  TReader reader; TPrinter printer; TLogger logger;
+  TReader& reader; TPrinter& printer; TLogger& logger;
 };
 ```
 
@@ -929,8 +929,7 @@ private:
   NiceGMock<Loggable> logger{};      // Ignore an uninteresting call
   StrictGMock<Readable> reader{};    // Fail on uninteresting call
   StrictGMock<Printable> printer{};  // Fail on uninteresting call
-  App app{reader, printer, logger};  // C++17 template argument
-                                     // deduction for class templates
+  App app{reader, printer, logger};
 
   EXPECT_CALL(reader, read).WillOnce(Return(42));
   EXPECT_CALL(printer, print, 42);
@@ -1170,7 +1169,7 @@ StrictGMock<Printable> printer{};  // WIRING!
                                            // and mocks
 
   EXPECT_CALL(mocks<Readable)>(), read).WillOnce(Return(42));
-  EXPECT_CALL(mocks<Readable>(), print, 42);
+  EXPECT_CALL(mocks<Printable>(), print, 42);
 
   app.run();
 };
@@ -1388,7 +1387,7 @@ THEN("^The (\\d+) should be printed") {
 
 ==============================================================================
 
-## Showcase (User Story -> ... -> Merge Request)
+## Showcase (User Story -> ... -> Deployment)
 
 ![ats](images/ats.png)
 
@@ -1464,7 +1463,6 @@ Scenario N: ...
 <img style="background:none; border:none; box-shadow:none;" src="images/ts_cd.png" width="75%" />
 
 #### Loosely coupled components (it's not a class diagram)
-
 
 ----
 
@@ -1623,7 +1621,7 @@ struct trading_system {
   SHOULD("connect to the market data on startup") { ... }
   SHOULD("not disconnect on stop if it wasn't connected") { ... }
 
-  SHOULD("disconnect on stop if it was connected") { 
+  SHOULD("disconnect on stop if it was connected") {
     InSequence sequence{};
     {
       EXPECT_CALL(mocks<MarketData>(), connect);
@@ -1647,7 +1645,7 @@ struct trading_system {
 
   void start() { marketData.connect(); connected = true; }
 
-  void stop() { 
+  void stop() {
     if (connected) {
       marketData.disconnect();
     }
@@ -1745,13 +1743,13 @@ Solution:
 
 ----
 
-### Merge/Pull Request
+### Merge/Pull Request (Definition of Done)
 
 <img style="background:none; border:none; box-shadow:none;" src="images/checks.png" />
 
 #### Merged by a team member, only if:
   * All code review dicussions were resolved
-  * All checks are passing 
+  * All checks are passing
     * All tests/static,dynamic analysis, etc...
 
 ----
@@ -1760,10 +1758,9 @@ Solution:
 |-|-|-|
 | TODO                  | WIP                     | DONE |
 |                       |                         | [0.0.1] Parse Feeds     |
+|                       |  [0.0.2] Handle Buy     | <- Take the next story... (in priority order) |
 
 <img style="background:none; border:none; box-shadow:none;" src="images/done.png" />
-
-* #### Take the next story... (Priority order)
 * #### Pair with someone else of the team! (knowledge sharing)
 
 ==============================================================================
@@ -1844,7 +1841,7 @@ private:
 ### Good practises are good practices for a reason!
 
 * Consider using a good* testing framework
-* Consider using a good* Mocking framework
+* Consider using a good* mocking framework
 * Consider writing `SOLID` instead of `STUPID` code
 * Consider using dependency injection framework to avoid the wiring mess and inject mocks automatically
 * Consider writing tests before the implementation
