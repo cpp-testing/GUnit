@@ -116,9 +116,10 @@ Kris Jusiak, Quantlab Financial
 ----
 
 ### "Don't cling to a mistake just because you spent a lot of time and money making it!" 
-#### And Test your code!
 
-<img style="background:none; border:none; box-shadow:none;" src="images/chuck_testing.jpg" width="50%" />
+<img style="background:none; border:none; box-shadow:none;" src="images/testing.jpg" width="50%" />
+
+### Test your code and avoid debugging!
 
 ==============================================================================
 
@@ -210,14 +211,30 @@ GTEST("Can add numbers") {
 
 #### <p align="left">GUnit.GTest-Lite (it will be used on the slides)</p>
 ```cpp
-"should add 2 numbers"_test = [] { // -gnu-string-literal-
-  EXPECT(4 == add(2, 2));          // -operator-template
-};
+"should add 2 numbers"_test { // -gnu-string-literal
+  EXPECT(4 == add(2, 2));     // -operator-template
+}
 ```
 
 ----
 
-### Testing-Frameworks references
+### GUnit.GTest-Lite
+
+```cpp
+"Calculator"_test = [] {
+  Calculator calc{}; // set-up
+
+  SHOULD("add 2 numbers") {       // 1. set-up
+    EXPECT(4 == calc.add(2, 2));  // 2. should add 2 numbers
+  }                               // 3. tear-down
+
+  SHOULD("sub 2 numbers") {       // 1. set-up
+    EXPECT(0 == calc.sub(2, 2));  // 2. should sub 2 numbers
+  }                               // 3. tear-down
+
+  // tear-down
+};
+```
 
 | | |
 |-|-|
@@ -549,12 +566,12 @@ https://github.com/ldionne/dyno
 <!-- .element: style="margin-left:-13%; width:125%" -->
   * Features
     * No more hand written mocks!
+    * Support for mocking concepts/type_erasure
     * Support for more than 10 parameters
     * Support for std::unique_ptr without any tricks
     * Support for overloaded operators
     * Support for mocking classes with constructors
     * 100% Compatible with Google Mocks
-    * Quicker compilation times
 ==============================================================================
 
 ### Consider writing `SOLID` instead of `STUPID` code
@@ -685,8 +702,7 @@ private:
  */
 class Reader {
  public:
-   virtual ~Reader() = default;
-   virtual int read() const { implementation... }
+   int read() const;
 };
 ```
 
@@ -696,59 +712,47 @@ class Reader {
  */
 class Printer {
  public:
-   virtual ~Printer() = default;
-   virtual void print(int i) { implementation... }
+   void print(int i);
 };
 ```
 
-> `virtual` just for testing, for now!
-
 ----
 
-### <strike>Stupid</strike> vs SOLID - Single Responsibility Principle
+### Stupid vs SOLID - Single Responsibility Principle
 
 ```cpp
 class App {
 public:
-  /**
-   * Dependency Injection
-   *   "Don't call us, we'll call you", Hollywood principle
-   */
-  App(Reader& reader, Printer& printer, Logger& logger);
-
   void run() {
     const auto value = reader.read();
     Logger << "run:" << value << '\n';
     printer.print(value); // Law of Demeter
                           // "Only talk to your immediate friends"
   }
+
 private:
-  Reader& reader; Printer& printer; Logger& logger;
+  Reader& reader; 
+  Printer& printer; 
+  Logger& logger;
 };
 ```
 
 ----
 
-### App - Unit-testing - Simpler!
+### App - Unit-testing?
 
 ```cpp
 "should print read value"_test = [] {
-  // Some boilerplate introduced!
-  NiceGMock<ILogger> logger{};      // Ignore an uninteresting call
-  StrictGMock<Reader> reader{};     // Fail on uninteresting call
-  StrictGMock<Printer> printer{};   // Fail on uninteresting call
-  App app{reader, printer, logger}; // Wiring!
+  // given
+  App app{};
 
-  EXPECT_CALL(reader, read).WillOnce(Return(42));
-  EXPECT_CALL(printer, print, 42);
-
+  // when
   app.run();
+
+  // then
+  // ??? still not quite there!
 };
 ```
-
-----
-
-### But we can have different implementations of readers/printers/loggers!
 
 ----
 
@@ -782,6 +786,8 @@ public:                             public:
 };                                  };
 ```
 
+#### We can have different implementations of readers/printers/loggers!
+
 ----
 
 ### <strike>Stupid</strike> vs SOLID - Dependency Inversion Principle
@@ -790,7 +796,8 @@ public:                             public:
 class App {
 public:
   /**
-   * Dependency Injection with abstractions, not implementations
+   * Dependency Injection
+   *   "Don't call us, we'll call you", Hollywood principle
    */
   App(IReader& reader, IPrinter& printer, ILogger& logger);
 
@@ -798,8 +805,8 @@ public:
     const auto value = reader.read();
     Logger << "run:" << value << '\n';
     printer.print(value); // Law of Demeter
-                          // "Only talk to your immediate friends"
-  }
+  }                       // "Only talk to your immediate friends"
+
 private:
   IReader& reader; IPrinter& printer; ILogger& logger;
 };
@@ -807,7 +814,7 @@ private:
 
 ----
 
-### App - Unit-testing - Clean and simple!
+### App - Unit-testing - Possible but with some boilerplate!
 
 ```cpp
 "should print read value"_test = [] {
@@ -1009,6 +1016,30 @@ namespace di = boost::di;
 ```
 
 ```cpp
+class App {
+ public:
+  App(const Reader&, Printer&); //[Boost].DI
+  void run();                   // deduces constructors parameters
+                                // dedcues required scope for them
+ private:                       // create dependencies and inject them
+  Reader& reader;
+  Printer& printer;
+};
+```
+
+#### Create App (object graph) using [Boost].DI
+```cpp
+int main() {
+  auto app = di::make<App>();
+  app.run();
+}
+```
+
+----
+
+###[[Boost].DI](https://github.com/boost-experimental/di) - Resolve dependencies templates/concepts/interfaces/type_erasure
+
+```cpp
 template<class TReader = Readable, class TSize = class Size>
 class App {                                               ^
  public:                                                  |
@@ -1023,7 +1054,8 @@ int main() {                                  |   |  |    |
      config{"127.0.0.1", 8080}, ---------------------/    |
      di::bind<class Size>.to<int_<42>>() -----------------/
   );
-  injector.create<App>().run(); // or di::make<App>(...).run();
+
+  di::make<App>(injector).run();
 }
 ```
 
@@ -1144,9 +1176,10 @@ int main() {
 
 #### Let's get rid off some boilerplate!
 ```cpp
-NiceGMock<Loggable> logger{};      // WIRING!
-StrictGMock<Readable> reader{};    // WIRING!
-StrictGMock<Printable> printer{};  // WIRING!
+GMock<Readable> reader{};    // WIRING!
+GMock<Printable> printer{};  // WIRING!
+GMock<Loggable> logger{};    // WIRING!
+...
 ```
 
 ----
@@ -1402,7 +1435,7 @@ Scenario 1: Value from a file is displayed # test/.../file_viewer:12
 
 ==============================================================================
 
-## Showcase (User Story -> ... -> Deployment)
+## Showcase (User Story -> ... -> Merge Request)
 
 ![ats](images/ats.png)
 
@@ -1477,7 +1510,7 @@ Scenario N: ...
 
 <img style="background:none; border:none; box-shadow:none;" src="images/ts_cd.png" width="75%" />
 
-#### Loosely coupled components (VISION)
+#### Loosely coupled components (THE VISION)
 
 ----
 
@@ -1811,14 +1844,14 @@ Solution:
 ```cpp
 "Calculator"_test_fixture = [] {
   // set-up
-  auto sut = calcualtor{};
+  auto calc = calcualtor{};
 
   "should add 2 numbers"_test = [&] {
-    std::testing::assert(4 == sut.add(2, 2));
+    std::testing::assert(4 == calc.add(2, 2));
   };
 
   "should sub 2 numbers"_test = [&] {
-    std::testing::assert(0 == sut.sub(2, 2));
+    std::testing::assert(0 == calc.sub(2, 2));
   };
 
   // tear-down
