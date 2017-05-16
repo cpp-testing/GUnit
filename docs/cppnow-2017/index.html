@@ -115,7 +115,7 @@ Kris Jusiak, Quantlab Financial
 
 ----
 
-### "Don't cling to a mistake just because you spent a lot of time and money making it!" 
+### "Don't cling to a mistake just because you spent a lot of time and money making it!"
 
 <img style="background:none; border:none; box-shadow:none;" src="images/testing.jpg" width="50%" />
 
@@ -731,8 +731,8 @@ public:
   }
 
 private:
-  Reader& reader; 
-  Printer& printer; 
+  Reader& reader;
+  Printer& printer;
   Logger& logger;
 };
 ```
@@ -804,8 +804,8 @@ public:
   void run() {
     const auto value = reader.read();
     Logger << "run:" << value << '\n';
-    printer.print(value); // Law of Demeter
-  }                       // "Only talk to your immediate friends"
+    printer.print(value);
+  }
 
 private:
   IReader& reader; IPrinter& printer; ILogger& logger;
