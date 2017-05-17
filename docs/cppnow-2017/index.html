@@ -202,8 +202,8 @@ TEST(AddTest, should_add_2_numbers) {
 #### <p align="left">GoogleTest/GUnit.GTest</p>
 
 ```cpp
-GTEST("Can add numbers") {
-  // set-up
+GTEST("Can add numbers") { // it works also with GoogleTest
+  // set-up                // types `GTEST(AddTests)`
   SHOULD("add 2 numbers") { EXPECT(4 == add(2, 2)); }
   // tear-down
 }
