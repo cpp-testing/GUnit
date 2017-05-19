@@ -1239,7 +1239,7 @@ GMock<Loggable> logger{};    // WIRING!
   auto [app, mocks] = testing::make<App>(); // SAME OLD, SAME OLD!
 
   EXPECT_CALL(mocks<Readable)>(), read).WillOnce(Return(42));
-  EXPECT_CALL(mocks<Readable>(), print, 42);
+  EXPECT_CALL(mocks<Printable>(), print, 42);
 
   app.run();
 };
@@ -1606,7 +1606,7 @@ using MarketData = decltype( Callable<void()>($(connect)) );
 ```cpp
 template<class TMarketData = MarketData>
 struct trading_system {
-  MarketData& marketData;
+  TMarketData& marketData;
   void start() { marketData.connect(); }
 };
 ```
@@ -1638,7 +1638,7 @@ using MarketData = decltype( Callable<void()>($(connect)) &&
 ```cpp
 template<class TMarketData = MarketData>
 struct trading_system {
-  MarketData& marketData;
+  TMarketData& marketData;
 
   void start() { marketData.connect(); }
   void stop() { } // The simplest implementation!
@@ -1649,7 +1649,10 @@ struct trading_system {
 
 ### TDD - Refactor (In both, code and tests)
 
-#### Remove duplicates
+* Remove duplicates
+* Cleanup the code
+* Extract files
+* ...
 
 ----
 
@@ -1667,6 +1670,27 @@ struct trading_system {
     EXPECT_CALL(mocks<MarketData>(), disconnect).Times(0);
     ts.stop();
   };
+};
+```
+
+----
+
+### TDD/Refactor - Cleanup the code
+
+```cpp
+template<class TMarketData = MarketData>
+class trading_system {
+public:
+  explicit trading_system(TMarketData& marketData)
+    : marketData(marketData)
+  { }
+
+  void start() {
+    marketData.connect();
+  }
+
+private:
+  TMarketData& marketData;
 };
 ```
 
@@ -1697,27 +1721,6 @@ struct trading_system {
 ----
 
 ### TDD/GREEN - Make it pass!
-
-```cpp
-template<class TMarketData = MarketData>
-struct trading_system {
-  MarketData& marketData;
-
-  void start() { marketData.connect(); connected = true; }
-
-  void stop() {
-    if (connected) {
-      marketData.disconnect();
-    }
-  }
-
-  bool connected{};
-};
-```
-
-----
-
-### TDD/Refactor - Cleanup the code
 
 ```cpp
 template<class TMarketData = MarketData>
