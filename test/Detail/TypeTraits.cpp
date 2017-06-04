@@ -69,6 +69,44 @@ TEST(TypeTraits, ShouldReturnTrueIfTupleContaintsType) {
   EXPECT_TRUE((contains<int, std::tuple<int, double, int>>::value));
   EXPECT_TRUE((contains<int, std::tuple<double, float, int>>::value));
 }
+
+void f1() {}
+int f2(int) { return {}; }
+int f3(int, const double&) { return {}; }
+
+struct c1 {
+  void f1() {}
+  int f2(int) { return {}; }
+  int f3(int, const double&) { return {}; }
+};
+
+struct c2 {
+  void f1() const {}
+  int f2(int) const { return {}; }
+  int f3(int, const double&) const { return {}; }
+};
+
+TEST(TypeTraits, ShouldReturnFunctionArguments) {
+  EXPECT_TRUE((std::is_same<void, typename function_traits<decltype(&f1)>::result_type>::value));
+  EXPECT_TRUE((std::is_same<type_list<>, typename function_traits<decltype(&f1)>::args>::value));
+  EXPECT_TRUE((std::is_same<int, typename function_traits<decltype(&f2)>::result_type>::value));
+  EXPECT_TRUE((std::is_same<type_list<int>, typename function_traits<decltype(&f2)>::args>::value));
+  EXPECT_TRUE((std::is_same<int, typename function_traits<decltype(&f3)>::result_type>::value));
+  EXPECT_TRUE((std::is_same<type_list<int, const double&>, typename function_traits<decltype(&f3)>::args>::value));
+  EXPECT_TRUE((std::is_same<void, typename function_traits<decltype(&c1::f1)>::result_type>::value));
+  EXPECT_TRUE((std::is_same<type_list<>, typename function_traits<decltype(&c1::f1)>::args>::value));
+  EXPECT_TRUE((std::is_same<int, typename function_traits<decltype(&c1::f2)>::result_type>::value));
+  EXPECT_TRUE((std::is_same<type_list<int>, typename function_traits<decltype(&c1::f2)>::args>::value));
+  EXPECT_TRUE((std::is_same<int, typename function_traits<decltype(&c1::f3)>::result_type>::value));
+  EXPECT_TRUE((std::is_same<type_list<int, const double&>, typename function_traits<decltype(&c1::f3)>::args>::value));
+  EXPECT_TRUE((std::is_same<void, typename function_traits<decltype(&c2::f1)>::result_type>::value));
+  EXPECT_TRUE((std::is_same<type_list<>, typename function_traits<decltype(&c2::f1)>::args>::value));
+  EXPECT_TRUE((std::is_same<int, typename function_traits<decltype(&c2::f2)>::result_type>::value));
+  EXPECT_TRUE((std::is_same<type_list<int>, typename function_traits<decltype(&c2::f2)>::args>::value));
+  EXPECT_TRUE((std::is_same<int, typename function_traits<decltype(&c2::f3)>::result_type>::value));
+  EXPECT_TRUE((std::is_same<type_list<int, const double&>, typename function_traits<decltype(&c2::f3)>::args>::value));
+}
+
 }
 }
 }

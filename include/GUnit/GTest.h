@@ -103,8 +103,9 @@ inline bool ShouldUseColor(bool stdout_is_tty) {
 }
 
 struct TestRun {
-  std::string should = GetShouldParam();
-  bool once = true;
+  std::string should_param = GetShouldParam();
+  bool next = true;
+  std::unordered_map<std::string, std::function<void(const std::string&)>> steps;
 
   std::string GetShouldParam() const {
     const auto sep = GTEST_FLAG(filter).find(":");
@@ -113,15 +114,9 @@ struct TestRun {
       : GTEST_FLAG(filter).substr(sep + 1);
   }
 
-  bool run(bool disabled, const std::string& name, int line) {
-    if (once) {
-      return false;
-    }
-
+  bool should(bool disabled, const std::string& name, int line) {
     static const bool is_stdout_tty = ShouldUseColor(internal::posix::IsATTY(internal::posix::FileNo(stdout)) != 0);
-
     auto colorize = ShouldUseColor(is_stdout_tty);
-
     if (disabled && !GTEST_FLAG(also_run_disabled_tests)) {
       if (colorize) {
         std::cout << "\033[0;33m";
@@ -134,7 +129,7 @@ struct TestRun {
       return false;
     }
 
-    const auto result = line > test_line && FilterMatchesShould(name, should);
+    const auto result = line > test_line && FilterMatchesShould(name, should_param);
     if (result) {
       if (colorize) {
         std::cout << "\033[0;33m";
@@ -145,7 +140,7 @@ struct TestRun {
       }
       std::cout << name << std::endl;
       test_line = line;
-      once = true;
+      next = true;
     }
     return result;
   }
@@ -270,8 +265,8 @@ class GTest : public detail::GTest<T, TParamType> {};
     void TestBodyImpl(::testing::detail::TestRun&);                                                                       \
     void TestBody() {                                                                                                     \
       ::testing::detail::TestRun tr;                                                                                      \
-      while (tr.once) {                                                                                                   \
-        tr.once = false;                                                                                                  \
+      while (tr.next) {                                                                                                   \
+        tr.next = false;                                                                                                  \
         GTEST test;                                                                                                       \
         test.SetUp();                                                                                                     \
         test.TestBodyImpl(tr);                                                                                            \
@@ -306,5 +301,5 @@ class GTest : public detail::GTest<T, TParamType> {};
 #define GTEST(...) __GUNIT_CAT(__GTEST_IMPL_, __GUNIT_SIZE(__VA_ARGS__))(false, __VA_ARGS__)
 #define DISABLED_GTEST(...) __GUNIT_CAT(__GTEST_IMPL_, __GUNIT_SIZE(__VA_ARGS__))(true, __VA_ARGS__)
 
-#define SHOULD(NAME) if (tr_gtest.run(false, NAME, __LINE__))
-#define DISABLED_SHOULD(NAME) if (tr_gtest.run(true, NAME, __LINE__))
+#define SHOULD(NAME) if (tr_gtest.should(false, NAME, __LINE__))
+#define DISABLED_SHOULD(NAME) if (tr_gtest.should(true, NAME, __LINE__))

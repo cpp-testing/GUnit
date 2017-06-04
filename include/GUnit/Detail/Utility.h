@@ -14,6 +14,7 @@
 #include <cstdio>
 #include <cstring>
 #include <memory>
+#include <vector>
 #include <set>
 #include <sstream>
 #include "GUnit/Detail/TypeTraits.h"
@@ -147,6 +148,16 @@ inline void trim(std::string &txt) {
   txt.erase(txt.find_last_not_of(" \n\r\t") + 1);
 }
 
+std::vector<std::string> split(const std::string& str, char delimiter) {
+  std::vector<std::string> result{};
+  std::stringstream ss{str};
+  std::string tok{};
+  while(getline(ss, tok, delimiter)) {
+    result.emplace_back(tok);
+  }
+  return result;
+}
+
 inline std::string demangle(const std::string &mangled) {
   const auto demangled = abi::__cxa_demangle(mangled.c_str(), 0, 0, 0);
   if (demangled) {
@@ -222,3 +233,8 @@ inline std::pair<std::string, int> addr2line(void *addr) {
 }  // detail
 }  // v1
 }  // testing
+
+template <class T, T... Chrs>
+constexpr auto operator""__string() {
+  return testing::detail::string<Chrs...>{};
+}

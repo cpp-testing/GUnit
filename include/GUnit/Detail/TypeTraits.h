@@ -19,6 +19,8 @@ namespace detail {
 
 using byte = unsigned char;
 
+template<class...> struct type_list{};
+
 template <class...>
 using void_t = void;
 
@@ -80,6 +82,44 @@ template <class T>
 auto type_id() {
   return reinterpret_cast<std::size_t>(&type<std::remove_cv_t<T>>::id);
 }
+
+template <class T>
+struct function_traits
+  : function_traits<decltype(&T::operator())>
+{ 
+  using is_lambda_expr = std::true_type;
+};
+
+template <class R, class... TArgs>
+struct function_traits<R (*)(TArgs...)> {
+  using result_type = R;
+  using args = type_list<TArgs...>;
+  using is_lambda_expr = std::false_type;
+};
+
+template <class R, class... TArgs>
+struct function_traits<R(TArgs...)> {
+  using result_type = R;
+  using args = type_list<TArgs...>;
+  using is_lambda_expr = std::false_type;
+};
+
+template <class R, class T, class... TArgs>
+struct function_traits<R (T::*)(TArgs...)> {
+  using result_type = R;
+  using args = type_list<TArgs...>;
+  using is_lambda_expr = std::false_type;
+};
+
+template <class R, class T, class... TArgs>
+struct function_traits<R (T::*)(TArgs...) const> {
+  using result_type = R;
+  using args = type_list<TArgs...>;
+  using is_lambda_expr = std::false_type;
+};
+
+template <class T>
+using function_traits_t = typename function_traits<T>::args;
 
 template <class, class>
 struct function_type;
