@@ -28,9 +28,8 @@ namespace testing {
 inline namespace v1 {
 
 struct steps {
-  using steps_t = std::unordered_map<std::string, std::function<void(const std::string&)>>;
-
   static auto& get() {
+    using steps_t = std::unordered_map<std::string, std::function<void(const std::string&)>>;
     static std::unordered_map<void*, steps_t> s{};
     return s;
   }
@@ -48,14 +47,16 @@ struct self {
 };
 
 template<class TRegex, class File, int Line>
-struct step {
+class step {
+ public:
   template<class TExpr>
-  step(const TExpr& expr) {// non explicit
+  step(const TExpr& expr) { // non explicit
     steps::get()[*self::self_ptr()][TRegex::c_str()] = [=](const std::string& st) {
       call(expr, st, TRegex::c_str(), detail::function_traits_t<TExpr>{});
     };
   }
 
+ private:
   template<class TExpr, class... Ts>
   void call(const TExpr& expr, const std::string& step, const std::string& regex, detail::type_list<Ts...> t) {
     std::regex pieces_regex{step};
