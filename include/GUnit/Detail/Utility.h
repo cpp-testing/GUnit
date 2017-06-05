@@ -230,6 +230,15 @@ inline std::pair<std::string, int> addr2line(void *addr) {
   return {res2.substr(0, colon), std::atoi(res2.substr(colon + 1).c_str())};
 }
 
+template<class T>
+auto lexical_cast(const std::string& str) {
+    T var;
+    std::istringstream iss;
+    iss.str(str);
+    iss >> var;
+    return var;
+}
+
 }  // detail
 }  // v1
 }  // testing

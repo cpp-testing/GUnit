@@ -16,7 +16,6 @@
 #include <functional>
 #include <json.hpp>
 #include <gherkin.hpp>
-#include <boost/lexical_cast.hpp>
 #include "GUnit/Detail/Preprocessor.h"
 #include "GUnit/Detail/Utility.h"
 
@@ -68,12 +67,12 @@ class step {
 
   template<class TExpr, class TMatches, class T, class... Ts, std::size_t... Ns>
   void call_impl(const TExpr& expr, const TMatches& matches, detail::type<T>, std::false_type, detail::type_list<Ts...>, std::index_sequence<Ns...>) {
-    ((static_cast<T*>(*self::self_ptr()))->*expr)(boost::lexical_cast<Ts>(matches[Ns+1].str().c_str())...);
+    ((static_cast<T*>(*self::self_ptr()))->*expr)(detail::lexical_cast<Ts>(matches[Ns+1].str().c_str())...);
   }
 
   template<class TExpr, class TMatches, class T, class... Ts, std::size_t... Ns>
   void call_impl(const TExpr& expr, const TMatches& matches, detail::type<T>, std::true_type, detail::type_list<Ts...>, std::index_sequence<Ns...>) {
-    expr(boost::lexical_cast<Ts>(matches[Ns+1].str().c_str())...);
+    expr(detail::lexical_cast<Ts>(matches[Ns+1].str().c_str())...);
   }
 };
 
