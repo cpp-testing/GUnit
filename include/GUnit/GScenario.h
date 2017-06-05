@@ -20,66 +20,66 @@
 #include "GUnit/Detail/Preprocessor.h"
 #include "GUnit/Detail/Utility.h"
 
+#define GIVEN(regex) ::testing::self __GUNIT_CAT(self, __LINE__){this}; ::testing::step<decltype(__GUNIT_CAT(regex, __string)), decltype(__GUNIT_CAT(__FILE__"", __string)), __LINE__> __GUNIT_CAT(step_, __LINE__)
+#define WHEN(regex)  ::testing::self __GUNIT_CAT(self, __LINE__){this}; ::testing::step<decltype(__GUNIT_CAT(regex, __string)), decltype(__GUNIT_CAT(__FILE__"", __string)), __LINE__> __GUNIT_CAT(step_, __LINE__)
+#define THEN(regex)  ::testing::self __GUNIT_CAT(self, __LINE__){this}; ::testing::step<decltype(__GUNIT_CAT(regex, __string)), decltype(__GUNIT_CAT(__FILE__"", __string)), __LINE__> __GUNIT_CAT(step_, __LINE__)
+
 namespace testing {
 inline namespace v1 {
 
-template<class T>
-struct ScenarioSteps {
+struct steps {
   using steps_t = std::unordered_map<std::string, std::function<void(const std::string&)>>;
 
-  template<class TRegex, class File, int Line>
-  struct step {
-    template<class TExpr>
-    step(const TExpr& expr) {// non explicit
-      (*self::self_ptr())->steps_[TRegex::c_str()] = [=](const std::string& st) {
-        call(expr, st, TRegex::c_str(), detail::function_traits_t<TExpr>{});
-      };
-    }
+  static auto& get() {
+    static std::unordered_map<void*, steps_t> s{};
+    return s;
+  }
+};
 
-    template<class TExpr, class... Ts>
-    void call(const TExpr& expr, const std::string& step, const std::string& regex, detail::type_list<Ts...> t) {
-      std::regex pieces_regex{step};
-      std::smatch pieces_match;
-      assert(std::regex_match(step, pieces_match, std::regex{regex}));
-      call_impl(expr, pieces_match, typename detail::function_traits<TExpr>::is_lambda_expr{}, t, std::make_index_sequence<sizeof...(Ts)>{});
-    }
+struct self {
+  explicit self(void* ptr) {
+    *self_ptr() = ptr;
+  }
 
-    template<class TExpr, class TMatches, class... Ts, std::size_t... Ns>
-    void call_impl(const TExpr& expr, const TMatches& matches, std::false_type, detail::type_list<Ts...>, std::index_sequence<Ns...>) {
-      ((*self::self_ptr())->*expr)(boost::lexical_cast<Ts>(matches[Ns+1].str().c_str())...);
-    }
+  static void** self_ptr() {
+    static void* ptr{};
+    return &ptr;
+  }
+};
 
-    template<class TExpr, class TMatches, class... Ts, std::size_t... Ns>
-    void call_impl(const TExpr& expr, const TMatches& matches, std::true_type, detail::type_list<Ts...>, std::index_sequence<Ns...>) {
-      expr(boost::lexical_cast<Ts>(matches[Ns+1].str().c_str())...);
-    }
-  };
+template<class TRegex, class File, int Line>
+struct step {
+  template<class TExpr>
+  step(const TExpr& expr) {// non explicit
+    steps::get()[*self::self_ptr()][TRegex::c_str()] = [=](const std::string& st) {
+      call(expr, st, TRegex::c_str(), detail::function_traits_t<TExpr>{});
+    };
+  }
 
-  struct self {
-    explicit self(T* ptr) {
-      *self_ptr() = ptr;
-    }
+  template<class TExpr, class... Ts>
+  void call(const TExpr& expr, const std::string& step, const std::string& regex, detail::type_list<Ts...> t) {
+    std::regex pieces_regex{step};
+    std::smatch pieces_match;
+    assert(std::regex_match(step, pieces_match, std::regex{regex}));
+    using ft_t = detail::function_traits<TExpr>;
+    call_impl(expr, pieces_match, detail::type<typename ft_t::base_type>{}, typename ft_t::is_lambda_expr{}, t, std::make_index_sequence<sizeof...(Ts)>{});
+  }
 
-    static T** self_ptr() {
-      static T* ptr{};
-      return &ptr;
-    }
-  };
+  template<class TExpr, class TMatches, class T, class... Ts, std::size_t... Ns>
+  void call_impl(const TExpr& expr, const TMatches& matches, detail::type<T>, std::false_type, detail::type_list<Ts...>, std::index_sequence<Ns...>) {
+    ((static_cast<T*>(*self::self_ptr()))->*expr)(boost::lexical_cast<Ts>(matches[Ns+1].str().c_str())...);
+  }
 
-  #define GIVEN(regex) self __GUNIT_CAT(self, __LINE__){this}; step<decltype(__GUNIT_CAT(regex, __string)), decltype(__GUNIT_CAT(__FILE__""__string)), __LINE__> __GUNIT_CAT(step_, __LINE__)
-  #define WHEN(regex)  self __GUNIT_CAT(self, __LINE__){this}; step<decltype(__GUNIT_CAT(regex, __string)), decltype(__GUNIT_CAT(__FILE__""__string)), __LINE__> __GUNIT_CAT(step_, __LINE__)
-  #define THEN(regex)  self __GUNIT_CAT(self, __LINE__){this}; step<decltype(__GUNIT_CAT(regex, __string)), decltype(__GUNIT_CAT(__FILE__""__string)), __LINE__> __GUNIT_CAT(step_, __LINE__)
-
-  steps_t& operator*() { return steps_; }
-
-private:
-  steps_t steps_{};
+  template<class TExpr, class TMatches, class T, class... Ts, std::size_t... Ns>
+  void call_impl(const TExpr& expr, const TMatches& matches, detail::type<T>, std::true_type, detail::type_list<Ts...>, std::index_sequence<Ns...>) {
+    expr(boost::lexical_cast<Ts>(matches[Ns+1].str().c_str())...);
+  }
 };
 
 template<class TSteps>
 class Scenario {
 public:
-  explicit Scenario(const std::string& features) { 
+  explicit Scenario(const std::string& features) {
     for (const auto& feature : detail::split(features, ';')) {
       parse_and_run(feature);
     }
@@ -103,13 +103,14 @@ private:
     TSteps steps{};
     for (const auto& expected_step : json["steps"]) {
       std::string line = expected_step["text"];
-      for (const auto& given_step : *steps) {
+      for (const auto& given_step : steps::get()[&steps]) {
         if (std::regex_match(line, std::regex{given_step.first})) {
           std::cout << '\t' << line << "\t" << feature << ":" << expected_step["locations"] << '\n';
           given_step.second(line);
         }
       }
     }
+    steps::get()[&steps].clear();
     std::cout << '\n';
   }
 

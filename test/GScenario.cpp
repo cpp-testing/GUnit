@@ -10,10 +10,8 @@
 
 #include "Common/Calculator.h"
 
-struct CalcSteps : testing::ScenarioSteps<CalcSteps> {
-  Calculator calc{};
-  double result{};
-
+class CalcSteps {
+public:
   GIVEN("^I have entered (\\d+) into the calculator$") = &CalcSteps::update;
   void update(double n) {
     calc.push(n);
@@ -21,7 +19,7 @@ struct CalcSteps : testing::ScenarioSteps<CalcSteps> {
 
   WHEN("^I press add") = &CalcSteps::add;
   void add() {
-    result = calc.add(); 
+    result = calc.add();
   }
 
   WHEN("^I press divide") = &CalcSteps::divide;
@@ -31,15 +29,17 @@ struct CalcSteps : testing::ScenarioSteps<CalcSteps> {
 
   THEN("^the result should be (.*) on the screen$") = &CalcSteps::show;
   void show(double expected) {
-    EXPECT_EQ(expected, result); 
+    EXPECT_EQ(expected, result);
   }
-};
 
-struct CalcStepsLambda : testing::ScenarioSteps<CalcStepsLambda> {
+private:
   Calculator calc{};
   double result{};
+};
 
-  GIVEN("^I have entered (\\d+) into the calculator$") 
+class CalcStepsLambda {
+public:
+  GIVEN("^I have entered (\\d+) into the calculator$")
     = [&](double n) { calc.push(n); };
 
   WHEN("^I press add")
@@ -50,6 +50,10 @@ struct CalcStepsLambda : testing::ScenarioSteps<CalcStepsLambda> {
 
   THEN("^the result should be (.*) on the screen$")
     = [&](double expected) { EXPECT_EQ(expected, result); };
+
+private:
+  Calculator calc{};
+  double result{};
 };
 
 GTEST("Calc features") {
