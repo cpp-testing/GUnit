@@ -9,14 +9,17 @@
 
 #include <cxxabi.h>
 #include <execinfo.h>
+#include <sys/stat.h>
 #include <unistd.h>
 #include <algorithm>
+#include <cassert>
 #include <cstdio>
 #include <cstring>
+#include <fstream>
 #include <memory>
-#include <vector>
 #include <set>
 #include <sstream>
+#include <vector>
 #include "GUnit/Detail/TypeTraits.h"
 
 #if defined(__APPLE__)
@@ -148,14 +151,32 @@ inline void trim(std::string &txt) {
   txt.erase(txt.find_last_not_of(" \n\r\t") + 1);
 }
 
-std::vector<std::string> split(const std::string& str, char delimiter) {
+std::vector<std::string> split(const std::string &str, char delimiter) {
   std::vector<std::string> result{};
   std::stringstream ss{str};
   std::string tok{};
-  while(getline(ss, tok, delimiter)) {
+  while (getline(ss, tok, delimiter)) {
     result.emplace_back(tok);
   }
   return result;
+}
+
+inline auto is_dir(const std::string &path) {
+  struct stat buf {};
+  stat(path.c_str(), &buf);
+  return S_ISDIR(buf.st_mode);
+}
+
+inline auto is_file(const std::string &path) {
+  struct stat buf {};
+  stat(path.c_str(), &buf);
+  return S_ISREG(buf.st_mode);
+}
+
+inline std::wstring read_file(const std::string &feature) {
+  std::ifstream file{feature};
+  assert(file.good());
+  return {(std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>()};
 }
 
 inline std::string demangle(const std::string &mangled) {
@@ -230,13 +251,13 @@ inline std::pair<std::string, int> addr2line(void *addr) {
   return {res2.substr(0, colon), std::atoi(res2.substr(colon + 1).c_str())};
 }
 
-template<class T>
-auto lexical_cast(const std::string& str) {
-    T var;
-    std::istringstream iss;
-    iss.str(str);
-    iss >> var;
-    return var;
+template <class T>
+auto lexical_cast(const std::string &str) {
+  T var;
+  std::istringstream iss;
+  iss.str(str);
+  iss >> var;
+  return var;
 }
 
 }  // detail

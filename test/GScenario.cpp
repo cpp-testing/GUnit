@@ -5,40 +5,34 @@
 // (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 //
-#include "GUnit/GTest.h"
 #include "GUnit/GScenario.h"
+#include "GUnit/GTest.h"
 
 #include "Common/Calculator.h"
 
 class CalcSteps {
-public:
+ public:
   GIVEN("^I have entered (\\d+) into the calculator$") = &CalcSteps::update;
-  void update(double n) {
-    calc.push(n);
-  }
+  void update(double n) { calc.push(n); }
 
   WHEN("^I press add") = &CalcSteps::add;
-  void add() {
-    result = calc.add();
-  }
+  void add() { result = calc.add(); }
 
   WHEN("^I press divide") = &CalcSteps::divide;
-  void divide() {
-    result = calc.divide();
-  }
+  void divide() { result = calc.divide(); }
 
   THEN("^the result should be (.*) on the screen$") = &CalcSteps::show;
-  void show(double expected) {
-    EXPECT_EQ(expected, result);
-  }
+  void show(double expected) { EXPECT_EQ(expected, result); }
 
-private:
+ private:
   Calculator calc{};
   double result{};
 };
 
+GSCENARIO(CalcStepsLambda, "../test/Features/Calc/addition.feature")
 class CalcStepsLambda {
-public:
+ public:
+  // clang-format off
   GIVEN("^I have entered (\\d+) into the calculator$")
     = [&](double n) { calc.push(n); };
 
@@ -50,13 +44,39 @@ public:
 
   THEN("^the result should be (.*) on the screen$")
     = [&](double expected) { EXPECT_EQ(expected, result); };
+  // clang-format on
 
-private:
+ private:
+  Calculator calc{};
+  double result{};
+};
+
+GSCENARIO(CalcStepsMix, "../test/Features/Calc")  // run all features in the folder
+class CalcStepsMix {
+ public:
+  // clang-format off
+  GIVEN("^I have entered (\\d+) into the calculator$")
+    = [&](double n) { calc.push(n); };
+
+  WHEN("^I press add") = &CalcSteps::add;
+  void add() { result = calc.add(); }
+
+  WHEN("^I press divide") = &CalcSteps::divide;
+  void divide() { result = calc.divide(); }
+
+  THEN("^the result should be (.*) on the screen$")
+    = [&](double expected) { EXPECT_EQ(expected, result); };
+  // clang-format on
+
+ private:
   Calculator calc{};
   double result{};
 };
 
 GTEST("Calc features") {
-  testing::Scenario<CalcSteps>{"../test/Features/addition.feature"};
-  testing::Scenario<CalcStepsLambda>{"../test/Features/addition.feature"};
+  testing::RunScenario<CalcSteps>("../test/Features/Calc/addition.feature");
+  testing::RunScenario<CalcStepsLambda>("../test/Features/Calc/addition.feature");
+  testing::RunScenario<CalcStepsLambda>("../test/Features/Calc");
+  testing::RunScenario<CalcStepsMix>("../test/Features/Calc/addition.feature;../test/Features/Calc/division.feature");
+  testing::RunScenario<CalcStepsMix>("../test/Features/Calc/addition.feature", "../test/Features/Calc/division.feature");
 }
