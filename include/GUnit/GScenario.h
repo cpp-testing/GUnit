@@ -22,6 +22,8 @@
 
 namespace testing {
 inline namespace v1 {
+struct mocked {};
+
 struct steps {
   static auto& get() {
     using steps_t = std::unordered_map<std::string, std::function<void(const std::string&)>>;
@@ -163,3 +165,5 @@ void RunScenario(const Ts&... features) {
 #define GSCENARIO(type, ...) \
   class type;                \
   GTEST(#type) { ::testing::RunScenario<type>(__VA_ARGS__); }
+
+#pragma GCC diagnostic ignored "-Wreturn-type"
