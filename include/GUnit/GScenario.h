@@ -94,7 +94,6 @@ inline void run_pickle(const std::string& feature, const TJson& json) {
   }
   steps::get()[&steps].clear();
   std::cout << '\n';
-  (void)feature;
 }
 
 template <class TSteps>
