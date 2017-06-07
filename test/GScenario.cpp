@@ -12,16 +12,16 @@
 
 class CalcSteps {
  public:
-  GIVEN("^I have entered (\\d+) into the calculator$") = &CalcSteps::update;
+  $Given("^I have entered (\\d+) into the calculator$") = &CalcSteps::update;
   void update(double n) { calc.push(n); }
 
-  WHEN("^I press add") = &CalcSteps::add;
+  $When("^I press add") = &CalcSteps::add;
   void add() { result = calc.add(); }
 
-  WHEN("^I press divide") = &CalcSteps::divide;
+  $Given("^I press divide") = &CalcSteps::divide;
   void divide() { result = calc.divide(); }
 
-  THEN("^the result should be (.*) on the screen$") = &CalcSteps::show;
+  $Then("^the result should be (.*) on the screen$") = &CalcSteps::show;
   void show(double expected) { EXPECT_EQ(expected, result); }
 
  private:
@@ -29,8 +29,7 @@ class CalcSteps {
   double result{};
 };
 
-GSCENARIO(CalcStepsLambda, "../test/Features/Calc/addition.feature")
-class CalcStepsLambda {
+$GScenario(CalcStepsLambda, "../test/Features/Calc/addition.feature") class CalcStepsLambda {
  public:
   // clang-format off
   GIVEN("^I have entered (\\d+) into the calculator$")

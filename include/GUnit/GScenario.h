@@ -22,8 +22,6 @@
 
 namespace testing {
 inline namespace v1 {
-struct mocked {};
-
 struct steps {
   static auto& get() {
     using steps_t = std::unordered_map<std::string, std::function<void(const std::string&)>>;
@@ -96,6 +94,7 @@ inline void run_pickle(const std::string& feature, const TJson& json) {
   }
   steps::get()[&steps].clear();
   std::cout << '\n';
+  (void)feature;
 }
 
 template <class TSteps>
@@ -114,34 +113,91 @@ inline void parse_and_run(const std::string& feature) {
 
 template <class TSteps>
 inline void run_scenarios(const std::string& feature) {
-  if (detail::is_dir(feature.c_str())) {
+  if (is_dir(feature.c_str())) {
     auto dp = opendir(feature.c_str());
     assert(dp);
     dirent* entry{};
     while ((entry = readdir(dp))) {
-      if (detail::is_file(feature + "/" + entry->d_name)) {
-        detail::parse_and_run<TSteps>(feature + "/" + entry->d_name);
+      if (is_file(feature + "/" + entry->d_name)) {
+        parse_and_run<TSteps>(feature + "/" + entry->d_name);
       }
     }
     closedir(dp);
   } else {
-    detail::parse_and_run<TSteps>(feature);
+    parse_and_run<TSteps>(feature);
   }
 }
 
 template <class TSteps>
-inline void run_scenario(const std::string& features) {
-  for (const auto& feature : detail::split(features, ';')) {
-    detail::run_scenarios<TSteps>(feature);
+inline auto get_feature_scenario(const std::string& feature) {
+  std::vector<std::string> scenarios{};
+  const auto content = read_file(feature);
+  gherkin::parser parser{L"en"};
+  gherkin::compiler compiler{feature};
+  const auto gherkin_document = parser.parse(content);
+  const auto pickles = compiler.compile(gherkin_document);
+  const auto ast = nlohmann::json::parse(compiler.ast(gherkin_document));
+  for (const auto& pickle : pickles) {
+    const std::string feature_name = ast["document"]["feature"]["name"];
+    const std::string scenario_name = nlohmann::json::parse(pickle)["pickle"]["name"];
+    scenarios.emplace_back(feature_name + "." + scenario_name);
   }
+  return scenarios;
+}
+
+template <class TSteps>
+inline auto get_scenarios(const std::string& feature) {
+  std::vector<std::string> scenarios{};
+  if (is_dir(feature.c_str())) {
+    auto dp = opendir(feature.c_str());
+    assert(dp);
+    dirent* entry{};
+    while ((entry = readdir(dp))) {
+      if (is_file(feature + "/" + entry->d_name)) {
+        const auto names = get_feature_scenario<TSteps>(feature + "/" + entry->d_name);
+        scenarios.insert(scenarios.end(), names.begin(), names.end());
+      }
+    }
+    closedir(dp);
+  } else {
+    return get_feature_scenario<TSteps>(feature);
+  }
+
+  return scenarios;
+}
+
+template <class TSteps>
+inline void run_scenario(const std::string& features) {
+  for (const auto& feature : split(features, ';')) {
+    run_scenarios<TSteps>(feature);
+  }
+}
+
+template <class TSteps>
+inline auto get_scenario(const std::string& features) {
+  std::vector<std::string> scenarios{};
+  for (const auto& feature : split(features, ';')) {
+    const auto names = get_scenarios<TSteps>(feature);
+    scenarios.insert(scenarios.end(), names.begin(), names.end());
+  }
+  return scenarios;
 }
 
 }  // detail
 
 template <class TSteps, class... Ts>
-void RunScenario(const Ts&... features) {
+inline void RunScenario(const Ts&... features) {
   using swallow = int[];
   (void)swallow{0, (detail::run_scenario<TSteps>(features), 0)...};
+}
+
+template <class TSteps, class... Ts>
+inline auto GetScenario(const Ts&... features) {
+  std::vector<std::string> scenarios{};
+  using swallow = int[];
+  const auto append = [&scenarios](const auto& v) { scenarios.insert(scenarios.end(), v.begin(), v.end()); };
+  (void)swallow{0, (append(detail::get_scenario<TSteps>(features)), 0)...};
+  return scenarios;
 }
 
 }  // v1
@@ -152,18 +208,31 @@ void RunScenario(const Ts&... features) {
   ::testing::step<decltype(__GUNIT_CAT(regex, __string)), decltype(__GUNIT_CAT(__FILE__ "", __string)), __LINE__> __GUNIT_CAT( \
       step_, __LINE__)
 
+#define $Given GIVEN
+
 #define WHEN(regex)                                                                                                            \
   ::testing::self __GUNIT_CAT(self, __LINE__){this};                                                                           \
   ::testing::step<decltype(__GUNIT_CAT(regex, __string)), decltype(__GUNIT_CAT(__FILE__ "", __string)), __LINE__> __GUNIT_CAT( \
       step_, __LINE__)
+
+#define $When WHEN
 
 #define THEN(regex)                                                                                                            \
   ::testing::self __GUNIT_CAT(self, __LINE__){this};                                                                           \
   ::testing::step<decltype(__GUNIT_CAT(regex, __string)), decltype(__GUNIT_CAT(__FILE__ "", __string)), __LINE__> __GUNIT_CAT( \
       step_, __LINE__)
 
-#define GSCENARIO(type, ...) \
-  class type;                \
-  GTEST(#type) { ::testing::RunScenario<type>(__VA_ARGS__); }
+#define $Then THEN
 
-#pragma GCC diagnostic ignored "-Wreturn-type"
+#define GSCENARIO(type, ...)                                             \
+  class type;                                                            \
+  GTEST(#type) {                                                         \
+    auto id = 0;                                                         \
+    for (const auto& name : ::testing::GetScenario<type>(__VA_ARGS__)) { \
+      if (tr_gtest.run("SCENARIO", name, id++)) {                        \
+        ::testing::RunScenario<type>(__VA_ARGS__);                       \
+      }                                                                  \
+    }                                                                    \
+  }
+
+#define $GScenario GSCENARIO

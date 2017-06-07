@@ -109,12 +109,10 @@ struct TestRun {
 
   std::string GetShouldParam() const {
     const auto sep = GTEST_FLAG(filter).find(":");
-    return sep == std::string::npos
-      ? "*"
-      : GTEST_FLAG(filter).substr(sep + 1);
+    return sep == std::string::npos ? "*" : GTEST_FLAG(filter).substr(sep + 1);
   }
 
-  bool should(bool disabled, const std::string& name, int line) {
+  bool run(const std::string& type, const std::string& name, int line, bool disabled = false) {
     static const bool is_stdout_tty = ShouldUseColor(internal::posix::IsATTY(internal::posix::FileNo(stdout)) != 0);
     auto colorize = ShouldUseColor(is_stdout_tty);
     if (disabled && !GTEST_FLAG(also_run_disabled_tests)) {
@@ -134,7 +132,7 @@ struct TestRun {
       if (colorize) {
         std::cout << "\033[0;33m";
       }
-      std::cout << "[ SHOULD   ] ";
+      std::cout << "[ " << std::left << std::setw(8) << type << " ] ";
       if (colorize) {
         std::cout << "\033[m";  // Resets the terminal to default.
       }
@@ -301,5 +299,5 @@ class GTest : public detail::GTest<T, TParamType> {};
 #define GTEST(...) __GUNIT_CAT(__GTEST_IMPL_, __GUNIT_SIZE(__VA_ARGS__))(false, __VA_ARGS__)
 #define DISABLED_GTEST(...) __GUNIT_CAT(__GTEST_IMPL_, __GUNIT_SIZE(__VA_ARGS__))(true, __VA_ARGS__)
 
-#define SHOULD(NAME) if (tr_gtest.should(false, NAME, __LINE__))
-#define DISABLED_SHOULD(NAME) if (tr_gtest.should(true, NAME, __LINE__))
+#define SHOULD(NAME) if (tr_gtest.run("SHOULD", NAME, __LINE__))
+#define DISABLED_SHOULD(NAME) if (tr_gtest.run("SHOULD", NAME, __LINE__, true))
