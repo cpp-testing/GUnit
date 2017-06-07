@@ -54,16 +54,16 @@ GSCENARIO(CalcStepsMix, "../test/Features/Calc")  // run all features in the fol
 class CalcStepsMix {
  public:
   // clang-format off
-  GIVEN("^I have entered (\\d+) into the calculator$")
+  $Given("^I have entered (\\d+) into the calculator$")
     = [&](double n) { calc.push(n); };
 
-  WHEN("^I press add") = &CalcSteps::add;
+  $Given("^I press add") = &CalcSteps::add;
   void add() { result = calc.add(); }
 
-  WHEN("^I press divide") = &CalcSteps::divide;
+  $When("^I press divide") = &CalcSteps::divide;
   void divide() { result = calc.divide(); }
 
-  THEN("^the result should be (.*) on the screen$")
+  $Then("^the result should be (.*) on the screen$")
     = [&](double expected) { EXPECT_EQ(expected, result); };
   // clang-format on
 
