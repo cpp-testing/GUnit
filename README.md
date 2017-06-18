@@ -829,15 +829,15 @@ GTEST("Calc features") {
 ```cpp
 class CalcStepsMock {
  public:
-  $Given("^I have entered (\\d+) into the calculator$")
-    = [&](double n) { calc.push(n); };
+  $Given("^I have entered (\\d+) into the calculator$") = [&](double n) { calc.push(n); };
   $Given("^I press add") = [&] { calc.add(); }
   $When("^I press divide") = [&] { calc.divide(); }
-  $Then("^the result should be (.*) on the screen$")
-    = [&](double expected) { EXPECTED_CALL(display, (show)(expected)); };
+  $Then("^the result should be (.*) on the screen$") = [&](double expected) {
+    EXPECTED_CALL(display, (show)(expected)); // verify mock expectations
+  };
 
  private:
-  testing::GMock<IDisplay> display{DEFER_CALLS(IDisplay, show)};
+  testing::GMock<IDisplay> display{DEFER_CALLS(IDisplay, show)}; // defer calls
   CalculatorUI calc{testing::object(display)};
 };
 ```
