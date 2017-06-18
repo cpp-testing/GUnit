@@ -796,10 +796,6 @@ GTEST(example) {
 
 * How `GMock` works?
   * It's not a C++ standard solution (depends on vtable implementation)
-    * [Itanium C++ ABI (vtable)](https://mentorembedded.github.io/cxx-abi/abi.html)
-
-    ![GNU/Clang](http://img.my.csdn.net/uploads/201101/15/4457637_1295058284pWf7.jpg)
-
     * [VTable in GCC](http://stackoverflow.com/questions/6258559/what-is-the-vtt-for-a-class)
     * [Deleting Destructors](http://eli.thegreenplace.net/2015/c-deleting-destructors-and-virtual-operator-delete)
     * [Devirtualization in C++](http://hubicka.blogspot.com/2014/01/devirtualization-in-c-part-1.html)
