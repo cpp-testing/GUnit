@@ -7,6 +7,7 @@
 //
 #include "GUnit/GScenario.h"
 #include "GUnit/GTest.h"
+#include "GUnit/GMock.h"
 
 #include "Common/Calculator.h"
 
@@ -29,7 +30,8 @@ class CalcSteps {
   double result{};
 };
 
-$GScenario(CalcStepsLambda, "../test/Features/Calc/addition.feature") class CalcStepsLambda {
+$GScenario(CalcStepsLambda, "../test/Features/Calc/addition.feature")
+class CalcStepsLambda {
  public:
   // clang-format off
   GIVEN("^I have entered (\\d+) into the calculator$")
@@ -72,10 +74,32 @@ class CalcStepsMix {
   double result{};
 };
 
+class CalcStepsMock {
+ public:
+  // clang-format off
+  $Given("^I have entered (\\d+) into the calculator$")
+    = [&](double n) { calc.push(n); };
+
+  $Given("^I press add") = &CalcStepsMock::add;
+  void add() { calc.add(); }
+
+  $When("^I press divide") = &CalcStepsMock::divide;
+  void divide() { calc.divide(); }
+
+  $Then("^the result should be (.*) on the screen$")
+    = [&](double expected) { EXPECTED_CALL(display, (show)(expected)); };
+  // clang-format on
+
+ private:
+  testing::GMock<IDisplay> display{DEFER_CALLS(IDisplay, show)};
+  CalculatorUI calc{testing::object(display)};
+};
+
 GTEST("Calc features") {
   testing::RunScenario<CalcSteps>("../test/Features/Calc/addition.feature");
   testing::RunScenario<CalcStepsLambda>("../test/Features/Calc/addition.feature");
   testing::RunScenario<CalcStepsLambda>("../test/Features/Calc");
   testing::RunScenario<CalcStepsMix>("../test/Features/Calc/addition.feature;../test/Features/Calc/division.feature");
   testing::RunScenario<CalcStepsMix>("../test/Features/Calc/addition.feature", "../test/Features/Calc/division.feature");
+  testing::RunScenario<CalcStepsMock>("../test/Features/Calc/addition.feature");
 }

@@ -51,7 +51,7 @@ else()
       add_executable(${out} ${CMAKE_CURRENT_LIST_DIR}/${name}.cpp)
       add_test(${out} ./${out})
       #target_link_libraries(${out} gtest_main gmock_main gherkin-cpp)
-      target_link_libraries(${out} gtest_main gmock_main)
+     target_link_libraries(${out} gtest_main gmock_main)
     endfunction()
 endif()
 
