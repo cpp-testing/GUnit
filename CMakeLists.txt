@@ -55,7 +55,7 @@ endif()
 
 test(test/GMake)
 test(test/GMock)
-test(test/GScenario)
+#test(test/GScenario)
 test(test/GTest)
 test(test/GTest-Lite)
 test(test/Detail/Preprocessor)

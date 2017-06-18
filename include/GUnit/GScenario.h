@@ -202,23 +202,27 @@ inline auto GetScenario(const Ts&... features) {
 }  // v1
 }  // testing
 
+#if defined(__clang__)
+#pragma clang diagnostic ignored "-Wdollar-in-identifier-extension"
+#endif
+
 #define GIVEN(regex)                                                                                                           \
   ::testing::self __GUNIT_CAT(self, __LINE__){this};                                                                           \
-  ::testing::step<decltype(__GUNIT_CAT(regex, __string)), decltype(__GUNIT_CAT(__FILE__ "", __string)), __LINE__> __GUNIT_CAT( \
+  ::testing::step<decltype(__GUNIT_CAT(regex, _gtest_string)), decltype(__GUNIT_CAT(__FILE__ "", _gtest_string)), __LINE__> __GUNIT_CAT( \
       step_, __LINE__)
 
 #define $Given GIVEN
 
 #define WHEN(regex)                                                                                                            \
   ::testing::self __GUNIT_CAT(self, __LINE__){this};                                                                           \
-  ::testing::step<decltype(__GUNIT_CAT(regex, __string)), decltype(__GUNIT_CAT(__FILE__ "", __string)), __LINE__> __GUNIT_CAT( \
+  ::testing::step<decltype(__GUNIT_CAT(regex, _gtest_string)), decltype(__GUNIT_CAT(__FILE__ "", _gtest_string)), __LINE__> __GUNIT_CAT( \
       step_, __LINE__)
 
 #define $When WHEN
 
 #define THEN(regex)                                                                                                            \
   ::testing::self __GUNIT_CAT(self, __LINE__){this};                                                                           \
-  ::testing::step<decltype(__GUNIT_CAT(regex, __string)), decltype(__GUNIT_CAT(__FILE__ "", __string)), __LINE__> __GUNIT_CAT( \
+  ::testing::step<decltype(__GUNIT_CAT(regex, _gtest_string)), decltype(__GUNIT_CAT(__FILE__ "", _gtest_string)), __LINE__> __GUNIT_CAT( \
       step_, __LINE__)
 
 #define $Then THEN

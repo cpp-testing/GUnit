@@ -105,7 +105,6 @@ inline bool ShouldUseColor(bool stdout_is_tty) {
 struct TestRun {
   std::string should_param = GetShouldParam();
   bool next = true;
-  std::unordered_map<std::string, std::function<void(const std::string&)>> steps;
 
   std::string GetShouldParam() const {
     const auto sep = GTEST_FLAG(filter).find(":");
@@ -113,6 +112,9 @@ struct TestRun {
   }
 
   bool run(const std::string& type, const std::string& name, int line, bool disabled = false) {
+    if (next) {
+      return false;
+    }
     static const bool is_stdout_tty = ShouldUseColor(internal::posix::IsATTY(internal::posix::FileNo(stdout)) != 0);
     auto colorize = ShouldUseColor(is_stdout_tty);
     if (disabled && !GTEST_FLAG(also_run_disabled_tests)) {

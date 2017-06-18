@@ -51,7 +51,7 @@ GTEST("Simple Test", "[True/False should be True/False]") {
 }
 
 GTEST("Vector test") {
-  std::vector<int> sut;
+  std::vector<int> sut{};
   EXPECT_TRUE(sut.empty());
 
   SHOULD("increase the size after a push back") {

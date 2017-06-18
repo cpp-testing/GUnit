@@ -264,7 +264,4 @@ auto lexical_cast(const std::string &str) {
 }  // v1
 }  // testing
 
-template <class T, T... Chrs>
-constexpr auto operator""__string() {
-  return testing::detail::string<Chrs...>{};
-}
+using namespace ::testing::detail::operators;
