@@ -115,22 +115,24 @@ struct TestRun {
     if (next) {
       return false;
     }
-    static const bool is_stdout_tty = ShouldUseColor(internal::posix::IsATTY(internal::posix::FileNo(stdout)) != 0);
-    auto colorize = ShouldUseColor(is_stdout_tty);
-    if (disabled && !GTEST_FLAG(also_run_disabled_tests)) {
-      if (colorize) {
-        std::cout << "\033[0;33m";
-      }
-      std::cout << "[ DISABLED ] ";
-      if (colorize) {
-        std::cout << "\033[m";  // Resets the terminal to default.
-      }
-      std::cout << name << std::endl;
-      return false;
-    }
 
     const auto result = line > test_line && FilterMatchesShould(name, should_param);
     if (result) {
+      static const bool is_stdout_tty = ShouldUseColor(internal::posix::IsATTY(internal::posix::FileNo(stdout)) != 0);
+      const auto colorize = ShouldUseColor(is_stdout_tty);
+
+      if (disabled && !GTEST_FLAG(also_run_disabled_tests)) {
+        if (colorize) {
+          std::cout << "\033[0;33m";
+        }
+        std::cout << "[ DISABLED ] ";
+        if (colorize) {
+          std::cout << "\033[m";  // Resets the terminal to default.
+        }
+        std::cout << name << std::endl;
+        return false;
+      }
+
       if (colorize) {
         std::cout << "\033[0;33m";
       }

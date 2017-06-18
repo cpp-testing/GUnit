@@ -63,6 +63,9 @@ GTEST("Vector test") {
     sut.emplace_back(42);
     EXPECT_EQ(1u, sut.size());
   }
+
+  DISABLED_SHOULD("disabled should") {}
+  SHOULD("do nothing") {}
 }
 
 class VectorTest : public testing::Test {
