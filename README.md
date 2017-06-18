@@ -769,6 +769,67 @@ GTEST(example) {
 
 ---
 
+## BDD (Given/When/Then) Scenarios with GScenario (Gherkin/Cucumber)
+
+* test/Features/Calc/addition.feature
+```cpp
+Feature: Addition
+  In order to avoid silly mistakes
+  As a math idiot
+  I want to be told the sum of two numbers
+
+  Scenario Outline: Add two numbers
+    Given I have entered <input_1> into the calculator
+    And I have entered <input_2> into the calculator
+    When I press <button>
+    Then the result should be <output> on the screen
+
+  Examples:
+    | input_1 | input_2 | button | output |
+    | 20      | 30      | add    | 50     |
+    | 2       | 5       | add    | 7      |
+    | 0       | 40      | add    | 40     |
+    | 3       | 222      | add    | 225     |
+```
+
+#### Steps Implementation
+```cpp
+class CalcSteps {
+ public:
+  $Given("^I have entered (\\d+) into the calculator$")
+    = [&](double n) { calc.push(n); };
+
+  $Given("^I press add") = &CalcSteps::add;
+  void add() { result = calc.add(); }
+
+  $When("^I press divide") = [&] { result = calc.divide(); }
+
+  $Then("^the result should be (.*) on the screen$")
+    = [&](double expected) { EXPECT_EQ(expected, result); };
+
+ private:
+  Calculator calc{};
+  double result{};
+};
+```
+
+#### Scenarios
+```cpp
+GTEST("Calc features") {
+  /**
+   * It takes type implemetning `Steps` and file/directory with feature/features
+   * (it might be split by ':' too -> "test/Features/Calc/addition:test/div.feature")
+   */
+  testing::RunScenario<CalcSteps>("test/Features/Calc/addition.feature");
+}
+```
+
+> Note Running specific `scneario`  requires ':' in the test filter (`--gtest_filter="test:feature.scenario"`)
+
+*  --gtest_filter="Calc features*:Addition.Add two numbers"  # calls Calc features test using Addition feature and Add two numbers scenario
+
+---
+
 ### Vision for C++20?
 
 * SG7: Mocks generation using static reflection (http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0194r0.pdf)
