@@ -136,7 +136,7 @@ TEST_F(BenchmarkTest, ShouldCallF2) {           |
 ```
 
 ## GUnit
-* Header only library
+* Header only library (BDD/Gherkin support requires linking with libgherkin-cpp)
 * Based on top of GoogleTest/GoogleMock
 * Modular (GMock/GMake/GTest/GTest-Lite are independent)
   * `GUnit.GMock` - GoogleMock without hand written mocks
@@ -403,7 +403,7 @@ struct IFoo {
 ```
 ```cpp
 GMock<IFoo> mock;
-EXPECT_INVOKE(mock, foo, 42).WillOnce(Return(42)); 
+EXPECT_INVOKE(mock, foo, 42).WillOnce(Return(42));
 // same as EXPECT_CALL(mock, (foo)(42)).WillOnce(Return(42));
 ```
 
@@ -824,7 +824,25 @@ GTEST("Calc features") {
 }
 ```
 
-> Note Running specific `scneario`  requires ':' in the test filter (`--gtest_filter="test:feature.scenario"`)
+### GWT and Mocking?
+
+```cpp
+class CalcStepsMock {
+ public:
+  $Given("^I have entered (\\d+) into the calculator$")
+    = [&](double n) { calc.push(n); };
+  $Given("^I press add") = [&] { calc.add(); }
+  $When("^I press divide") = [&] { calc.divide(); }
+  $Then("^the result should be (.*) on the screen$")
+    = [&](double expected) { EXPECTED_CALL(display, (show)(expected)); };
+
+ private:
+  testing::GMock<IDisplay> display{DEFER_CALLS(IDisplay, show)};
+  CalculatorUI calc{testing::object(display)};
+};
+```
+
+> Note Running specific `scenario` requires ':' in the test filter (`--gtest_filter="test:feature.scenario"`)
 
 *  --gtest_filter="Calc features*:Addition.Add two numbers"  # calls Calc features test using Addition feature and Add two numbers scenario
 
