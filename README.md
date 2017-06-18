@@ -802,7 +802,7 @@ class CalcSteps {
   $Given("^I press add") = &CalcSteps::add;
   void add() { result = calc.add(); }
 
-  $When("^I press divide") = [&] { result = calc.divide(); }
+  $When("^I press divide") = [&] { result = calc.divide(); };
 
   $Then("^the result should be (.*) on the screen$")
     = [&](double expected) { EXPECT_EQ(expected, result); };
@@ -830,8 +830,8 @@ GTEST("Calc features") {
 class CalcStepsMock {
  public:
   $Given("^I have entered (\\d+) into the calculator$") = [&](double n) { calc.push(n); };
-  $Given("^I press add") = [&] { calc.add(); }
-  $When("^I press divide") = [&] { calc.divide(); }
+  $Given("^I press add") = [&] { calc.add(); };
+  $When("^I press divide") = [&] { calc.divide(); };
   $Then("^the result should be (.*) on the screen$") = [&](double expected) {
     EXPECTED_CALL(display, (show)(expected)); // verify mock expectations
   };
