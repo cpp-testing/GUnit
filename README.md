@@ -13,44 +13,14 @@
 > GoogleTest/GoogleMock/Cucumber on steroids
 
 If you like/and or are struck with GoogleTest/GoogleMock/Cucmber-cpp on Linux/Mac environment with C++14 support you may want to consider using GUnit because your testing experience will become much better:
-* No more hand written mocks! (No more MOCK_CONST_METHOD3)
-* No more base classes and label as identifiers for GoogleTest (GTEST/SHOULD)
-* No need to create mocks by hand (GMake - Automatic mocks injection)
-* No need for ruby to run BDD (Gherkin - Given/When/Then) scenarios
-
-## Why GUnit it's based on GoogleTest/GoogleMock?
-
-* [GoogleTest](https://github.com/google/googletest)
-  * (+) Widely used
-  * (+) Stable
-  * (+) Powerful
-  * (+) **Comes with GoogleMock**
-  * (+) Well documented
-  * (-) Macro based
-  * (-) Slow to compile
-
-* [GoogleMock](https://github.com/google/googletest)
-  * (+) Widely used
-  * (+) Stable
-  * (+) Powerful
-  * (+) Well documented
-  * (-) Hand written mocks
-    * Who likes writing and maintaining these?
-    ```cpp
-    class MockInterface : public interface {
-    public:
-      MOCK_CONST_METHOD1(get, bool());
-      MOCK_METHOD1(set, void(bool));
-    };
-    ```
-  * (-) Macro based
-  > Towards Painless Testing with GoogleTest and GoogleMock.
-15
-* (-) Slow to compile
+* **No more hand written mocks**! (No more MOCK_CONST_METHOD3)
+* **No more base classes and label as identifiers for GoogleTest** (GTEST/SHOULD)
+* **No need to create mocks by hand** (GMake - Automatic mocks injection)
+* **No need for ruby to run BDD scenarios** (Gherkin - Given/When/Then)
 
 ## Showcase/Motivation for GUnit (Towards Painless Testing)
 
-### Example
+### Example (TDD)
 
 ```cpp
 class interface1 {                          class interface2 {
@@ -145,6 +115,47 @@ TEST_F(BenchmarkTest, ShouldCallF2) {           |
 }                                               |}
 ```
 
+### Example (BDD)
+
+* test/Features/Calc/addition.feature (Gherkin)
+```cpp
+Feature: Addition
+  In order to avoid silly mistakes
+  As a math idiot
+  I want to be told the sum of two numbers
+
+  Scenario Outline: Add two numbers
+    Given I have entered 2 into the calculator
+    And I have entered 2 into the calculator
+    When I press add
+    Then the result should be 4 on the screen
+```
+
+#### Steps Implementation
+```cpp
+class CalcSteps {
+ public:
+  $Given("^I have entered (\\d+) into the calculator$")
+    = [&](double n) { calc.push(n); };
+
+  $Given("^I press add") = &CalcSteps::add;
+  void add() { result = calc.add(); }
+
+  $When("^I press divide") = [&] { result = calc.divide(); };
+
+  $Then("^the result should be (.*) on the screen$")
+    = [&](double expected) { EXPECT_EQ(expected, result); };
+
+ private:
+  Calculator calc{};
+  double result{};
+};
+
+GTEST("Calc features") {
+  testing::RunScenario<CalcSteps>("test/Features/Calc/addition.feature");
+}
+```
+
 ## GUnit
 * Header only library (BDD/Gherkin support requires linking with libgherkin-cpp)
 * Based on top of GoogleTest/GoogleMock
@@ -176,6 +187,36 @@ TEST_F(BenchmarkTest, ShouldCallF2) {           |
   $mkdir build && cd build && cmake ..
   $make && ctest
   ```
+
+## Why GUnit it's based on GoogleTest/GoogleMock?
+
+* [GoogleTest](https://github.com/google/googletest)
+  * (+) Widely used
+  * (+) Stable
+  * (+) Powerful
+  * (+) **Comes with GoogleMock**
+  * (+) Well documented
+  * (-) Macro based
+  * (-) Slow to compile
+
+* [GoogleMock](https://github.com/google/googletest)
+  * (+) Widely used
+  * (+) Stable
+  * (+) Powerful
+  * (+) Well documented
+  * (-) Hand written mocks
+    * Who likes writing and maintaining these?
+    ```cpp
+    class MockInterface : public interface {
+    public:
+      MOCK_CONST_METHOD1(get, bool());
+      MOCK_METHOD1(set, void(bool));
+    };
+    ```
+  * (-) Macro based
+  > Towards Painless Testing with GoogleTest and GoogleMock.
+15
+* (-) Slow to compile
 
 ## GUnit.GMock
  * **GoogleMock without writing and maintaining mocks by hand**
@@ -799,7 +840,7 @@ Feature: Addition
     | 20      | 30      | add    | 50     |
     | 2       | 5       | add    | 7      |
     | 0       | 40      | add    | 40     |
-    | 3       | 222      | add    | 225     |
+    | 3       | 222     | add    | 225    |
 ```
 
 #### Steps Implementation
