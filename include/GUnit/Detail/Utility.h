@@ -151,7 +151,7 @@ inline void trim(std::string &txt) {
   txt.erase(txt.find_last_not_of(" \n\r\t") + 1);
 }
 
-std::vector<std::string> split(const std::string &str, char delimiter) {
+inline std::vector<std::string> split(const std::string &str, char delimiter) {
   std::vector<std::string> result{};
   std::stringstream ss{str};
   std::string tok{};
@@ -252,7 +252,7 @@ inline std::pair<std::string, int> addr2line(void *addr) {
 }
 
 template <class T>
-auto lexical_cast(const std::string &str) {
+inline auto lexical_cast(const std::string &str) {
   T var;
   std::istringstream iss;
   iss.str(str);
