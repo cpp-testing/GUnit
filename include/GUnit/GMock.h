@@ -9,11 +9,13 @@
 
 #include <gmock/gmock.h>
 #include <fstream>
+#include <functional>
 #include <memory>
 #include <string>
 #include <tuple>
 #include <typeinfo>
 #include <unordered_map>
+#include <vector>
 #include "GUnit/Detail/Preprocessor.h"
 #include "GUnit/Detail/TypeTraits.h"
 #include "GUnit/Detail/Utility.h"
@@ -215,7 +217,7 @@ class GMock {
 
   void expected() {}
 
-  template<class TName = detail::string<>, class R = void*, class... TArgs>
+  template <class TName = detail::string<>, class R = void *, class... TArgs>
   R not_expected(TArgs... args) {
     const auto addr = (volatile int *)__builtin_return_address(0) - 1;
     auto *ptr = [this] {
@@ -280,7 +282,7 @@ class GMock {
 
   template <class TName, class R, class... TArgs>
   void original_defer_call(TArgs... args) {
-    calls.push_back([=]{ original_call<TName, R>(args...); });
+    calls.push_back([=] { original_call<TName, R>(args...); });
   }
 
  public:
@@ -290,13 +292,13 @@ class GMock {
   GMock(const GMock &) = delete;
   GMock(GMock &&) = default;
   ~GMock() noexcept {
-    for (const auto& call : calls) {
+    for (const auto &call : calls) {
       call();
     }
   }
 
-  template<class... Ts>
-  GMock(const Ts&... call) : GMock() {
+  template <class... Ts>
+  GMock(const Ts &... call) : GMock() {
     using swallow = int[];
     (void)swallow{0, (defer_call<decltype(call.first)>(call.second), 0)...};
   }
@@ -326,8 +328,8 @@ class GMock {
 template <class T>
 class NiceMock<GMock<T>> final : public GMock<T> {
  public:
-  template<class... Ts>
-  NiceMock(Ts&& ... ts) : GMock<T>{std::forward<Ts>(ts)...} {
+  template <class... Ts>
+  NiceMock(Ts &&... ts) : GMock<T>{std::forward<Ts>(ts)...} {
     Mock::AllowUninterestingCalls(internal::ImplicitCast_<GMock<T> *>(this));
   }
 
@@ -340,8 +342,8 @@ class NiceMock<GMock<T>> final : public GMock<T> {
 template <class T>
 class StrictMock<GMock<T>> final : public GMock<T> {
  public:
-  template<class... Ts>
-  StrictMock(Ts&& ... ts) : GMock<T>{std::forward<Ts>(ts)...} {
+  template <class... Ts>
+  StrictMock(Ts &&... ts) : GMock<T>{std::forward<Ts>(ts)...} {
     Mock::FailUninterestingCalls(internal::ImplicitCast_<GMock<T> *>(this));
   }
   StrictMock(StrictMock &&) = default;
@@ -556,14 +558,20 @@ auto object(TMock *mock) {
 #define __GMOCK_ON_INVOKE_IMPL_1(obj, f, ...) __GMOCK_ON_CALL_1(obj, f(__VA_ARGS__), f(__VA_ARGS__))
 
 #define __GMOCK_DEFER_CALLS_IMPL(I, f) std::make_pair(#f##_gtest_string, &I::f)
-#define __GMOCK_DEFER_CALLS_IMPL_10(I, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10) __GMOCK_DEFER_CALLS_IMPL_9(I, f1, f2, f3, f4, f5, f6, f7, f8, f9), __GMOCK_DEFER_CALLS_IMPL(I, f10)
-#define __GMOCK_DEFER_CALLS_IMPL_9(I, f1, f2, f3, f4, f5, f6, f7, f8, f9) __GMOCK_DEFER_CALLS_IMPL_8(I, f1, f2, f3, f4, f5, f6, f7, f8), __GMOCK_DEFER_CALLS_IMPL(I, f9)
-#define __GMOCK_DEFER_CALLS_IMPL_8(I, f1, f2, f3, f4, f5, f6, f7, f8) __GMOCK_DEFER_CALLS_IMPL_7(I, f1, f2, f3, f4, f5, f6, f7), __GMOCK_DEFER_CALLS_IMPL(I, f8)
-#define __GMOCK_DEFER_CALLS_IMPL_7(I, f1, f2, f3, f4, f5, f6, f7) __GMOCK_DEFER_CALLS_IMPL_6(I, f1, f2, f3, f4, f5, f6), __GMOCK_DEFER_CALLS_IMPL(I, f7)
-#define __GMOCK_DEFER_CALLS_IMPL_6(I, f1, f2, f3, f4, f5, f6) __GMOCK_DEFER_CALLS_IMPL_5(I, f1, f2, f3, f4, f5), __GMOCK_DEFER_CALLS_IMPL(I, f6)
-#define __GMOCK_DEFER_CALLS_IMPL_5(I, f1, f2, f3, f4, f5) __GMOCK_DEFER_CALLS_IMPL_4(I, f1, f2, f3, f4), __GMOCK_DEFER_CALLS_IMPL(I, f5)
+#define __GMOCK_DEFER_CALLS_IMPL_10(I, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10) \
+  __GMOCK_DEFER_CALLS_IMPL_9(I, f1, f2, f3, f4, f5, f6, f7, f8, f9), __GMOCK_DEFER_CALLS_IMPL(I, f10)
+#define __GMOCK_DEFER_CALLS_IMPL_9(I, f1, f2, f3, f4, f5, f6, f7, f8, f9) \
+  __GMOCK_DEFER_CALLS_IMPL_8(I, f1, f2, f3, f4, f5, f6, f7, f8), __GMOCK_DEFER_CALLS_IMPL(I, f9)
+#define __GMOCK_DEFER_CALLS_IMPL_8(I, f1, f2, f3, f4, f5, f6, f7, f8) \
+  __GMOCK_DEFER_CALLS_IMPL_7(I, f1, f2, f3, f4, f5, f6, f7), __GMOCK_DEFER_CALLS_IMPL(I, f8)
+#define __GMOCK_DEFER_CALLS_IMPL_7(I, f1, f2, f3, f4, f5, f6, f7) \
+  __GMOCK_DEFER_CALLS_IMPL_6(I, f1, f2, f3, f4, f5, f6), __GMOCK_DEFER_CALLS_IMPL(I, f7)
+#define __GMOCK_DEFER_CALLS_IMPL_6(I, f1, f2, f3, f4, f5, f6) \
+  __GMOCK_DEFER_CALLS_IMPL_5(I, f1, f2, f3, f4, f5), __GMOCK_DEFER_CALLS_IMPL(I, f6)
+#define __GMOCK_DEFER_CALLS_IMPL_5(I, f1, f2, f3, f4, f5) \
+  __GMOCK_DEFER_CALLS_IMPL_4(I, f1, f2, f3, f4), __GMOCK_DEFER_CALLS_IMPL(I, f5)
 #define __GMOCK_DEFER_CALLS_IMPL_4(I, f1, f2, f3, f4) __GMOCK_DEFER_CALLS_IMPL_3(I, f1, f2, f3), __GMOCK_DEFER_CALLS_IMPL(I, f4)
 #define __GMOCK_DEFER_CALLS_IMPL_3(I, f1, f2, f3) __GMOCK_DEFER_CALLS_IMPL_2(I, f1, f2), __GMOCK_DEFER_CALLS_IMPL(I, f3)
 #define __GMOCK_DEFER_CALLS_IMPL_2(I, f1, f2) __GMOCK_DEFER_CALLS_IMPL_1(I, f1), __GMOCK_DEFER_CALLS_IMPL(I, f2)
 #define __GMOCK_DEFER_CALLS_IMPL_1(I, f1) __GMOCK_DEFER_CALLS_IMPL(I, f1)
-#define DEFER_CALLS(I, ...) __GUNIT_CAT(__GMOCK_DEFER_CALLS_IMPL_,__GUNIT_SIZE(__VA_ARGS__))(I, __VA_ARGS__)
+#define DEFER_CALLS(I, ...) __GUNIT_CAT(__GMOCK_DEFER_CALLS_IMPL_, __GUNIT_SIZE(__VA_ARGS__))(I, __VA_ARGS__)
