@@ -10,32 +10,42 @@
 > "If you liked it then you should have put a test on it", Beyonce rule
 
 ## GUnit
-> Towards Painless Testing with GoogleTest and GoogleMock.
+> GoogleTest/GoogleMock/Cucumber on steroids
 
-## [GoogleTest](https://github.com/google/googletest)
-* (+) Widely used
-* (+) Stable
-* (+) Powerful
-* (+) **Comes with GoogleMock**
-* (+) Well documented
-* (-) Macro based
-* (-) Slow to compile
+If you like/and or are struck with GoogleTest/GoogleMock/Cucmber-cpp on Linux/Mac environment with C++14 support you may want to consider using GUnit because your testing experience will become much better:
+* No more hand written mocks! (No more MOCK_CONST_METHOD3)
+* No more base classes and label as identifiers for GoogleTest (GTEST/SHOULD)
+* No need to create mocks by hand (GMake - Automatic mocks injection)
+* No need for ruby to run BDD (Gherkin - Given/When/Then) scenarios
 
-## [GoogleMock](https://github.com/google/googletest)
-* (+) Widely used
-* (+) Stable
-* (+) Powerful
-* (+) Well documented
-* (-) Hand written mocks
-  * Who likes writing and maintaining these?
-  ```cpp
-  class MockInterface : public interface {
-  public:
-    MOCK_CONST_METHOD1(get, bool());
-    MOCK_METHOD1(set, void(bool));
-  };
-  ```
-* (-) Macro based
+## Why GUnit it's based on GoogleTest/GoogleMock?
+
+* [GoogleTest](https://github.com/google/googletest)
+  * (+) Widely used
+  * (+) Stable
+  * (+) Powerful
+  * (+) **Comes with GoogleMock**
+  * (+) Well documented
+  * (-) Macro based
+  * (-) Slow to compile
+
+* [GoogleMock](https://github.com/google/googletest)
+  * (+) Widely used
+  * (+) Stable
+  * (+) Powerful
+  * (+) Well documented
+  * (-) Hand written mocks
+    * Who likes writing and maintaining these?
+    ```cpp
+    class MockInterface : public interface {
+    public:
+      MOCK_CONST_METHOD1(get, bool());
+      MOCK_METHOD1(set, void(bool));
+    };
+    ```
+  * (-) Macro based
+  > Towards Painless Testing with GoogleTest and GoogleMock.
+15
 * (-) Slow to compile
 
 ## Showcase/Motivation for GUnit (Towards Painless Testing)
