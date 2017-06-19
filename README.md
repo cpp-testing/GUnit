@@ -144,6 +144,7 @@ GTEST("Calc features") {
     * One (GTEST) macro for all types of tests
     * 100% Compatible with tests using GTest
   * `GUnit.GTest-Lite` - lightweight, limited, no-macro way of defining simple tests
+  * `GUnit.GScenario` - Gherkin/Cucumber implementation for C++ without Ruby dependencies
 * Requirements
   * [C++14](https://ubershmekel.github.io/cppdrafts/c++14-cd.html)
   * [GoogleTest](https://github.com/google/googletest) (compatible with all versions)
@@ -865,24 +866,6 @@ class CalcStepsMock {
 *  --gtest_filter="Calc features*:Addition.Add two numbers"  # calls Calc features test using Addition feature and Add two numbers scenario
 
 ---
-
-### Vision for C++20?
-
-* SG7: Mocks generation using static reflection (http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2016/p0194r0.pdf)
-
-### Test (V5)
-```cpp
-"example"_test_fixture = [] {
-  auto [sut, mocks] = make<example, NaggyMock>();
-
-  "should print text when update"_test = [&] {
-    using namespace testing;
-    EXPECT_CALL(mocks<iconfig>(), (is_dumpable)()).WillOnce(Return(true));
-    EXPECT_CALL(mocks<iprinter>(), (print)("text"));
-    sut->update();
-  };
-};
-```
 
 ### Limitations
 
