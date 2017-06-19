@@ -48,7 +48,7 @@ public:                                         |
 ```
 
 ```cpp
-struct BenchmarkTest : testing::Test {          |
+struct ExampleTest : testing::Test {            |
  void SetUp() override {                        |
    sut = std::make_unique<example>(m1, m2, m3); |
  }                                              |
@@ -61,7 +61,7 @@ struct BenchmarkTest : testing::Test {          |
 ```
 
 ```cpp
-TEST_F(BenchmarkTest, ShouldCallF1) {           |GTEST(example) { // set-up
+TEST_F(ExampleTest, ShouldCallF1) {             |GTEST(example) { // set-up
  using namespace testing;                       | using namespace testing;
                                                 |
  EXPECT_CALL(m1,f1(_)).WillOnce(Return(true));  | SHOULD("call f1") {
@@ -71,7 +71,7 @@ TEST_F(BenchmarkTest, ShouldCallF1) {           |GTEST(example) { // set-up
  sut->test();                                   |
 }                                               |  sut->test(); // sut and mocks were
                                                 | }             // created automatically
-TEST_F(BenchmarkTest, ShouldCallF2) {           |
+TEST_F(ExampleTest, ShouldCallF2) {             |
  using namespace testing;                       | SHOULD("call f2") {
                                                 |  EXPECT_CALL(mock<i1>(),(f1)(_)).WillOnce(Return(false));
  EXPECT_CALL(m1,f1(_)).WillOnce(Return(false)); |  EXPECT_CALL(mock<i2>(),(f2_2)()).Times(1);
