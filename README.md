@@ -18,43 +18,10 @@ If you like/and or are struck with GoogleTest/GoogleMock/Cucmber-cpp on Linux/Ma
 * **No need to create mocks by hand** (GMake - Automatic mocks injection)
 * **No need for ruby to run BDD scenarios** (Gherkin - Given/When/Then)
 
-## Showcase/Motivation for GUnit (Towards Painless Testing)
+## Motivation for GUnit (Towards Painless Testing)
 
 ### Example (TDD)
 
-```cpp
-class interface1 {                          class interface2 {
- public:                                     public:
-  virtual ~interface1() = default;             virtual void f2_1() = 0;
-  virtual bool f1(int) const = 0;              virtual void f2_2() = 0;
-};                                             virtual void f2_3() = 0;
-class interface3 {                             virtual void f2_4() = 0;
- public:                                       virtual ~interface2() noexcept {}
-  virtual void f3(int, int, int) = 0;        };
-  virtual ~interface3() noexcept = default;
-};
-
-class example {
- public:
-  example(const interface1& i1, interface2& i2, interface3& i3);
-
-  void test() {
-    if (i1.f1(42)) {
-      i2.f2_1();
-    } else {
-      i2.f2_2();
-    }
-    i3.f3(0, 1, 2);
-  }
-
- private:
-  const interface1& i1;
-  interface2& i2;
-  interface3& i3;
-};
-```
-
-### Test
 ```cpp
 GoogleTest/GoogleMock                           | GUnit
 ------------------------------------------------+---------------------------------------------
