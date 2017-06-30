@@ -138,6 +138,41 @@ STEPS("Calc*") calcSteps = [] {
 SCENARIO="test/Features/Calc/addition.feature" ./test --gtest_filter="Calc Addition.Add two numbers"
 ```
 
+#### Output
+```sh
+[==========] Running 8 tests from 1 test case.
+[----------] Global test environment set-up.
+[----------] 8 tests from Addition
+[ RUN      ] Addition.Add two numbers
+[ STEP     ] I have entered 20 into the calculator
+[ STEP     ] I have entered 30 into the calculator
+[ STEP     ] I press add
+[ STEP     ] the result should be 50 on the screen
+
+[       OK ] Addition.Add two numbers (1 ms)
+[ RUN      ] Addition.Add two numbers
+[ STEP     ] I have entered 2 into the calculator
+[ STEP     ] I have entered 5 into the calculator
+[ STEP     ] I press add
+[ STEP     ] the result should be 7 on the screen
+
+[       OK ] Addition.Add two numbers (1 ms)
+[ RUN      ] Addition.Add two numbers
+[ STEP     ] I have entered 0 into the calculator
+[ STEP     ] I have entered 40 into the calculator
+[ STEP     ] I press add
+[ STEP     ] the result should be 40 on the screen
+
+...
+
+[       OK ] Addition.Add two numbers (1 ms)
+[----------] 8 tests from Addition (7 ms total)
+
+[----------] Global test environment tear-down
+[==========] 8 tests from 1 test case ran. (7 ms total)
+[  PASSED  ] 8 tests.
+```
+
 ## GUnit
 * Header only library (BDD/Gherkin support requires linking with libgherkin-cpp)
 * Based on top of GoogleTest/GoogleMock
@@ -751,6 +786,17 @@ INSTANTIATE_TEST_CASE_P(                        |
 *  --gtest_filter="FooTest*:Do*"   # calls FooTest with should("Do...")
 *  --gtest_filter="FooTest.:Do*"   # calls FooTest with should("Do...")
 *  --gtest_filter="-FooTest?:-Do*" # calls not FooTest with not should("Do...")
+
+#### Example output
+
+```sh
+[----------] 1 tests from Example
+[ RUN      ] Example.Do Something
+[ SHOULD   ] should be true
+[ SHOULD   ] should be false
+[       OK ] Example.Do Something (0 ms)
+[----------] 1 tests from Example (0 ms total)
+```
 
 ## GUnit.GTest-Lite
 * Synopsis
