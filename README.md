@@ -791,10 +791,10 @@ INSTANTIATE_TEST_CASE_P(                        |
 
 ```sh
 [----------] 1 tests from Example
-[ RUN      ] Example.Do Something
-[ SHOULD   ] should be true
-[ SHOULD   ] should be false
-[       OK ] Example.Do Something (0 ms)
+[ RUN      ] Example.Return
+[ SHOULD   ] return true
+[ SHOULD   ] return false
+[       OK ] Example.Return (0 ms)
 [----------] 1 tests from Example (0 ms total)
 ```
 
