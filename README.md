@@ -85,7 +85,7 @@ TEST_F(ExampleTest, ShouldCallF2) {             |
 ### Example (BDD)
 
 * test/Features/Calc/addition.feature (Gherkin)
-```cpp
+```gherkin
 Feature: Calc Addition
   In order to avoid silly mistakes
   As a math idiot
