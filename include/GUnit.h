@@ -9,6 +9,6 @@
 
 #include "GUnit/GMake.h"
 #include "GUnit/GMock.h"
-//#include "GUnit/GScenario.h"
+#include "GUnit/GScenario.h"
 #include "GUnit/GTest-Lite.h"
 #include "GUnit/GTest.h"

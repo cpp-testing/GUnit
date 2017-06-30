@@ -7,7 +7,7 @@
 //
 #pragma once
 
-#include <dirent.h>
+#include <gtest/gtest.h>
 #include <cassert>
 #include <cstring>
 #include <fstream>
@@ -15,64 +15,70 @@
 #include <gherkin.hpp>
 #include <json.hpp>
 #include <regex>
+#include <stdexcept>
 #include <unordered_map>
 #include <utility>
+#include <vector>
 #include "GUnit/Detail/Preprocessor.h"
 #include "GUnit/Detail/Utility.h"
 
 namespace testing {
 inline namespace v1 {
-struct steps {
-  static auto& get() {
-    using steps_t = std::unordered_map<std::string, std::function<void(const std::string&)>>;
-    static std::unordered_map<void*, steps_t> s{};
+struct StepIsNotImplemented : std::runtime_error {
+  using std::runtime_error::runtime_error;
+};
+struct StepIsAmbiguous : std::runtime_error {
+  using std::runtime_error::runtime_error;
+};
+
+namespace detail {
+template <class T>
+void MakeAndRegisterTestInfo(const T& test, const std::string& type, const std::string& name, const std::string& /*file*/,
+                             int /*line*/,
+                             detail::type<TestInfo*(const char*, const char*, const char*, const char*, const void*, void (*)(),
+                                                    void (*)(), internal::TestFactoryBase*)>) {
+  internal::MakeAndRegisterTestInfo(type.c_str(), name.c_str(), nullptr, nullptr, internal::GetTestTypeId(),
+                                    Test::SetUpTestCase, Test::TearDownTestCase, test);
+}
+
+template <class T, class... Ts>
+void MakeAndRegisterTestInfo(const T& test, const std::string& type, const std::string& name, const std::string& file, int line,
+                             detail::type<TestInfo*(Ts...)>) {
+  internal::MakeAndRegisterTestInfo(type.c_str(), name.c_str(), nullptr, nullptr, {file.c_str(), line},
+                                    internal::GetTestTypeId(), Test::SetUpTestCase, Test::TearDownTestCase, test);
+}
+
+inline bool PatternMatchesString2(const char* pattern, const char* str) {
+  switch (*pattern) {
+    case '\0':
+    case ':':  // Either ':' or '\0' marks the end of the pattern.
+      return *str == '\0';
+    case '?':  // Matches any single character.
+      return *str != '\0' && PatternMatchesString2(pattern + 1, str + 1);
+    case '*':  // Matches any string (possibly empty) of characters.
+      return (*str != '\0' && PatternMatchesString2(pattern, str + 1)) || PatternMatchesString2(pattern + 1, str);
+    default:  // Non-special character.  Matches itself.
+      return *pattern == *str && PatternMatchesString2(pattern + 1, str + 1);
+  }
+}
+
+struct context {
+  static auto& step() {
+    static auto i = 0;
+    return i;
+  }
+
+  static auto& pickles() {
+    static std::string p{};
+    return p;
+  }
+
+  static auto& steps() {
+    static std::unordered_map<std::string, std::function<void(const std::string&)>> s{};
     return s;
   }
 };
 
-struct self {
-  explicit self(void* ptr) { *self_ptr() = ptr; }
-  static void** self_ptr() {
-    static void* ptr{};
-    return &ptr;
-  }
-};
-
-template <class TRegex, class File, int Line>
-class step {
- public:
-  template <class TExpr>
-  step(const TExpr& expr) {  // non explicit
-    steps::get()[*self::self_ptr()][TRegex::c_str()] = [=](const std::string& st) {
-      call(expr, st, TRegex::c_str(), detail::function_traits_t<TExpr>{});
-    };
-  }
-
- private:
-  template <class TExpr, class... Ts>
-  void call(const TExpr& expr, const std::string& step, const std::string& regex, detail::type_list<Ts...> t) {
-    std::regex pieces_regex{step};
-    std::smatch pieces_match;
-    assert(std::regex_match(step, pieces_match, std::regex{regex}));
-    using ft_t = detail::function_traits<TExpr>;
-    call_impl(expr, pieces_match, detail::type<typename ft_t::base_type>{}, typename ft_t::is_lambda_expr{}, t,
-              std::make_index_sequence<sizeof...(Ts)>{});
-  }
-
-  template <class TExpr, class TMatches, class T, class... Ts, std::size_t... Ns>
-  void call_impl(const TExpr& expr, const TMatches& matches, detail::type<T>, std::false_type, detail::type_list<Ts...>,
-                 std::index_sequence<Ns...>) {
-    ((static_cast<T*>(*self::self_ptr()))->*expr)(detail::lexical_cast<Ts>(matches[Ns + 1].str().c_str())...);
-  }
-
-  template <class TExpr, class TMatches, class T, class... Ts, std::size_t... Ns>
-  void call_impl(const TExpr& expr, const TMatches& matches, detail::type<T>, std::true_type, detail::type_list<Ts...>,
-                 std::index_sequence<Ns...>) {
-    expr(detail::lexical_cast<Ts>(matches[Ns + 1].str().c_str())...);
-  }
-};
-
-namespace detail {
 inline auto parse(const std::string& feature, const std::wstring& content) {
   gherkin::parser parser{L"en"};
   gherkin::compiler compiler{feature};
@@ -80,56 +86,31 @@ inline auto parse(const std::string& feature, const std::wstring& content) {
   return compiler.compile(gherkin_document);
 }
 
-template <class TSteps, class TJson>
-inline void run_pickle(const std::string& feature, const TJson& json) {
-  TSteps steps{};
+inline void run(const std::string& pickles) {
+  const auto json = nlohmann::json::parse(pickles)["pickle"];
   for (const auto& expected_step : json["steps"]) {
     std::string line = expected_step["text"];
-    for (const auto& given_step : steps::get()[&steps]) {
+    auto found = false;
+    for (const auto& given_step : context::steps()) {
       if (std::regex_match(line, std::regex{given_step.first})) {
-        std::cout << '\t' << line << "\t" << feature << ":" << expected_step["locations"] << '\n';
+        if (found) {
+          throw StepIsAmbiguous{"STEP \"" + line + "\" is ambiguous!"};
+        }
+        std::cout << "\033[0;96m"
+                  << "[ STEP     ] " << line << "\033[m" << '\n';
         given_step.second(line);
+        found = true;
       }
     }
-  }
-  steps::get()[&steps].clear();
-  std::cout << '\n';
-}
 
-template <class TSteps>
-inline void run(const std::string& feature, const std::vector<std::string>& pickles) {
-  for (const auto& pickle : pickles) {
-    run_pickle<TSteps>(feature, nlohmann::json::parse(pickle)["pickle"]);
-  }
-}
-
-template <class TSteps>
-inline void parse_and_run(const std::string& feature) {
-  const auto content = read_file(feature);
-  const auto pickles = parse(feature, content);
-  run<TSteps>(feature, pickles);
-}
-
-template <class TSteps>
-inline void run_scenarios(const std::string& feature) {
-  if (is_dir(feature.c_str())) {
-    auto dp = opendir(feature.c_str());
-    assert(dp);
-    dirent* entry{};
-    while ((entry = readdir(dp))) {
-      if (is_file(feature + "/" + entry->d_name)) {
-        parse_and_run<TSteps>(feature + "/" + entry->d_name);
-      }
+    if (not found) {
+      throw StepIsNotImplemented{"STEP \"" + line + "\" not implemented!"};
     }
-    closedir(dp);
-  } else {
-    parse_and_run<TSteps>(feature);
   }
 }
 
 template <class TSteps>
-inline auto get_feature_scenario(const std::string& feature) {
-  std::vector<std::string> scenarios{};
+inline void parse_and_register(const std::string& name, const TSteps& steps, const std::string& feature) {
   const auto content = read_file(feature);
   gherkin::parser parser{L"en"};
   gherkin::compiler compiler{feature};
@@ -139,66 +120,85 @@ inline auto get_feature_scenario(const std::string& feature) {
   for (const auto& pickle : pickles) {
     const std::string feature_name = ast["document"]["feature"]["name"];
     const std::string scenario_name = nlohmann::json::parse(pickle)["pickle"]["name"];
-    scenarios.emplace_back(feature_name + "." + scenario_name);
-  }
-  return scenarios;
-}
 
-template <class TSteps>
-inline auto get_scenarios(const std::string& feature) {
-  std::vector<std::string> scenarios{};
-  if (is_dir(feature.c_str())) {
-    auto dp = opendir(feature.c_str());
-    assert(dp);
-    dirent* entry{};
-    while ((entry = readdir(dp))) {
-      if (is_file(feature + "/" + entry->d_name)) {
-        const auto names = get_feature_scenario<TSteps>(feature + "/" + entry->d_name);
-        scenarios.insert(scenarios.end(), names.begin(), names.end());
-      }
+    if (PatternMatchesString2(name.c_str(), feature_name.c_str())) {
+      class TestFactory : public internal::TestFactoryBase {
+        class test : public Test {
+         public:
+          test(const TSteps& steps, const std::string& pickles) : steps{steps}, pickles{pickles} {}
+
+          void TestBody() {
+            context::pickles() = pickles;
+            steps();
+            std::cout << '\n';
+            context::steps().clear();
+          }
+
+         private:
+          TSteps steps;
+          std::string pickles;
+        };
+
+       public:
+        TestFactory(const TSteps& steps, const std::string& pickles) : steps{steps}, pickles{pickles} {}
+        Test* CreateTest() override { return new test{steps, pickles}; }
+
+       private:
+        TSteps steps;
+        std::string pickles;
+      };
+
+      MakeAndRegisterTestInfo(new TestFactory{steps, pickle}, feature_name, scenario_name, __FILE__, __LINE__,
+                              detail::type<decltype(internal::MakeAndRegisterTestInfo)>{});
     }
-    closedir(dp);
-  } else {
-    return get_feature_scenario<TSteps>(feature);
-  }
-
-  return scenarios;
-}
-
-template <class TSteps>
-inline void run_scenario(const std::string& features) {
-  for (const auto& feature : split(features, ';')) {
-    run_scenarios<TSteps>(feature);
   }
 }
 
-template <class TSteps>
-inline auto get_scenario(const std::string& features) {
-  std::vector<std::string> scenarios{};
-  for (const auto& feature : split(features, ';')) {
-    const auto names = get_scenarios<TSteps>(feature);
-    scenarios.insert(scenarios.end(), names.begin(), names.end());
+template <class TFeature>
+struct steps {
+  template <class TSteps>
+  steps(const TSteps& s) {
+    const auto scenario = std::getenv("SCENARIO");
+    assert(scenario);
+    for (const auto& feature : detail::split(scenario, ';')) {
+      parse_and_register(TFeature::c_str(), s, feature);
+    }
   }
-  return scenarios;
-}
+};
+
+template <class TRegex, class File, int Line>
+class step {
+ public:
+  template <class TExpr>
+  step(const TExpr& expr) {  // non explicit
+    context::step()++;
+    context::steps()[TRegex::c_str()] = [=](const std::string& st) {
+      call(expr, st, TRegex::c_str(), detail::function_traits_t<TExpr>{});
+    };
+  }
+
+  ~step() {
+    if (not--context::step()) {
+      run(context::pickles());
+    }
+  }
+
+ private:
+  template <class TExpr, class... Ts>
+  void call(const TExpr& expr, const std::string& step, const std::string& regex, detail::type_list<Ts...> t) {
+    std::regex pieces_regex{step};
+    std::smatch pieces_match;
+    assert(std::regex_match(step, pieces_match, std::regex{regex}));
+    call_impl(expr, pieces_match, t, std::make_index_sequence<sizeof...(Ts)>{});
+  }
+
+  template <class TExpr, class TMatches, class... Ts, std::size_t... Ns>
+  void call_impl(const TExpr& expr, const TMatches& matches, detail::type_list<Ts...>, std::index_sequence<Ns...>) {
+    expr(detail::lexical_cast<Ts>(matches[Ns + 1].str().c_str())...);
+  }
+};
 
 }  // detail
-
-template <class TSteps, class... Ts>
-inline void RunScenario(const Ts&... features) {
-  using swallow = int[];
-  (void)swallow{0, (detail::run_scenario<TSteps>(features), 0)...};
-}
-
-template <class TSteps, class... Ts>
-inline auto GetScenario(const Ts&... features) {
-  std::vector<std::string> scenarios{};
-  using swallow = int[];
-  const auto append = [&scenarios](const auto& v) { scenarios.insert(scenarios.end(), v.begin(), v.end()); };
-  (void)swallow{0, (append(detail::get_scenario<TSteps>(features)), 0)...};
-  return scenarios;
-}
-
 }  // v1
 }  // testing
 
@@ -206,36 +206,17 @@ inline auto GetScenario(const Ts&... features) {
 #pragma clang diagnostic ignored "-Wdollar-in-identifier-extension"
 #endif
 
-#define GIVEN(regex)                                                                                                           \
-  ::testing::self __GUNIT_CAT(self, __LINE__){this};                                                                           \
-  ::testing::step<decltype(__GUNIT_CAT(regex, _gtest_string)), decltype(__GUNIT_CAT(__FILE__ "", _gtest_string)), __LINE__> __GUNIT_CAT( \
-      step_, __LINE__)
+#define STEPS(feature) __attribute__((unused))::testing::detail::steps<decltype(__GUNIT_CAT(feature, _gtest_string))>
 
-#define $Given GIVEN
+#define __STEP_IMPL(txt)                                                                                      \
+  __attribute__((unused))::testing::detail::step<decltype(__GUNIT_CAT(txt, _gtest_string)),                   \
+                                                 decltype(__GUNIT_CAT(__FILE__ "", _gtest_string)), __LINE__> \
+      __GUNIT_CAT(step_, __LINE__)
 
-#define WHEN(regex)                                                                                                            \
-  ::testing::self __GUNIT_CAT(self, __LINE__){this};                                                                           \
-  ::testing::step<decltype(__GUNIT_CAT(regex, _gtest_string)), decltype(__GUNIT_CAT(__FILE__ "", _gtest_string)), __LINE__> __GUNIT_CAT( \
-      step_, __LINE__)
+#define GIVEN __STEP_IMPL
+#define WHEN __STEP_IMPL
+#define THEN __STEP_IMPL
 
-#define $When WHEN
-
-#define THEN(regex)                                                                                                            \
-  ::testing::self __GUNIT_CAT(self, __LINE__){this};                                                                           \
-  ::testing::step<decltype(__GUNIT_CAT(regex, _gtest_string)), decltype(__GUNIT_CAT(__FILE__ "", _gtest_string)), __LINE__> __GUNIT_CAT( \
-      step_, __LINE__)
-
-#define $Then THEN
-
-#define GSCENARIO(type, ...)                                             \
-  class type;                                                            \
-  GTEST(#type) {                                                         \
-    auto id = 0;                                                         \
-    for (const auto& name : ::testing::GetScenario<type>(__VA_ARGS__)) { \
-      if (tr_gtest.run("SCENARIO", name, id++)) {                        \
-        ::testing::RunScenario<type>(__VA_ARGS__);                       \
-      }                                                                  \
-    }                                                                    \
-  }
-
-#define $GScenario GSCENARIO
+#define $Given __STEP_IMPL
+#define $When __STEP_IMPL
+#define $Then __STEP_IMPL
