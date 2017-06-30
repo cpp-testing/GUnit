@@ -852,7 +852,7 @@ GTEST(example) {
 ## BDD (Given/When/Then) Scenarios with GScenario (Gherkin/Cucumber)
 
 * test/Features/Calc/addition.feature
-```cpp
+```gherkin
 Feature: Addition
   In order to avoid silly mistakes
   As a math idiot
