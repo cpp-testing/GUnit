@@ -86,7 +86,7 @@ TEST_F(ExampleTest, ShouldCallF2) {             |
 
 * test/Features/Calc/addition.feature (Gherkin)
 ```cpp
-Feature: Addition
+Feature: Calc Addition
   In order to avoid silly mistakes
   As a math idiot
   I want to be told the sum of two numbers
@@ -100,27 +100,35 @@ Feature: Addition
 
 #### Steps Implementation
 ```cpp
-class CalcSteps {
- public:
-  $Given("^I have entered (\\d+) into the calculator$")
-    = [&](double n) { calc.push(n); };
-
-  $Given("^I press add") = &CalcSteps::add;
-  void add() { result = calc.add(); }
-
-  $When("^I press divide") = [&] { result = calc.divide(); };
-
-  $Then("^the result should be (.*) on the screen$")
-    = [&](double expected) { EXPECT_EQ(expected, result); };
-
- private:
+STEPS("Calc*") calcSteps = [] {
   Calculator calc{};
   double result{};
-};
 
-GTEST("Calc features") {
-  testing::RunScenario<CalcSteps>("test/Features/Calc/addition.feature");
-}
+  $Given("I have entered {n} into the calculator") =
+    [&](double n) {
+      calc.push(n);
+    };
+
+  $When("I press add") =
+    [&]{
+      result = calc.add();
+    };
+
+  $Given("I press divide") =
+    [&]{
+      result = calc.divide();
+    };
+
+  $Then("the result should be {expected} on the screen") =
+    [&] (double expected) {
+      EXPECT_EQ(expected, result);
+    };
+};
+```
+
+#### Usage
+```sh
+SCENARIO="test/Features/Calc/addition.feature" ./test
 ```
 
 ## GUnit
@@ -846,24 +854,31 @@ GTEST("Calc features") {
 ### GWT and Mocking?
 
 ```cpp
-class CalcStepsMock {
- public:
-  $Given("^I have entered (\\d+) into the calculator$") = [&](double n) { calc.push(n); };
-  $Given("^I press add") = [&] { calc.add(); };
-  $When("^I press divide") = [&] { calc.divide(); };
-  $Then("^the result should be (.*) on the screen$") = [&](double expected) {
-    EXPECTED_CALL(display, (show)(expected)); // verify mock expectations
-  };
-
- private:
-  testing::GMock<IDisplay> display{DEFER_CALLS(IDisplay, show)}; // defer calls
+STEPS("Calc*") calcStepsMock = [] {
+  testing::GMock<IDisplay> display{DEFER_CALLS(IDisplay, show)};
   CalculatorUI calc{testing::object(display)};
+
+  $Given("I have entered {n} into the calculator") =
+    [&](double n) {
+      calc.push(n);
+    };
+
+  $When("I press add") =
+    [&]{ calc.add(); };
+
+  $Given("I press divide") =
+    [&]{ calc.divide(); };
+
+  $Then("the result should be {expected} on the screen") =
+    [&] (double expected) {
+      EXPECTED_CALL(display, (show)(expected));
+    };
 };
 ```
 
-> Note Running specific `scenario` requires ':' in the test filter (`--gtest_filter="test:feature.scenario"`)
+> Note Running specific `scenario` requires ':' in the test filter (`--gtest_filter="feature.scenario"`)
 
-*  --gtest_filter="Calc features*:Addition.Add two numbers"  # calls Calc features test using Addition feature and Add two numbers scenario
+*  --gtest_filter="Calc Addition.Add two numbers"  # calls Calc features test using Addition feature and Add two numbers scenario
 
 ---
 
