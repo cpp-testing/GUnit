@@ -128,7 +128,7 @@ STEPS("Calc*") calcSteps = [] {
 
 #### Usage
 ```sh
-SCENARIO="test/Features/Calc/addition.feature" ./test
+SCENARIO="test/Features/Calc/addition.feature" ./test --gtest_filter="Calc Addition.Add two numbers"
 ```
 
 ## GUnit
@@ -848,7 +848,7 @@ GTEST("Calc features") {
    * (it might be split by ':' too -> "test/Features/Calc/addition:test/div.feature")
    */
   testing::RunScenario<CalcSteps>("test/Features/Calc/addition.feature");
-}
+efer}
 ```
 
 ### GWT and Mocking?
