@@ -114,7 +114,7 @@ STEPS("Calc*") calcSteps = [] {
       result = calc.add();
     };
 
-  $Given("I press divide") =
+  $When("I press divide") =
     [&]{
       result = calc.divide();
     };
@@ -866,7 +866,7 @@ STEPS("Calc*") calcStepsMock = [] {
   $When("I press add") =
     [&]{ calc.add(); };
 
-  $Given("I press divide") =
+  $When("I press divide") =
     [&]{ calc.divide(); };
 
   $Then("the result should be {expected} on the screen") =
