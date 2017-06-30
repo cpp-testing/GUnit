@@ -188,6 +188,7 @@ class step {
   void call(const TExpr& expr, const std::string& step, const std::string& regex, detail::type_list<Ts...> t) {
     std::regex pieces_regex{step};
     std::smatch pieces_match;
+    (void)regex;
     assert(std::regex_match(step, pieces_match, std::regex{regex}));
     call_impl(expr, pieces_match, t, std::make_index_sequence<sizeof...(Ts)>{});
   }
