@@ -978,7 +978,7 @@ STEPS("Calc*") calcStepsMock = [] {
 ### References
 * [C++ Now 2017: Towards Painless Testing](https://www.youtube.com/watch?v=NVrZjT5lW5o)
 * [C++ Now 2017: Mocking C++](https://www.youtube.com/watch?v=t0wLm2iiEH0)
-* [Meeting C++ 2016: TDD/BDD and Dependency Injection](https://www.youtube.com/watch?v=T3uMcxhzRUE) | [Slides](http://boost-experimental.github.io/di/meetingcpp-2016)
+* [Meeting C++ 2016: TDD/BDD and Dependency Injection](https://www.youtube.com/watch?v=T3uMcxhzRUE)
 * [Automatic Mocks Injector](https://github.com/cpp-testing/mocks_injector)
 * [[Boost].DI](https://github.com/boost-experimental/di) - Dependency Injection Library
 * [VC](https://github.com/boost-experimental/vc) - Virtual Concepts Library

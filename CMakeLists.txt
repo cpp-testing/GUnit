@@ -36,12 +36,22 @@ link_directories(${CMAKE_CURRENT_LIST_DIR}/libs/gherkin-cpp)
 set(BUILD_GMOCK)
 set(BUILD_GTEST)
 
+add_custom_command(
+  OUTPUT "../libs/gherkin-cpp/libgherkin-cpp.a"
+  COMMAND cd ../libs/gherkin-cpp && make -j2
+)
+
+add_custom_target(
+  gherkin_cpp ALL DEPENDS "../libs/gherkin-cpp/libgherkin-cpp.a"
+)
+
 find_program(MEMORYCHECK_COMMAND valgrind)
 if (ENABLE_MEMCHECK AND MEMORYCHECK_COMMAND)
     function(test name)
       string(REPLACE "/" "_" out ${name})
       add_executable(${out} ${CMAKE_CURRENT_LIST_DIR}/${name}.cpp)
       add_test(${out} ${MEMORYCHECK_COMMAND} --leak-check=full --error-exitcode=1 ./${out})
+      add_dependencies(${out} gherkin_cpp)
       target_link_libraries(${out} gtest_main gmock_main gherkin-cpp)
     endfunction()
 else()
@@ -49,6 +59,7 @@ else()
       string(REPLACE "/" "_" out ${name})
       add_executable(${out} ${CMAKE_CURRENT_LIST_DIR}/${name}.cpp)
       add_test(${out} ./${out})
+      add_dependencies(${out} gherkin_cpp)
       target_link_libraries(${out} gtest_main gmock_main gherkin-cpp)
     endfunction()
 endif()
