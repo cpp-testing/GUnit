@@ -37,12 +37,12 @@ set(BUILD_GMOCK)
 set(BUILD_GTEST)
 
 add_custom_command(
-  OUTPUT "../libs/gherkin-cpp/libgherkin-cpp.a"
-  COMMAND cd ../libs/gherkin-cpp && make -j2
+  OUTPUT libgherkin-cpp
+  COMMAND cd ../libs/gherkin-cpp && make
 )
 
 add_custom_target(
-  gherkin_cpp ALL DEPENDS "../libs/gherkin-cpp/libgherkin-cpp.a"
+  gherkin_cpp ALL DEPENDS libgherkin-cpp
 )
 
 find_program(MEMORYCHECK_COMMAND valgrind)
