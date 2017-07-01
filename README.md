@@ -50,13 +50,13 @@ public:                                         |
 ```cpp
 struct ExampleTest : testing::Test {            |
  void SetUp() override {                        |
-   sut = std::make_unique<example>(m1, m2, m3); |
+   sut = std::make_unique<example>(m1, m2, m3); | // SetUp IS OPTIONAL!
  }                                              |
-                                                | // set-up is NOT NEEDED!
- mock_i1 m1;                                    |
- mock_i2 m2;                                    |
- mock_i3 m3;                                    |
- std::unique_ptr<example> sut;                  |
+                                                |
+ mock_i1 m1;                                    | // members
+ mock_i2 m2;                                    | // for
+ mock_i3 m3;                                    | // testing
+ std::unique_ptr<example> sut;                  | // are NOT NEEDED!
 };                                              |
 ```
 
