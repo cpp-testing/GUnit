@@ -16,7 +16,7 @@ STEPS("*") calcSteps = [] {
   Calculator calc{};
   double result{};
 
-  $Given("I have entered (.*) into the calculator") =
+  $Given("I have entered {n} into the calculator") =
     [&](double n) {
       calc.push(n);
     };
@@ -31,7 +31,7 @@ STEPS("*") calcSteps = [] {
       result = calc.divide();
     };
 
-  $Then("the result should be (.*) on the screen") =
+  $Then("the result should be {expected} on the screen") =
     [&] (double expected) {
       EXPECT_EQ(expected, result);
     };
@@ -41,7 +41,7 @@ STEPS("*") calcStepsMock = [] {
   testing::GMock<IDisplay> display{DEFER_CALLS(IDisplay, show)};
   CalculatorUI calc{testing::object(display)};
 
-  $Given("I have entered (.*) into the calculator") =
+  $Given("I have entered {n} into the calculator") =
     [&](double n) {
       calc.push(n);
     };
@@ -52,7 +52,7 @@ STEPS("*") calcStepsMock = [] {
   $Given("I press divide") =
     [&]{ calc.divide(); };
 
-  $Then("the result should be (.*) on the screen") =
+  $Then("the result should be {expected} on the screen") =
     [&] (double expected) {
       EXPECTED_CALL(display, (show)(expected));
     };

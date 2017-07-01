@@ -8,17 +8,12 @@
 #pragma once
 
 #include <gtest/gtest.h>
-#include <cassert>
-#include <cstring>
-#include <fstream>
 #include <functional>
 #include <gherkin.hpp>
 #include <json.hpp>
-#include <regex>
 #include <stdexcept>
 #include <unordered_map>
 #include <utility>
-#include <vector>
 #include "GUnit/Detail/Preprocessor.h"
 #include "GUnit/Detail/Utility.h"
 
@@ -92,7 +87,7 @@ inline void run(const std::string& pickles) {
     std::string line = expected_step["text"];
     auto found = false;
     for (const auto& given_step : context::steps()) {
-      if (std::regex_match(line, std::regex{given_step.first})) {
+      if (detail::match(given_step.first, line)) {
         if (found) {
           throw StepIsAmbiguous{"STEP \"" + line + "\" is ambiguous!"};
         }
@@ -159,21 +154,22 @@ struct steps {
   template <class TSteps>
   steps(const TSteps& s) {
     const auto scenario = std::getenv("SCENARIO");
-    assert(scenario);
-    for (const auto& feature : detail::split(scenario, ';')) {
-      parse_and_register(TFeature::c_str(), s, feature);
+    if (scenario) {
+      for (const auto& feature : detail::split(scenario, ';')) {
+        parse_and_register(TFeature::c_str(), s, feature);
+      }
     }
   }
 };
 
-template <class TRegex, class File, int Line>
+template <class TPattern, class File, int Line>
 class step {
  public:
   template <class TExpr>
   step(const TExpr& expr) {  // non explicit
     context::step()++;
-    context::steps()[TRegex::c_str()] = [=](const std::string& st) {
-      call(expr, st, TRegex::c_str(), detail::function_traits_t<TExpr>{});
+    context::steps()[TPattern::c_str()] = [=](const std::string& st) {
+      call(expr, st, TPattern::c_str(), detail::function_traits_t<TExpr>{});
     };
   }
 
@@ -185,16 +181,14 @@ class step {
 
  private:
   template <class TExpr, class... Ts>
-  void call(const TExpr& expr, const std::string& step, const std::string& regex, detail::type_list<Ts...> t) {
-    std::regex pieces_regex{step};
-    std::smatch pieces_match;
-    std::regex_match(step, pieces_match, std::regex{regex});
-    call_impl(expr, pieces_match, t, std::make_index_sequence<sizeof...(Ts)>{});
+  void call(const TExpr& expr, const std::string& step, const std::string& pattern, detail::type_list<Ts...> t) {
+    static_assert(detail::args_size(TPattern{}) == sizeof...(Ts), "The number of function parameters don't match the number of arguments specified in the pattern!");
+    call_impl(expr, detail::matches(pattern, step), t, std::make_index_sequence<sizeof...(Ts)>{});
   }
 
   template <class TExpr, class TMatches, class... Ts, std::size_t... Ns>
   void call_impl(const TExpr& expr, const TMatches& matches, detail::type_list<Ts...>, std::index_sequence<Ns...>) {
-    expr(detail::lexical_cast<Ts>(matches[Ns + 1].str().c_str())...);
+    expr(detail::lexical_cast<Ts>(matches[Ns].c_str())...);
   }
 };
 

@@ -102,6 +102,13 @@ struct string {
     return str;
   }
 
+  constexpr auto operator[](int N) {
+    using char_t = char[];
+    return char_t{Chrs..., 0}[N];
+  }
+
+  constexpr auto size() { return sizeof...(Chrs); }
+
   template <char... Chrs_>
   constexpr auto operator+(string<Chrs_...>) {
     return string<Chrs..., Chrs_...>{};
@@ -128,6 +135,50 @@ constexpr auto operator""_gtest_string() {
 }
 
 }  // operators
+
+template<class T>
+inline constexpr auto args_size(T str) {
+  auto args = 0;
+  for (auto i = 0u; i < str.size(); ++i) {
+    if (str[i] == '{') {
+      ++args;
+    }
+  }
+  return args;
+}
+
+template<class T>
+inline auto matches(T pattern, const std::string& str) {
+  std::vector<std::string> matches{};
+  auto pi = 0u, si = 0u;
+
+  const auto matcher = [&](char b, char e) {
+    const auto match = si;
+    while (str[si] && str[si] != b) ++si;
+    matches.emplace_back(str.substr(match, si - match));
+    while (pattern[pi] && pattern[pi] != e) ++pi;
+    pi++;
+  };
+
+  while (pi < pattern.size() && si < str.size()) {
+    if (pattern[pi] == '"' && str[si] == '"' && pattern[pi + 1] == '{') {
+      ++si;
+      matcher('"', '}');
+    } else if (pattern[pi] == '{') {
+      matcher(' ', '}');
+    } else if (pattern[pi] != str[si]) {
+      return std::vector<std::string>{};
+    }
+    ++pi, ++si;
+  }
+
+  return matches;
+}
+
+template<class T>
+inline auto match(T pattern, const std::string& str) {
+  return not matches(pattern, str).empty() || std::string{pattern.c_str()} == str;
+}
 
 template <class, std::size_t N, std::size_t... Ns>
 auto get_type_name_impl(const char *ptr, std::index_sequence<Ns...>) {
