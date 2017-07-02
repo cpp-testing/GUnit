@@ -312,6 +312,12 @@ inline auto lexical_cast(const std::string &str) {
 }
 
 }  // detail
+
+template <class T, T... Chrs>
+constexpr auto operator""_s() {
+  return detail::string<Chrs...>{};
+}
+
 }  // v1
 }  // testing
 

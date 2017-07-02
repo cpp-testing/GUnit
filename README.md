@@ -107,29 +107,32 @@ Feature: Calc Addition
 
 #### Steps Implementation
 ```cpp
-STEPS("Calc*") calcSteps = [] {
+STEPS("Calc*") = [](auto& scenario) {
+  testing::Steps steps{scenario};
   Calculator calc{};
   double result{};
 
-  $Given("I have entered {n} into the calculator") =
+  steps.Given("I have entered {n} into the calculator") =
     [&](double n) {
       calc.push(n);
     };
 
-  $When("I press add") =
-    [&]{
+  steps.When("I press add") =
+    [&] {
       result = calc.add();
     };
 
-  $When("I press divide") =
-    [&]{
+  steps.When("I press divide") =
+    [&] {
       result = calc.divide();
     };
 
-  $Then("the result should be {expected} on the screen") =
+  steps.Then("the result should be {expected} on the screen") =
     [&] (double expected) {
       EXPECT_EQ(expected, result);
     };
+
+  return steps;
 };
 ```
 
@@ -907,25 +910,28 @@ efer}
 ### GWT and Mocking?
 
 ```cpp
-STEPS("Calc*") calcStepsMock = [] {
+STEPS("*") = [](auto& scenario) {
+  testing::Steps steps{scenario};
   testing::GMock<IDisplay> display{DEFER_CALLS(IDisplay, show)};
   CalculatorUI calc{testing::object(display)};
 
-  $Given("I have entered {n} into the calculator") =
+  steps.Given("I have entered {n} into the calculator") =
     [&](double n) {
       calc.push(n);
     };
 
-  $When("I press add") =
+  steps.When("I press add") =
     [&]{ calc.add(); };
 
-  $When("I press divide") =
+  steps.Given("I press divide") =
     [&]{ calc.divide(); };
 
-  $Then("the result should be {expected} on the screen") =
+  steps.Then("the result should be {expected} on the screen") =
     [&] (double expected) {
       EXPECTED_CALL(display, (show)(expected));
     };
+
+  return steps;
 };
 ```
 

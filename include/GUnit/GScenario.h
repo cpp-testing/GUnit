@@ -7,12 +7,14 @@
 //
 #pragma once
 
+#include <cassert>
 #include <gtest/gtest.h>
 #include <functional>
 #include <gherkin.hpp>
 #include <json.hpp>
 #include <stdexcept>
 #include <unordered_map>
+#include <type_traits>
 #include <utility>
 #include "GUnit/Detail/Preprocessor.h"
 #include "GUnit/Detail/Utility.h"
@@ -57,23 +59,6 @@ inline bool PatternMatchesString2(const char* pattern, const char* str) {
   }
 }
 
-struct context {
-  static auto& step() {
-    static auto i = 0;
-    return i;
-  }
-
-  static auto& pickles() {
-    static std::string p{};
-    return p;
-  }
-
-  static auto& steps() {
-    static std::unordered_map<std::string, std::function<void(const std::string&)>> s{};
-    return s;
-  }
-};
-
 inline auto parse(const std::string& feature, const std::wstring& content) {
   gherkin::parser parser{L"en"};
   gherkin::compiler compiler{feature};
@@ -81,12 +66,12 @@ inline auto parse(const std::string& feature, const std::wstring& content) {
   return compiler.compile(gherkin_document);
 }
 
-inline void run(const std::string& pickles) {
+inline void run(const std::string& pickles, const std::unordered_map<std::string, std::function<void(const std::string&)>>& steps) {
   const auto json = nlohmann::json::parse(pickles)["pickle"];
   for (const auto& expected_step : json["steps"]) {
     std::string line = expected_step["text"];
     auto found = false;
-    for (const auto& given_step : context::steps()) {
+    for (const auto& given_step : steps) {
       if (detail::match(given_step.first, line)) {
         if (found) {
           throw StepIsAmbiguous{"STEP \"" + line + "\" is ambiguous!"};
@@ -104,7 +89,7 @@ inline void run(const std::string& pickles) {
   }
 }
 
-template <class TSteps>
+template <class T, class TSteps>
 inline void parse_and_register(const std::string& name, const TSteps& steps, const std::string& feature) {
   const auto content = read_file(feature);
   gherkin::parser parser{L"en"};
@@ -123,10 +108,10 @@ inline void parse_and_register(const std::string& name, const TSteps& steps, con
           test(const TSteps& steps, const std::string& pickles) : steps{steps}, pickles{pickles} {}
 
           void TestBody() {
-            context::pickles() = pickles;
-            steps();
+            auto result = steps(pickles);
+            static_assert(std::is_same<T, decltype(result)>{}, "STEPS implementation has to return testing::Steps type!");
+            (void)result;
             std::cout << '\n';
-            context::steps().clear();
           }
 
          private:
@@ -149,68 +134,100 @@ inline void parse_and_register(const std::string& name, const TSteps& steps, con
   }
 }
 
-template <class TFeature>
+template <class T, class TFeature>
 struct steps {
   template <class TSteps>
   steps(const TSteps& s) {
     const auto scenario = std::getenv("SCENARIO");
     if (scenario) {
       for (const auto& feature : detail::split(scenario, ';')) {
-        parse_and_register(TFeature::c_str(), s, feature);
+        parse_and_register<T>(TFeature::c_str(), s, feature);
       }
     }
   }
 };
 
-template <class TPattern, class File, int Line>
-class step {
- public:
-  template <class TExpr>
-  step(const TExpr& expr) {  // non explicit
-    context::step()++;
-    context::steps()[TPattern::c_str()] = [=](const std::string& st) {
-      call(expr, st, TPattern::c_str(), detail::function_traits_t<TExpr>{});
-    };
+}  // detail
+
+class Steps {
+public:
+  explicit Steps(const std::string& pickles)
+    : pickles{pickles}
+  { }
+
+  Steps(const Steps& steps) {
+    detail::run(steps.pickles, steps.steps_);
   }
 
-  ~step() {
-    if (not--context::step()) {
-      run(context::pickles());
-    }
+  template<class TPattern>
+  auto Given(const TPattern& pattern) {
+    constexpr auto size = detail::args_size(TPattern{});
+    return step<size>{pattern.c_str(), steps_[pattern.c_str()]};
   }
+
+  auto Given(const char* pattern) {
+    return step<-1>{pattern, steps_[pattern]};
+  }
+
+  template<class TPattern>
+  auto When(const TPattern& pattern) {
+    constexpr auto size = detail::args_size(TPattern{});
+    return step<size>{pattern.c_str(), steps_[pattern.c_str()]};
+  }
+
+  auto When(const char* pattern) {
+    return step<-1>{pattern, steps_[pattern]};
+  }
+
+  template<class TPattern>
+  auto Then(const TPattern& pattern) {
+    constexpr auto size = detail::args_size(TPattern{});
+    return step<size>{pattern.c_str(), steps_[pattern.c_str()]};
+  }
+
+  auto Then(const char* pattern) {
+    return step<-1>{pattern, steps_[pattern]};
+  }
+
+private:
+  template<int ArgsSize>
+  class step {
+   public:
+    explicit step(const std::string& pattern, std::function<void(const std::string&)>& expr)
+      : pattern_{pattern}, expr_{expr}
+    { }
+
+    template<class TExpr>
+    void operator=(const TExpr& expr) {
+      expr_ = [pattern = pattern_, expr](const std::string& step) {
+        call(expr, step, pattern, detail::function_traits_t<TExpr>{});
+      };
+    }
+
+   private:
+    template <class TExpr, class... Ts>
+    static void call(const TExpr& expr, const std::string& step, const std::string& pattern, detail::type_list<Ts...> t) {
+      static_assert(ArgsSize == -1 || ArgsSize == sizeof...(Ts), "The number of function parameters don't match the number of arguments specified in the pattern!");
+      assert(detail::args_size(pattern) == sizeof...(Ts));
+      call_impl(expr, detail::matches(pattern, step), t, std::make_index_sequence<sizeof...(Ts)>{});
+    }
+
+    template <class TExpr, class TMatches, class... Ts, std::size_t... Ns>
+    static void call_impl(const TExpr& expr, const TMatches& matches, detail::type_list<Ts...>, std::index_sequence<Ns...>) {
+      expr(detail::lexical_cast<Ts>(matches[Ns].c_str())...);
+    }
+
+    std::string pattern_;
+    std::function<void(const std::string&)>& expr_;
+  };
 
  private:
-  template <class TExpr, class... Ts>
-  void call(const TExpr& expr, const std::string& step, const std::string& pattern, detail::type_list<Ts...> t) {
-    static_assert(detail::args_size(TPattern{}) == sizeof...(Ts), "The number of function parameters don't match the number of arguments specified in the pattern!");
-    call_impl(expr, detail::matches(pattern, step), t, std::make_index_sequence<sizeof...(Ts)>{});
-  }
-
-  template <class TExpr, class TMatches, class... Ts, std::size_t... Ns>
-  void call_impl(const TExpr& expr, const TMatches& matches, detail::type_list<Ts...>, std::index_sequence<Ns...>) {
-    expr(detail::lexical_cast<Ts>(matches[Ns].c_str())...);
-  }
+  std::string pickles;
+  std::unordered_map<std::string, std::function<void(const std::string&)>> steps_{};
 };
 
-}  // detail
 }  // v1
 }  // testing
 
-#if defined(__clang__)
-#pragma clang diagnostic ignored "-Wdollar-in-identifier-extension"
-#endif
-
-#define STEPS(feature) __attribute__((unused))::testing::detail::steps<decltype(__GUNIT_CAT(feature, _gtest_string))>
-
-#define __STEP_IMPL(txt)                                                                                      \
-  __attribute__((unused))::testing::detail::step<decltype(__GUNIT_CAT(txt, _gtest_string)),                   \
-                                                 decltype(__GUNIT_CAT(__FILE__ "", _gtest_string)), __LINE__> \
-      __GUNIT_CAT(step_, __LINE__)
-
-#define GIVEN __STEP_IMPL
-#define WHEN __STEP_IMPL
-#define THEN __STEP_IMPL
-
-#define $Given __STEP_IMPL
-#define $When __STEP_IMPL
-#define $Then __STEP_IMPL
+#define STEPS(feature) \
+  __attribute__((unused)) ::testing::detail::steps<::testing::Steps, decltype(__GUNIT_CAT(feature, _gtest_string))> __GUNIT_CAT(_gsteps__, __COUNTER__)

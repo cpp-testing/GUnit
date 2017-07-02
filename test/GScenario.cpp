@@ -12,50 +12,56 @@
 #include "Common/Calculator.h"
 
 // clang-format off
-STEPS("*") calcSteps = [] {
+STEPS("*") = [](auto& scenario) {
+  using namespace testing;
+  Steps steps{scenario};
   Calculator calc{};
   double result{};
 
-  $Given("I have entered {n} into the calculator") =
+  steps.Given("I have entered {n} into the calculator"_s) =
     [&](double n) {
       calc.push(n);
     };
 
-  $When("I press add") =
-    [&]{
+  steps.When("I press add"_s) =
+    [&] {
       result = calc.add();
     };
 
-  $Given("I press divide") =
-    [&]{
+  steps.Given("I press divide"_s) =
+    [&] {
       result = calc.divide();
     };
 
-  $Then("the result should be {expected} on the screen") =
-    [&] (double expected) {
+  steps.Then("the result should be {expected} on the screen"_s) =
+    [&](double expected) {
       EXPECT_EQ(expected, result);
     };
+
+  return steps;
 };
 
-STEPS("*") calcStepsMock = [] {
+STEPS("*") = [](auto& scenario) {
   testing::GMock<IDisplay> display{DEFER_CALLS(IDisplay, show)};
   CalculatorUI calc{testing::object(display)};
+  testing::Steps steps{scenario};
 
-  $Given("I have entered {n} into the calculator") =
+  steps.Given("I have entered {n} into the calculator") =
     [&](double n) {
       calc.push(n);
     };
 
-  $When("I press add") =
+  steps.When("I press add") =
     [&]{ calc.add(); };
 
-  $Given("I press divide") =
+  steps.Given("I press divide") =
     [&]{ calc.divide(); };
 
-  $Then("the result should be {expected} on the screen") =
+  steps.Then("the result should be {expected} on the screen") =
     [&] (double expected) {
       EXPECTED_CALL(display, (show)(expected));
     };
-};
 
+  return steps;
+};
 // clang-format on
