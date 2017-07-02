@@ -66,7 +66,7 @@ inline auto parse(const std::string& feature, const std::wstring& content) {
   return compiler.compile(gherkin_document);
 }
 
-inline void run(const std::string& pickles, const std::unordered_map<std::string, std::function<void(const std::string&)>>& steps) {
+inline void run(const std::string& pickles, const std::unordered_map<std::string, std::pair<std::string, std::function<void(const std::string&)>>>& steps) {
   const auto json = nlohmann::json::parse(pickles)["pickle"];
   for (const auto& expected_step : json["steps"]) {
     std::string line = expected_step["text"];
@@ -77,8 +77,8 @@ inline void run(const std::string& pickles, const std::unordered_map<std::string
           throw StepIsAmbiguous{"STEP \"" + line + "\" is ambiguous!"};
         }
         std::cout << "\033[0;96m"
-                  << "[ STEP     ] " << line << "\033[m" << '\n';
-        given_step.second(line);
+                  << "[ " << std::right << std::setw(8) << given_step.second.first << " ] " << line << "\033[m" << '\n';
+        given_step.second.second(line);
         found = true;
       }
     }
@@ -162,46 +162,46 @@ public:
   template<class TPattern>
   auto Given(const TPattern& pattern) {
     constexpr auto size = detail::args_size(TPattern{});
-    return step<size>{pattern.c_str(), steps_[pattern.c_str()]};
+    return step<size>{"Given", pattern.c_str(), steps_[pattern.c_str()]};
   }
 
   auto Given(const char* pattern) {
-    return step<-1>{pattern, steps_[pattern]};
+    return step<-1>{"Given", pattern, steps_[pattern]};
   }
 
   template<class TPattern>
   auto When(const TPattern& pattern) {
     constexpr auto size = detail::args_size(TPattern{});
-    return step<size>{pattern.c_str(), steps_[pattern.c_str()]};
+    return step<size>{"When", pattern.c_str(), steps_[pattern.c_str()]};
   }
 
   auto When(const char* pattern) {
-    return step<-1>{pattern, steps_[pattern]};
+    return step<-1>{"When", pattern, steps_[pattern]};
   }
 
   template<class TPattern>
   auto Then(const TPattern& pattern) {
     constexpr auto size = detail::args_size(TPattern{});
-    return step<size>{pattern.c_str(), steps_[pattern.c_str()]};
+    return step<size>{"Then", pattern.c_str(), steps_[pattern.c_str()]};
   }
 
   auto Then(const char* pattern) {
-    return step<-1>{pattern, steps_[pattern]};
+    return step<-1>{"Then", pattern, steps_[pattern]};
   }
 
 private:
   template<int ArgsSize>
   class step {
    public:
-    explicit step(const std::string& pattern, std::function<void(const std::string&)>& expr)
-      : pattern_{pattern}, expr_{expr}
+    step(const std::string& step_name, const std::string& pattern, std::pair<std::string, std::function<void(const std::string&)>>& expr)
+      : step_name_(step_name), pattern_{pattern}, expr_{expr}
     { }
 
     template<class TExpr>
     void operator=(const TExpr& expr) {
-      expr_ = [pattern = pattern_, expr](const std::string& step) {
+      expr_ = {step_name_, [pattern = pattern_, expr](const std::string& step) {
         call(expr, step, pattern, detail::function_traits_t<TExpr>{});
-      };
+      }};
     }
 
    private:
@@ -217,13 +217,14 @@ private:
       expr(detail::lexical_cast<Ts>(matches[Ns].c_str())...);
     }
 
+    std::string step_name_;
     std::string pattern_;
-    std::function<void(const std::string&)>& expr_;
+    std::pair<std::string, std::function<void(const std::string&)>>& expr_;
   };
 
  private:
   std::string pickles;
-  std::unordered_map<std::string, std::function<void(const std::string&)>> steps_{};
+  std::unordered_map<std::string, std::pair<std::string, std::function<void(const std::string&)>>> steps_{};
 };
 
 }  // v1
