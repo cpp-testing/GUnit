@@ -910,7 +910,7 @@ efer}
 ### GWT and Mocking?
 
 ```cpp
-STEPS("*") = [](auto& scenario) {
+STEPS("Calc*") = [](auto& scenario) {
   testing::Steps steps{scenario};
   testing::GMock<IDisplay> display{DEFER_CALLS(IDisplay, show)};
   CalculatorUI calc{testing::object(display)};

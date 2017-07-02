@@ -12,7 +12,7 @@
 #include "Common/Calculator.h"
 
 // clang-format off
-STEPS("*") = [](auto& scenario) {
+STEPS("Calc *") = [](auto& scenario) {
   using namespace testing;
   Steps steps{scenario};
   Calculator calc{};
@@ -64,4 +64,42 @@ STEPS("*") = [](auto& scenario) {
 
   return steps;
 };
+
+const auto CalcPush = [](auto& calc) {
+  return [&](double n) {
+    calc.push(n);
+  };
+};
+
+const auto CalcAdd = [](auto& calc, auto& result) {
+  return [&] {
+    result = calc.add();
+  };
+};
+
+const auto CalcDivide = [](auto& calc, auto& result) {
+  return [&] {
+    result = calc.divide();
+  };
+};
+
+const auto CalcResult = [](auto& result) {
+  return [&](double expected) {
+    EXPECT_EQ(expected, result);
+  };
+};
+
+STEPS("Calc *") = [](auto& scenario) {
+  testing::Steps steps{scenario};
+  Calculator calc{};
+  double result{};
+
+  steps.Given("I have entered {n} into the calculator")        = CalcPush(calc);
+  steps.When ("I press add")                                   = CalcAdd(calc, result);
+  steps.Given("I press divide")                                = CalcDivide(calc, result);
+  steps.Then ("the result should be {expected} on the screen") = CalcResult(result);
+
+  return steps;
+};
+
 // clang-format on
