@@ -91,18 +91,11 @@ Feature: Calc Addition
   As a math idiot
   I want to be told the sum of two numbers
 
-  Scenario Outline: Add two numbers
-    Given I have entered <input_1> into the calculator
-    And I have entered <input_2> into the calculator
-    When I press <button>
-    Then the result should be <output> on the screen
-
-  Examples:
-    | input_1 | input_2 | button | output |
-    | 20      | 30      | add    | 50     |
-    | 2       | 5       | add    | 7      |
-    | 0       | 40      | add    | 40     |
-    | 3       | 222     | add    | 225    |
+  Scenario: Add two numbers
+    Given I have entered 5 into the calculator
+    And I have entered 7 into the calculator
+    When I press add
+    Then the result should be 12 on the screen
 ```
 
 #### Steps Implementation
@@ -877,34 +870,47 @@ Feature: Addition
 
 #### Steps Implementation
 ```cpp
-class CalcSteps {
- public:
-  $Given("^I have entered (\\d+) into the calculator$")
-    = [&](double n) { calc.push(n); };
+const auto CalcPush = [](auto& calc) {
+  return [&](double n) {
+    calc.push(n);
+  };
+};
 
-  $Given("^I press add") = &CalcSteps::add;
-  void add() { result = calc.add(); }
+const auto CalcAdd = [](auto& calc, auto& result) {
+  return [&] {
+    result = calc.add();
+  };
+};
 
-  $When("^I press divide") = [&] { result = calc.divide(); };
+const auto CalcDivide = [](auto& calc, auto& result) {
+  return [&] {
+    result = calc.divide();
+  };
+};
 
-  $Then("^the result should be (.*) on the screen$")
-    = [&](double expected) { EXPECT_EQ(expected, result); };
+const auto CalcResult = [](auto& result) {
+  return [&](double expected) {
+    EXPECT_EQ(expected, result);
+  };
+};
 
- private:
+STEPS("Calc *") = [](auto& scenario) {
+  testing::Steps steps{scenario};
   Calculator calc{};
   double result{};
+
+  steps.Given("I have entered {n} into the calculator")        = CalcPush(calc);
+  steps.When ("I press add")                                   = CalcAdd(calc, result);
+  steps.When ("I press divide")                                = CalcDivide(calc, result);
+  steps.Then ("the result should be {expected} on the screen") = CalcResult(result);
+
+  return steps;
 };
 ```
 
-#### Scenarios
-```cpp
-GTEST("Calc features") {
-  /**
-   * It takes type implemetning `Steps` and file/directory with feature/features
-   * (it might be split by ':' too -> "test/Features/Calc/addition:test/div.feature")
-   */
-  testing::RunScenario<CalcSteps>("test/Features/Calc/addition.feature");
-efer}
+#### Usage
+```sh
+SCENARIO="test/Features/Calc/addition.feature" ./test --gtest_filter="Calc Addition.Add two numbers"
 ```
 
 ### GWT and Mocking?

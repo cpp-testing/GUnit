@@ -28,7 +28,7 @@ STEPS("Calc *") = [](auto& scenario) {
       result = calc.add();
     };
 
-  steps.Given("I press divide"_s) =
+  steps.When("I press divide"_s) =
     [&] {
       result = calc.divide();
     };
@@ -96,10 +96,25 @@ STEPS("Calc *") = [](auto& scenario) {
 
   steps.Given("I have entered {n} into the calculator")        = CalcPush(calc);
   steps.When ("I press add")                                   = CalcAdd(calc, result);
-  steps.Given("I press divide")                                = CalcDivide(calc, result);
+  steps.When ("I press divide")                                = CalcDivide(calc, result);
   steps.Then ("the result should be {expected} on the screen") = CalcResult(result);
 
   return steps;
 };
 
+STEPS("Table") = [](auto& scenario) {
+  using namespace testing;
+  Steps steps{scenario};
+
+  steps.Given("I have the following table"_s, "ids") =
+    [](const Table&) {};
+
+  steps.When("When I choose {id}"_s) =
+    [](int) {};
+
+  steps.Then("I should get {desc}"_s) =
+    [](std::string) {};
+
+  return steps;
+};
 // clang-format on

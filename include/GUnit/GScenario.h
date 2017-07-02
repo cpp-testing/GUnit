@@ -16,6 +16,7 @@
 #include <unordered_map>
 #include <type_traits>
 #include <utility>
+#include <vector>
 #include "GUnit/Detail/Preprocessor.h"
 #include "GUnit/Detail/Utility.h"
 
@@ -27,6 +28,8 @@ struct StepIsNotImplemented : std::runtime_error {
 struct StepIsAmbiguous : std::runtime_error {
   using std::runtime_error::runtime_error;
 };
+
+using Table = std::vector<std::unordered_map<std::string, std::string>>;
 
 namespace detail {
 template <class T>
@@ -66,10 +69,35 @@ inline auto parse(const std::string& feature, const std::wstring& content) {
   return compiler.compile(gherkin_document);
 }
 
-inline void run(const std::string& pickles, const std::unordered_map<std::string, std::pair<std::string, std::function<void(const std::string&)>>>& steps) {
+inline auto make_table(const nlohmann::json& step) {
+  Table table{};
+  std::vector<std::string> ids{};
+  for (const auto& argument : step["arguments"]) {
+    auto first = true;
+    for (const auto& row : argument["rows"]) {
+      if (first) {
+        for (const auto& cell : row["cells"]) {
+          ids.push_back(cell["value"]);
+        }
+        first = false;
+      } else {
+        std::unordered_map<std::string, std::string> r;
+        int i = 0;
+        for (const auto& cell : row["cells"]) {
+          r[ids[i++]] = cell["value"];
+        }
+        table.push_back(r);
+      }
+    }
+  }
+  return table;
+}
+
+inline void run(const std::string& pickles, const std::unordered_map<std::string, std::pair<std::string, std::function<void(const std::string&, const Table&)>>>& steps) {
   const auto json = nlohmann::json::parse(pickles)["pickle"];
   for (const auto& expected_step : json["steps"]) {
     std::string line = expected_step["text"];
+    const auto table = make_table(expected_step);
     auto found = false;
     for (const auto& given_step : steps) {
       if (detail::match(given_step.first, line)) {
@@ -78,7 +106,7 @@ inline void run(const std::string& pickles, const std::unordered_map<std::string
         }
         std::cout << "\033[0;96m"
                   << "[ " << std::right << std::setw(8) << given_step.second.first << " ] " << line << "\033[m" << '\n';
-        given_step.second.second(line);
+        given_step.second.second(line, table);
         found = true;
       }
     }
@@ -147,6 +175,17 @@ struct steps {
   }
 };
 
+template <class T>
+inline auto lexical_table_cast(const std::string &, const Table& table) {
+  static_assert(std::is_same<T, decltype(table)>::value, "");
+  return table;
+}
+
+template <class T>
+inline auto lexical_table_cast(const std::string & str, const T&) {
+  return detail::lexical_cast<T>(str);
+}
+
 }  // detail
 
 class Steps {
@@ -165,8 +204,18 @@ public:
     return step<size>{"Given", pattern.c_str(), steps_[pattern.c_str()]};
   }
 
+  template<class TPattern>
+  auto Given(const TPattern& pattern, const std::string&) {
+    constexpr auto size = detail::args_size(TPattern{});
+    return step<size, true>{"Given", pattern.c_str(), steps_[pattern.c_str()]};
+  }
+
   auto Given(const char* pattern) {
-    return step<-1>{"Given", pattern, steps_[pattern]};
+    return step<>{"Given", pattern, steps_[pattern]};
+  }
+
+  auto Given(const char* pattern, const std::string&) {
+    return step<-1, true>{"Given", pattern, steps_[pattern]};
   }
 
   template<class TPattern>
@@ -175,8 +224,18 @@ public:
     return step<size>{"When", pattern.c_str(), steps_[pattern.c_str()]};
   }
 
+  template<class TPattern>
+  auto When(const TPattern& pattern, const std::string&) {
+    constexpr auto size = detail::args_size(TPattern{});
+    return step<size, true>{"When", pattern.c_str(), steps_[pattern.c_str()]};
+  }
+
   auto When(const char* pattern) {
-    return step<-1>{"When", pattern, steps_[pattern]};
+    return step<>{"When", pattern, steps_[pattern]};
+  }
+
+  auto When(const char* pattern, const std::string&) {
+    return step<-1, true>{"When", pattern, steps_[pattern]};
   }
 
   template<class TPattern>
@@ -185,46 +244,61 @@ public:
     return step<size>{"Then", pattern.c_str(), steps_[pattern.c_str()]};
   }
 
+  template<class TPattern>
+  auto Then(const TPattern& pattern, const std::string&) {
+    constexpr auto size = detail::args_size(TPattern{});
+    return step<size, true>{"Then", pattern.c_str(), steps_[pattern.c_str()]};
+  }
+
   auto Then(const char* pattern) {
-    return step<-1>{"Then", pattern, steps_[pattern]};
+    return step<>{"Then", pattern, steps_[pattern]};
+  }
+
+  auto Then(const char* pattern, const std::string&) {
+    return step<-1, true>{"Then", pattern, steps_[pattern]};
   }
 
 private:
-  template<int ArgsSize>
+  template<int ArgsSize = -1, bool HasTable = false>
   class step {
    public:
-    step(const std::string& step_name, const std::string& pattern, std::pair<std::string, std::function<void(const std::string&)>>& expr)
+    step(const std::string& step_name, const std::string& pattern, std::pair<std::string, std::function<void(const std::string&, const Table&)>>& expr)
       : step_name_(step_name), pattern_{pattern}, expr_{expr}
     { }
 
     template<class TExpr>
     void operator=(const TExpr& expr) {
-      expr_ = {step_name_, [pattern = pattern_, expr](const std::string& step) {
-        call(expr, step, pattern, detail::function_traits_t<TExpr>{});
+      expr_ = {step_name_, [pattern = pattern_, expr](const std::string& step, const Table& table) {
+        call(expr, step, table, pattern, detail::function_traits_t<TExpr>{});
       }};
     }
 
    private:
     template <class TExpr, class... Ts>
-    static void call(const TExpr& expr, const std::string& step, const std::string& pattern, detail::type_list<Ts...> t) {
-      static_assert(ArgsSize == -1 || ArgsSize == sizeof...(Ts), "The number of function parameters don't match the number of arguments specified in the pattern!");
-      assert(detail::args_size(pattern) == sizeof...(Ts));
-      call_impl(expr, detail::matches(pattern, step), t, std::make_index_sequence<sizeof...(Ts)>{});
+    static void call(const TExpr& expr, const std::string& step, const Table& table, const std::string& pattern, detail::type_list<Ts...> t) {
+      static_assert(ArgsSize == -1 || ArgsSize + int(HasTable) == sizeof...(Ts), "The number of function parameters don't match the number of arguments specified in the pattern!");
+      assert(detail::args_size(pattern) + int(HasTable) == sizeof...(Ts));
+      call_impl(expr, detail::matches(pattern, step), table, t, std::make_index_sequence<sizeof...(Ts)>{}, std::integral_constant<bool, HasTable>{});
     }
 
     template <class TExpr, class TMatches, class... Ts, std::size_t... Ns>
-    static void call_impl(const TExpr& expr, const TMatches& matches, detail::type_list<Ts...>, std::index_sequence<Ns...>) {
+    static void call_impl(const TExpr& expr, const TMatches& matches, const Table&, detail::type_list<Ts...>, std::index_sequence<Ns...>, std::false_type) {
       expr(detail::lexical_cast<Ts>(matches[Ns].c_str())...);
+    }
+
+    template <class TExpr, class TMatches, class... Ts, std::size_t... Ns>
+    static void call_impl(const TExpr& expr, const TMatches& matches, const Table& table, detail::type_list<Ts...>, std::index_sequence<Ns...>, std::true_type) {
+      expr(detail::lexical_table_cast<Ts>(matches[Ns].c_str(), table)...);
     }
 
     std::string step_name_;
     std::string pattern_;
-    std::pair<std::string, std::function<void(const std::string&)>>& expr_;
+    std::pair<std::string, std::function<void(const std::string&, const Table&)>>& expr_;
   };
 
  private:
   std::string pickles;
-  std::unordered_map<std::string, std::pair<std::string, std::function<void(const std::string&)>>> steps_{};
+  std::unordered_map<std::string, std::pair<std::string, std::function<void(const std::string&, const Table&)>>> steps_{};
 };
 
 }  // v1

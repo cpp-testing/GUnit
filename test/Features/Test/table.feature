@@ -1,16 +1,17 @@
 #language: en
 
-Feature: Test table
+Feature: Table
 
   Scenario: Table
-    Given I have following table
+    Given I have the following table
       | id | desc   |
       | 42 | number |
       | 11 | text |
-     When I choose id <id>
-     Then I should get <desc>
 
-    Examples:
-      | id | desc |
-      | 42 | number |
-      | 11 | text |
+#     When I choose <id>
+#     Then I should get <desc>
+#
+#    Examples:
+#      | id | desc |
+#      | 42 | number |
+#      | 11 | text |
