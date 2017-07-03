@@ -38,7 +38,7 @@ STEPS("Calc *") = [](auto& scenario) {
       EXPECT_EQ(expected, result);
     };
 
-  return steps;
+  return *steps;
 };
 
 STEPS("Calc*") = [](auto& scenario) {
@@ -62,7 +62,7 @@ STEPS("Calc*") = [](auto& scenario) {
       EXPECTED_CALL(display, (show)(expected));
     };
 
-  return steps;
+  return *steps;
 };
 
 const auto CalcPush = [](auto& calc) {
@@ -99,7 +99,7 @@ STEPS("Calc *") = [](auto& scenario) {
   steps.When ("I press divide")                                = CalcDivide(calc, result);
   steps.Then ("the result should be {expected} on the screen") = CalcResult(result);
 
-  return steps;
+  return *steps;
 };
 
 STEPS("Table") = [](auto& scenario) {
@@ -128,6 +128,6 @@ STEPS("Table") = [](auto& scenario) {
       EXPECT_EQ(expected_desc, desc);
     };
 
-  return steps;
+  return *steps;
 };
 // clang-format on

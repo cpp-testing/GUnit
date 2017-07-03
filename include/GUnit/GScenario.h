@@ -139,9 +139,9 @@ inline void parse_and_register(const std::string& name, const TSteps& steps, con
           test(const TSteps& steps, const std::string& pickles) : steps{steps}, pickles{pickles} {}
 
           void TestBody() {
-            auto result = steps(pickles);
-            static_assert(std::is_same<T, decltype(result)>{}, "STEPS implementation has to return testing::Steps type!");
-            (void)result;
+            static_assert(std::is_same<T, decltype(steps(pickles))>{},
+                          "STEPS implementation has to return testing::Steps type!");
+            steps(pickles);
             std::cout << '\n';
           }
 
@@ -191,22 +191,15 @@ inline auto lexical_table_cast(const std::string& str, const T&) {
 
 }  // detail
 
-#if defined(__clang__)
-#pragma clang optimize off
-#pragma clang diagnostic ignored "-Wgnu-zero-variadic-macro-arguments"
-#elif defined(__GNUC__)
-#pragma GCC system_header
-#pragma GCC push_options
-#pragma GCC optimize("O0")
-#endif
 class Steps {
  public:
   explicit Steps(const std::string& pickles) : pickles{pickles} {}
 
-  Steps(const Steps& steps) __attribute__((optimize("no-elide-constructors"))) {
-    if (not steps.pickles.empty()) {
-      detail::run(steps.pickles, steps.steps_);
+  auto& operator*() {
+    if (not pickles.empty()) {
+      detail::run(pickles, steps_);
     }
+    return *this;
   }
 
   template <class TPattern>
@@ -305,12 +298,6 @@ private:
 std::string pickles;
 std::unordered_map<std::string, std::pair<std::string, std::function<void(const std::string&, const Table&)>>> steps_{};
 };
-
-#if defined(__clang__)
-#pragma clang optimize on
-#elif defined(__GNUC__)
-#pragma GCC pop_options
-#endif
 
 }  // v1
 }  // testing
