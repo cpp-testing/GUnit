@@ -18,22 +18,22 @@ STEPS("Calc *") = [](auto& scenario) {
   Calculator calc{};
   double result{};
 
-  steps.Given("I have entered {n} into the calculator"_s) =
+  steps.Given("I have entered {n} into the calculator"_step) =
     [&](double n) {
       calc.push(n);
     };
 
-  steps.When("I press add"_s) =
+  steps.When("I press add"_step) =
     [&] {
       result = calc.add();
     };
 
-  steps.When("I press divide"_s) =
+  steps.When("I press divide"_step) =
     [&] {
       result = calc.divide();
     };
 
-  steps.Then("the result should be {expected} on the screen"_s) =
+  steps.Then("the result should be {expected} on the screen"_step) =
     [&](double expected) {
       EXPECT_EQ(expected, result);
     };
@@ -108,12 +108,12 @@ STEPS("Table") = [](auto& scenario) {
   Table expected_table{};
   std::string expected_desc{};
 
-  steps.Given("I have the following table"_s, "ids") =
+  steps.Given("I have the following table"_step, "ids") =
     [&](const Table& table) {
       expected_table = table;
     };
 
-  steps.When("I choose {id}"_s) =
+  steps.When("I choose {id}"_step) =
     [&](int id) {
       for (auto row : expected_table) {
           if (row["id"] == std::to_string(id)) {
@@ -123,7 +123,7 @@ STEPS("Table") = [](auto& scenario) {
       }
     };
 
-  steps.Then("I should get '{desc}'"_s) =
+  steps.Then("I should get '{desc}'"_step) =
     [&](std::string desc) {
       EXPECT_EQ(expected_desc, desc);
     };

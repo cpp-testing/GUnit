@@ -314,7 +314,7 @@ inline auto lexical_cast(const std::string &str) {
 }  // detail
 
 template <class T, T... Chrs>
-constexpr auto operator""_s() {
+constexpr auto operator""_step() {
   return detail::string<Chrs...>{};
 }
 
