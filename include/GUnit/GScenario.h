@@ -191,6 +191,14 @@ inline auto lexical_table_cast(const std::string& str, const T&) {
 
 }  // detail
 
+#if defined(__clang__)
+#pragma clang optimize off
+#pragma clang diagnostic ignored "-Wgnu-zero-variadic-macro-arguments"
+#elif defined(__GNUC__)
+#pragma GCC system_header
+#pragma GCC push_options
+#pragma GCC optimize("O0")
+#endif
 class Steps {
  public:
   explicit Steps(const std::string& pickles) : pickles{pickles} {}
@@ -297,6 +305,12 @@ private:
 std::string pickles;
 std::unordered_map<std::string, std::pair<std::string, std::function<void(const std::string&, const Table&)>>> steps_{};
 };
+
+#if defined(__clang__)
+#pragma clang optimize on
+#elif defined(__GNUC__)
+#pragma GCC pop_options
+#endif
 
 }  // v1
 }  // testing
