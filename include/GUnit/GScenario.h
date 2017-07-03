@@ -32,6 +32,9 @@ struct StepIsAmbiguous : std::runtime_error {
 using Table = std::vector<std::unordered_map<std::string, std::string>>;
 
 namespace detail {
+
+struct Steps {};
+
 template <class T>
 void MakeAndRegisterTestInfo(const T& test, const std::string& type, const std::string& name, const std::string& /*file*/,
                              int /*line*/,
@@ -121,7 +124,7 @@ inline void run(
   }
 }
 
-template <class T, class TSteps>
+template <class TSteps>
 inline void parse_and_register(const std::string& name, const TSteps& steps, const std::string& feature) {
   const auto content = read_file(feature);
   gherkin::parser parser{L"en"};
@@ -140,7 +143,7 @@ inline void parse_and_register(const std::string& name, const TSteps& steps, con
           test(const TSteps& steps, const std::string& pickles) : steps{steps}, pickles{pickles} {}
 
           void TestBody() {
-            static_assert(std::is_same<T, decltype(steps(pickles))>{},
+            static_assert(std::is_same<Steps, decltype(steps(pickles))>{},
                           "STEPS implementation has to return testing::Steps type!");
             steps(pickles);
             std::cout << '\n';
@@ -166,14 +169,14 @@ inline void parse_and_register(const std::string& name, const TSteps& steps, con
   }
 }
 
-template <class T, class TFeature>
+template <class TFeature>
 struct steps {
   template <class TSteps>
   steps(const TSteps& s) {
     const auto scenario = std::getenv("SCENARIO");
     if (scenario) {
       for (const auto& feature : detail::split(scenario, ';')) {
-        parse_and_register<T>(TFeature::c_str(), s, feature);
+        parse_and_register(TFeature::c_str(), s, feature);
       }
     }
   }
@@ -194,62 +197,64 @@ inline auto lexical_table_cast(const std::string& str, const T&) {
 
 class Steps {
  public:
-  explicit Steps(const std::string& pickles) : pickles{pickles} {}
-
-  auto& operator*() {
-    if (not pickles.empty()) {
-      detail::run(pickles, steps_);
-    }
-    return *this;
+   detail::Steps operator()(const std::string& scenario) {
+    detail::run(scenario, steps_);
+    return {};
   }
 
-  template <class TPattern>
+  template <class File = detail::string<>, int line = 0, class TPattern>
   auto Given(const TPattern& pattern) {
     constexpr auto size = detail::args_size(TPattern{});
     return step<size>{"Given", pattern.c_str(), steps_[pattern.c_str()]};
   }
 
-  template <class TPattern>
-  auto Given(const TPattern& pattern, const std::string&) {
+  template <class File = detail::string<>, int line = 0, class TPattern, class T>
+  auto Given(const TPattern& pattern, const T&) {
     constexpr auto size = detail::args_size(TPattern{});
     return step<size, true>{"Given", pattern.c_str(), steps_[pattern.c_str()]};
   }
 
+  template<class File = detail::string<>, int line = 0>
   auto Given(const char* pattern) { return step<>{"Given", pattern, steps_[pattern]}; }
 
-  auto Given(const char* pattern, const std::string&) { return step<-1, true>{"Given", pattern, steps_[pattern]}; }
+  template<class File = detail::string<>, int line = 0, class T>
+  auto Given(const char* pattern, const T&) { return step<-1, true>{"Given", pattern, steps_[pattern]}; }
 
-  template <class TPattern>
+  template <class File = detail::string<>, int line = 0, class TPattern>
   auto When(const TPattern& pattern) {
     constexpr auto size = detail::args_size(TPattern{});
     return step<size>{"When", pattern.c_str(), steps_[pattern.c_str()]};
   }
 
-  template <class TPattern>
-  auto When(const TPattern& pattern, const std::string&) {
+  template <class File = detail::string<>, int line = 0, class TPattern, class T>
+  auto When(const TPattern& pattern, const T&) {
     constexpr auto size = detail::args_size(TPattern{});
     return step<size, true>{"When", pattern.c_str(), steps_[pattern.c_str()]};
   }
 
+  template<class File = detail::string<>, int line = 0>
   auto When(const char* pattern) { return step<>{"When", pattern, steps_[pattern]}; }
 
-  auto When(const char* pattern, const std::string&) { return step<-1, true>{"When", pattern, steps_[pattern]}; }
+  template<class File = detail::string<>, int line = 0, class T>
+  auto When(const char* pattern, const T&) { return step<-1, true>{"When", pattern, steps_[pattern]}; }
 
-  template <class TPattern>
+  template <class File = detail::string<>, int line = 0, class TPattern>
   auto Then(const TPattern& pattern) {
     constexpr auto size = detail::args_size(TPattern{});
     return step<size>{"Then", pattern.c_str(), steps_[pattern.c_str()]};
   }
 
-  template <class TPattern>
-  auto Then(const TPattern& pattern, const std::string&) {
+  template <class File = detail::string<>, int line = 0, class TPattern, class T>
+  auto Then(const TPattern& pattern, const T&) {
     constexpr auto size = detail::args_size(TPattern{});
     return step<size, true>{"Then", pattern.c_str(), steps_[pattern.c_str()]};
   }
 
+  template<class File = detail::string<>, int line = 0>
   auto Then(const char* pattern) { return step<>{"Then", pattern, steps_[pattern]}; }
 
-  auto Then(const char* pattern, const std::string&) { return step<-1, true>{"Then", pattern, steps_[pattern]}; }
+  template<class File = detail::string<>, int line = 0, class T>
+  auto Then(const char* pattern, const T&) { return step<-1, true>{"Then", pattern, steps_[pattern]}; }
 
  private:
   template <int ArgsSize = -1, bool HasTable = false>
@@ -296,7 +301,6 @@ std::pair<std::string, std::function<void(const std::string&, const Table&)>>& e
 };
 
 private:
-std::string pickles;
 std::unordered_map<std::string, std::pair<std::string, std::function<void(const std::string&, const Table&)>>> steps_{};
 };
 
@@ -304,5 +308,13 @@ std::unordered_map<std::string, std::pair<std::string, std::function<void(const 
 }  // testing
 
 #define STEPS(feature)                                                                                             \
-  __attribute__((unused))::testing::detail::steps<::testing::Steps, decltype(__GUNIT_CAT(feature, _gtest_string))> \
+  __attribute__((unused))::testing::detail::steps<decltype(__GUNIT_CAT(feature, _gtest_string))> \
       __GUNIT_CAT(_gsteps__, __COUNTER__)
+
+#if defined(__clang__)
+#pragma clang diagnostic ignored "-Wdollar-in-identifier-extension"
+#endif
+
+#define $Given Given<decltype(__FILE__""_gtest_string), __LINE__>
+#define $When When<decltype(__FILE__""_gtest_string), __LINE__>
+#define $Then Then<decltype(__FILE__""_gtest_string), __LINE__>

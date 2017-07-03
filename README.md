@@ -101,7 +101,7 @@ Feature: Calc Addition
 #### Steps Implementation
 ```cpp
 STEPS("Calc*") = [](auto& scenario) {
-  testing::Steps steps{scenario};
+  testing::Steps steps{};
   Calculator calc{};
   double result{};
 
@@ -125,7 +125,7 @@ STEPS("Calc*") = [](auto& scenario) {
       EXPECT_EQ(expected, result);
     };
 
-  return steps;
+  return steps(scenario);
 };
 ```
 
@@ -136,38 +136,27 @@ SCENARIO="test/Features/Calc/addition.feature" ./test --gtest_filter="Calc Addit
 
 #### Output
 ```sh
-[==========] Running 8 tests from 1 test case.
+[==========] Running 12 tests from 1 test case.
 [----------] Global test environment set-up.
-[----------] 8 tests from Addition
-[ RUN      ] Addition.Add two numbers
-[ STEP     ] I have entered 20 into the calculator
-[ STEP     ] I have entered 30 into the calculator
-[ STEP     ] I press add
-[ STEP     ] the result should be 50 on the screen
+[----------] 12 tests from Calc Addition
+[ RUN      ] Calc Addition.Add two numbers
+[    Given ] I have entered 20 into the calculator
+[    Given ] I have entered 30 into the calculator
+[     When ] I press add
+[     Then ] the result should be 50 on the screen
 
-[       OK ] Addition.Add two numbers (1 ms)
-[ RUN      ] Addition.Add two numbers
-[ STEP     ] I have entered 2 into the calculator
-[ STEP     ] I have entered 5 into the calculator
-[ STEP     ] I press add
-[ STEP     ] the result should be 7 on the screen
-
-[       OK ] Addition.Add two numbers (1 ms)
-[ RUN      ] Addition.Add two numbers
-[ STEP     ] I have entered 0 into the calculator
-[ STEP     ] I have entered 40 into the calculator
-[ STEP     ] I press add
-[ STEP     ] the result should be 40 on the screen
+[       OK ] Calc Addition.Add two numbers (0 ms)
+[ RUN      ] Calc Addition.Add two numbers
+[    Given ] I have entered 2 into the calculator
+[    Given ] I have entered 5 into the calculator
+[     When ] I press add
+[     Then ] the result should be 7 on the screen
 
 ...
 
-[       OK ] Addition.Add two numbers (1 ms)
-[----------] 8 tests from Addition (7 ms total)
-
 [----------] Global test environment tear-down
-[==========] 8 tests from 1 test case ran. (7 ms total)
-[  PASSED  ] 8 tests.
-```
+[==========] 12 tests from 1 test case ran. (7 ms total)
+[  PASSED  ] 12 tests.```
 
 ## GUnit
 * Header only library (BDD/Gherkin support requires linking with libgherkin-cpp)
@@ -895,7 +884,7 @@ const auto CalcResult = [](auto& result) {
 };
 
 STEPS("Calc *") = [](auto& scenario) {
-  testing::Steps steps{scenario};
+  testing::Steps steps{};
   Calculator calc{};
   double result{};
 
@@ -904,7 +893,7 @@ STEPS("Calc *") = [](auto& scenario) {
   steps.When ("I press divide")                                = CalcDivide(calc, result);
   steps.Then ("the result should be {expected} on the screen") = CalcResult(result);
 
-  return steps;
+  return steps(scenario);
 };
 ```
 
@@ -917,7 +906,7 @@ SCENARIO="test/Features/Calc/addition.feature" ./test --gtest_filter="Calc Addit
 
 ```cpp
 STEPS("Calc*") = [](auto& scenario) {
-  testing::Steps steps{scenario};
+  testing::Steps steps{};
   testing::GMock<IDisplay> display{DEFER_CALLS(IDisplay, show)};
   CalculatorUI calc{testing::object(display)};
 
@@ -937,7 +926,7 @@ STEPS("Calc*") = [](auto& scenario) {
       EXPECTED_CALL(display, (show)(expected));
     };
 
-  return steps;
+  return steps(scenario);
 };
 ```
 

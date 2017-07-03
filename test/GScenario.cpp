@@ -14,7 +14,7 @@
 // clang-format off
 STEPS("Calc *") = [](auto& scenario) {
   using namespace testing;
-  Steps steps{scenario};
+  Steps steps{};
   Calculator calc{};
   double result{};
 
@@ -38,13 +38,13 @@ STEPS("Calc *") = [](auto& scenario) {
       EXPECT_EQ(expected, result);
     };
 
-  return *steps;
+  return steps(scenario);
 };
 
 STEPS("Calc*") = [](auto& scenario) {
   testing::GMock<IDisplay> display{DEFER_CALLS(IDisplay, show)};
   CalculatorUI calc{testing::object(display)};
-  testing::Steps steps{scenario};
+  testing::Steps steps{};
 
   steps.Given("I have entered {n} into the calculator") =
     [&](double n) {
@@ -62,7 +62,7 @@ STEPS("Calc*") = [](auto& scenario) {
       EXPECTED_CALL(display, (show)(expected));
     };
 
-  return *steps;
+  return steps(scenario);
 };
 
 const auto CalcPush = [](auto& calc) {
@@ -90,7 +90,7 @@ const auto CalcResult = [](auto& result) {
 };
 
 STEPS("Calc *") = [](auto& scenario) {
-  testing::Steps steps{scenario};
+  testing::Steps steps{};
   Calculator calc{};
   double result{};
 
@@ -99,21 +99,21 @@ STEPS("Calc *") = [](auto& scenario) {
   steps.When ("I press divide")                                = CalcDivide(calc, result);
   steps.Then ("the result should be {expected} on the screen") = CalcResult(result);
 
-  return *steps;
+  return steps(scenario);
 };
 
 STEPS("Table") = [](auto& scenario) {
   using namespace testing;
-  Steps steps{scenario};
+  Steps steps{};
   Table expected_table{};
   std::string expected_desc{};
 
-  steps.Given("I have the following table"_step, "ids") =
+  steps.$Given("I have the following table"_step, "ids") =
     [&](const Table& table) {
       expected_table = table;
     };
 
-  steps.When("I choose {id}"_step) =
+  steps.$When("I choose {id}"_step) =
     [&](int id) {
       for (auto row : expected_table) {
           if (row["id"] == std::to_string(id)) {
@@ -123,11 +123,11 @@ STEPS("Table") = [](auto& scenario) {
       }
     };
 
-  steps.Then("I should get '{desc}'"_step) =
+  steps.$Then("I should get '{desc}'"_step) =
     [&](std::string desc) {
       EXPECT_EQ(expected_desc, desc);
     };
 
-  return *steps;
+  return steps(scenario);
 };
 // clang-format on
