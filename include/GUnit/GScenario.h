@@ -84,7 +84,8 @@ inline auto make_table(const nlohmann::json& step) {
         std::unordered_map<std::string, std::string> r;
         int i = 0;
         for (const auto& cell : row["cells"]) {
-          r[ids[i++]] = cell["value"];
+          std::string value = cell["value"];
+          r[ids[i++]] = value;
         }
         table.push_back(r);
       }
