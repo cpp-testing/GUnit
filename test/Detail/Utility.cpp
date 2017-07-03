@@ -19,16 +19,16 @@ TEST(Utility, ShouldReturnMatches) {
   constexpr auto n0 = "I press add"_gtest_string;
   constexpr auto n1 = "I have a {number} to read"_gtest_string;
   constexpr auto n2 = "I have a {number} and a {second number} to read"_gtest_string;
-  constexpr auto n3 = R"(I have a "{text}" and a {second number} to read)"_gtest_string;
+  constexpr auto n3 = R"(I have a '{text}' and a {second number} to read)"_gtest_string;
   constexpr auto n4 = "I have a {} blah"_gtest_string;
   constexpr auto n5 = "I have a {} to read"_gtest_string;
-  constexpr auto n6 = R"(I have a "{}" to read)"_gtest_string;
+  constexpr auto n6 = R"(I have a '{}' to read)"_gtest_string;
 
   constexpr auto t0 = "I press add";
   constexpr auto t1 = "I have a 42 to read";
   constexpr auto t2 = "I have a 1234 and a fifty to read";
-  constexpr auto t3 = R"(I have a "text with spaces" and a fifty to read)";
-  constexpr auto t4 = R"(I have a "42" to read)";
+  constexpr auto t3 = R"(I have a 'text with spaces' and a fifty to read)";
+  constexpr auto t4 = R"(I have a '42' to read)";
 
   static_assert(0 == args_size(n0), "");
   static_assert(1 == args_size(n1), "");

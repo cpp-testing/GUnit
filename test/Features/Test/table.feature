@@ -2,16 +2,15 @@
 
 Feature: Table
 
-  Scenario: Table
+  Scenario Outline: Table
     Given I have the following table
       | id | desc   |
       | 42 | number |
-      | 11 | text |
+      | 11 | text   |
+     When I choose <id>
+     Then I should get '<desc>'
 
-#     When I choose <id>
-#     Then I should get <desc>
-#
-#    Examples:
-#      | id | desc |
-#      | 42 | number |
-#      | 11 | text |
+     Examples:
+       | id | desc |
+       | 42 | number |
+       | 11 | text |

@@ -136,7 +136,7 @@ constexpr auto operator""_gtest_string() {
 
 }  // operators
 
-template<class T>
+template <class T>
 inline constexpr auto args_size(T str) {
   auto args = 0;
   for (auto i = 0u; i < str.size(); ++i) {
@@ -147,8 +147,8 @@ inline constexpr auto args_size(T str) {
   return args;
 }
 
-template<class T>
-inline auto matches(T pattern, const std::string& str) {
+template <class T>
+inline auto matches(T pattern, const std::string &str) {
   std::vector<std::string> matches{};
   auto pi = 0u, si = 0u;
 
@@ -161,9 +161,9 @@ inline auto matches(T pattern, const std::string& str) {
   };
 
   while (pi < pattern.size() && si < str.size()) {
-    if (pattern[pi] == '"' && str[si] == '"' && pattern[pi + 1] == '{') {
+    if (pattern[pi] == '\'' && str[si] == '\'' && pattern[pi + 1] == '{') {
       ++si;
-      matcher('"', '}');
+      matcher('\'', '}');
     } else if (pattern[pi] == '{') {
       matcher(' ', '}');
     } else if (pattern[pi] != str[si]) {
@@ -175,8 +175,8 @@ inline auto matches(T pattern, const std::string& str) {
   return matches;
 }
 
-template<class T>
-inline auto match(T pattern, const std::string& str) {
+template <class T>
+inline auto match(T pattern, const std::string &str) {
   return not matches(pattern, str).empty() || std::string{pattern.c_str()} == str;
 }
 

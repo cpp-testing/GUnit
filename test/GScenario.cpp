@@ -41,7 +41,7 @@ STEPS("Calc *") = [](auto& scenario) {
   return steps;
 };
 
-STEPS("*") = [](auto& scenario) {
+STEPS("Calc*") = [](auto& scenario) {
   testing::GMock<IDisplay> display{DEFER_CALLS(IDisplay, show)};
   CalculatorUI calc{testing::object(display)};
   testing::Steps steps{scenario};
@@ -105,15 +105,28 @@ STEPS("Calc *") = [](auto& scenario) {
 STEPS("Table") = [](auto& scenario) {
   using namespace testing;
   Steps steps{scenario};
+  Table expected_table{};
+  std::string expected_desc{};
 
   steps.Given("I have the following table"_s, "ids") =
-    [](const Table&) {};
+    [&](const Table& table) {
+      expected_table = table;
+    };
 
-  steps.When("When I choose {id}"_s) =
-    [](int) {};
+  steps.When("I choose {id}"_s) =
+    [&](int id) {
+      for (auto row : expected_table) {
+          if (row["id"] == std::to_string(id)) {
+              expected_desc = row["desc"];
+              break;
+          }
+      }
+    };
 
-  steps.Then("I should get {desc}"_s) =
-    [](std::string) {};
+  steps.Then("I should get '{desc}'"_s) =
+    [&](std::string desc) {
+      EXPECT_EQ(expected_desc, desc);
+    };
 
   return steps;
 };
