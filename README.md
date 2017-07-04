@@ -12,7 +12,7 @@
 ## GUnit
 > GoogleTest/GoogleMock/Cucumber on steroids
 
-If you like/and or are struck with GoogleTest/GoogleMock/Cucmber-cpp on Linux/Mac environment with C++14 support you may want to consider using GUnit because your testing experience will become much better:
+If you like/and or are struck with GoogleTest/GoogleMock/Cucmber-cpp on clang/gcc with C++14 you may want to consider using GUnit in order to improve your testing experience by:
 * **No more hand written mocks**! (No more MOCK_CONST_METHOD3)
 * **No more base classes and label as identifiers for GoogleTest** (GTEST/SHOULD)
 * **No need to create mocks by hand** (GMake - Automatic mocks injection)
@@ -92,10 +92,10 @@ Feature: Calc Addition
   I want to be told the sum of two numbers
 
   Scenario: Add two numbers
-    Given I have entered 5 into the calculator
-    And I have entered 7 into the calculator
-    When I press add
-    Then the result should be 12 on the screen
+    Given I have entered 20 into the calculator
+      And I have entered 30 into the calculator
+     When I press add
+     Then the result should be 50 on the screen
 ```
 
 #### Steps Implementation
