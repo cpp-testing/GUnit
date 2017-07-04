@@ -11,6 +11,7 @@
 #include <fstream>
 #include <functional>
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <tuple>
 #include <typeinfo>
@@ -204,6 +205,32 @@ struct GetAccess {
 };
 CallReactionType GetCallReaction();
 template struct GetAccess<&Mock::GetReactionOnUninterestingCalls>;
+
+class Expected {
+ public:
+  explicit Expected(const std::string &name) : name_{name} {}
+
+  ~Expected() {
+    if (f_ and not called) {
+      throw std::runtime_error("Uninteresting function call: \"" + name_ + "\"\nMissing EXPECTED_CALL!");
+    }
+  }
+
+  void operator()() {
+    f_();
+    called = true;
+  }
+
+  template <class T>
+  void operator=(const T &f) {
+    f_ = f;
+  }
+
+ private:
+  std::string name_;
+  std::function<void()> f_{};
+  bool called = false;
+};
 }  // detail
 
 template <class T>
@@ -525,7 +552,6 @@ auto object(TMock *mock) {
        __GUNIT_CAT(__GMOCK_OVERLOAD_CAST_IMPL_, __GMOCK_OVERLOAD_CALL call)(obj, call) & \
        std::decay_t<decltype(obj)>::type::__GMOCK_NAME call __GMOCK_CALL call))          \
       .InternalExpectedAt(__FILE__, __LINE__, #obj, #qcall)
-#define EXPECTED_CALL EXPECT_CALL
 
 #define EXPECT_INVOKE(obj, f, ...) __GUNIT_CAT(__GMOCK_EXPECT_INVOKE_IMPL_, __GUNIT_IBP(f))(obj, f, __VA_ARGS__)
 #define __GMOCK_EXPECT_INVOKE_IMPL_0(obj, f, ...)                                                                        \
@@ -536,7 +562,6 @@ auto object(TMock *mock) {
                                                                  __GUNIT_IF(__GUNIT_IBP(f))(f, (f))(__VA_ARGS__));       \
                                   })(obj)
 #define __GMOCK_EXPECT_INVOKE_IMPL_1(obj, f, ...) __GMOCK_EXPECT_CALL_1(obj, f(__VA_ARGS__), f(__VA_ARGS__))
-#define EXPECTED_INVOKE EXPECT_INVOKE
 
 #undef ON_CALL
 #define ON_CALL(obj, call) __GUNIT_CAT(__GMOCK_ON_CALL_, __GUNIT_IBP(call))(obj, call, call)
@@ -574,4 +599,16 @@ auto object(TMock *mock) {
 #define __GMOCK_DEFER_CALLS_IMPL_3(I, f1, f2, f3) __GMOCK_DEFER_CALLS_IMPL_2(I, f1, f2), __GMOCK_DEFER_CALLS_IMPL(I, f3)
 #define __GMOCK_DEFER_CALLS_IMPL_2(I, f1, f2) __GMOCK_DEFER_CALLS_IMPL_1(I, f1), __GMOCK_DEFER_CALLS_IMPL(I, f2)
 #define __GMOCK_DEFER_CALLS_IMPL_1(I, f1) __GMOCK_DEFER_CALLS_IMPL(I, f1)
+
 #define DEFER_CALLS(I, ...) __GUNIT_CAT(__GMOCK_DEFER_CALLS_IMPL_, __GUNIT_SIZE(__VA_ARGS__))(I, __VA_ARGS__)
+
+#define MOCK_METHOD1_T_DEFER(name, ...)                                      \
+  ::testing::detail::Expected defer_##name{#name};                           \
+  MOCK_METHOD1_T(name##_defer, __VA_ARGS__);                                 \
+  GMOCK_RESULT_(, __VA_ARGS__) name(GMOCK_ARG_(, 1, __VA_ARGS__) gmock_a1) { \
+    defer_##name = [&] { this->name##_defer(gmock_a1); };                    \
+  }
+
+#define EXPECTED_CALL(mock, call, ...)          \
+  EXPECT_CALL(mock, call##_defer(__VA_ARGS__)); \
+  mock.defer_##call()

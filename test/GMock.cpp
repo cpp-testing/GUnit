@@ -1017,30 +1017,30 @@ TEST(GMock, ShouldDeferCallWithExpected) {
   using namespace testing;
   StrictGMock<interface> mock{DEFER_CALLS(interface, foo)};
 
-  //given
+  // given
   EXPECT_CALL(mock, (get)(_)).WillOnce(Return(77));
 
-  //when
+  // when
   mock.object().foo(42);
   EXPECT_EQ(77, mock.object().get(0));
 
-  //then
-  EXPECTED_CALL(mock, (foo)(42));
+  // then
+  EXPECT_CALL(mock, (foo)(42));
 }
 
 TEST(GMock, ShouldDeferCallsWithExpected) {
   using namespace testing;
   StrictGMock<interface> mock{DEFER_CALLS(interface, foo, bar)};
 
-  //given
+  // given
   EXPECT_CALL(mock, (get)(_)).WillOnce(Return(77));
 
-  //when
+  // when
   mock.object().foo(42);
   mock.object().bar({}, {});
   EXPECT_EQ(77, mock.object().get(0));
 
-  //then
-  EXPECTED_CALL(mock, (foo)(42));
-  EXPECTED_CALL(mock, (bar)(_, _));
+  // then
+  EXPECT_CALL(mock, (foo)(42));
+  EXPECT_CALL(mock, (bar)(_, _));
 }

@@ -57,7 +57,7 @@ STEPS("Calc*") = [](auto steps) {
 
   steps.Then("the result should be {expected} on the screen") =
     [&] (double expected) {
-      EXPECTED_CALL(display, (show)(expected));
+      EXPECT_CALL(display, (show)(expected));
     };
 
   return steps;
