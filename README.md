@@ -100,8 +100,7 @@ Feature: Calc Addition
 
 #### Steps Implementation
 ```cpp
-STEPS("Calc*") = [](auto& scenario) {
-  testing::Steps steps{};
+STEPS("Calc*") = [](auto steps) {
   Calculator calc{};
   double result{};
 
@@ -125,7 +124,7 @@ STEPS("Calc*") = [](auto& scenario) {
       EXPECT_EQ(expected, result);
     };
 
-  return steps(scenario);
+  return steps;
 };
 ```
 
@@ -136,27 +135,18 @@ SCENARIO="test/Features/Calc/addition.feature" ./test --gtest_filter="Calc Addit
 
 #### Output
 ```sh
-[==========] Running 12 tests from 1 test case.
+[==========] Running 1 test from 1 test case.
 [----------] Global test environment set-up.
-[----------] 12 tests from Calc Addition
+[----------] 1 tests from Calc Addition
 [ RUN      ] Calc Addition.Add two numbers
 [    Given ] I have entered 20 into the calculator
 [    Given ] I have entered 30 into the calculator
 [     When ] I press add
 [     Then ] the result should be 50 on the screen
-
-[       OK ] Calc Addition.Add two numbers (0 ms)
-[ RUN      ] Calc Addition.Add two numbers
-[    Given ] I have entered 2 into the calculator
-[    Given ] I have entered 5 into the calculator
-[     When ] I press add
-[     Then ] the result should be 7 on the screen
-
-...
-
 [----------] Global test environment tear-down
-[==========] 12 tests from 1 test case ran. (7 ms total)
-[  PASSED  ] 12 tests.```
+[==========] 1 test from 1 test case ran. (7 ms total)
+[  PASSED  ] 1 tests.
+```
 
 ## GUnit
 * Header only library (BDD/Gherkin support requires linking with libgherkin-cpp)
@@ -883,8 +873,7 @@ const auto CalcResult = [](auto& result) {
   };
 };
 
-STEPS("Calc *") = [](auto& scenario) {
-  testing::Steps steps{};
+STEPS("Calc *") = [](auto steps) {
   Calculator calc{};
   double result{};
 
@@ -893,7 +882,7 @@ STEPS("Calc *") = [](auto& scenario) {
   steps.When ("I press divide")                                = CalcDivide(calc, result);
   steps.Then ("the result should be {expected} on the screen") = CalcResult(result);
 
-  return steps(scenario);
+  return steps;
 };
 ```
 
@@ -905,8 +894,7 @@ SCENARIO="test/Features/Calc/addition.feature" ./test --gtest_filter="Calc Addit
 ### GWT and Mocking?
 
 ```cpp
-STEPS("Calc*") = [](auto& scenario) {
-  testing::Steps steps{};
+STEPS("Calc*") = [](auto steps) {
   testing::GMock<IDisplay> display{DEFER_CALLS(IDisplay, show)};
   CalculatorUI calc{testing::object(display)};
 
@@ -926,7 +914,7 @@ STEPS("Calc*") = [](auto& scenario) {
       EXPECTED_CALL(display, (show)(expected));
     };
 
-  return steps(scenario);
+  return steps;
 };
 ```
 

@@ -31,9 +31,9 @@ struct StepIsAmbiguous : std::runtime_error {
 
 using Table = std::vector<std::unordered_map<std::string, std::string>>;
 
-namespace detail {
+class Steps;
 
-struct Steps {};
+namespace detail {
 
 template <class T>
 void MakeAndRegisterTestInfo(const T& test, const std::string& type, const std::string& name, const std::string& /*file*/,
@@ -143,9 +143,9 @@ inline void parse_and_register(const std::string& name, const TSteps& steps, con
           test(const TSteps& steps, const std::string& pickles) : steps{steps}, pickles{pickles} {}
 
           void TestBody() {
-            static_assert(std::is_same<Steps, decltype(steps(pickles))>{},
+            static_assert(std::is_same<Steps, decltype(steps(Steps{pickles}))>{},
                           "STEPS implementation has to return testing::Steps type!");
-            steps(pickles);
+            steps(Steps{pickles});
             std::cout << '\n';
           }
 
@@ -197,10 +197,11 @@ inline auto lexical_table_cast(const std::string& str, const T&) {
 
 class Steps {
  public:
-   detail::Steps operator()(const std::string& scenario) {
-    detail::run(scenario, steps_);
-    return {};
-  }
+   explicit Steps(const std::string& scenario) : scenario_{scenario} {}
+
+   Steps(const Steps& steps) {
+      detail::run(steps.scenario_, steps.steps_);
+   }
 
   template <class File = detail::string<>, int line = 0, class TPattern>
   auto Given(const TPattern& pattern) {
@@ -301,6 +302,7 @@ std::pair<std::string, std::function<void(const std::string&, const Table&)>>& e
 };
 
 private:
+std::string scenario_;
 std::unordered_map<std::string, std::pair<std::string, std::function<void(const std::string&, const Table&)>>> steps_{};
 };
 

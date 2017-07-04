@@ -321,4 +321,4 @@ constexpr auto operator""_step() {
 }  // v1
 }  // testing
 
-using namespace ::testing::detail::operators;
+using ::testing::detail::operators::operator""_gtest_string;
