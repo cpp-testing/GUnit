@@ -12,13 +12,13 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <algorithm>
-#include <cassert>
 #include <cstdio>
 #include <cstring>
 #include <fstream>
 #include <memory>
 #include <set>
 #include <sstream>
+#include <stdexcept>
 #include <vector>
 #include "GUnit/Detail/TypeTraits.h"
 
@@ -226,7 +226,9 @@ inline auto is_file(const std::string &path) {
 
 inline std::wstring read_file(const std::string &feature) {
   std::ifstream file{feature};
-  assert(file.good());
+  if (!file.good()) {
+    throw std::runtime_error("File \"" + feature + "\" not found!");
+  }
   return {(std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>()};
 }
 
