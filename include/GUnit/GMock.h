@@ -11,6 +11,7 @@
 #include <fstream>
 #include <functional>
 #include <memory>
+#include <queue>
 #include <stdexcept>
 #include <string>
 #include <tuple>
@@ -211,25 +212,26 @@ class Expected {
   explicit Expected(const std::string &name) : name_{name} {}
 
   ~Expected() {
-    if (f_ and not called) {
+    if (not fs_.empty()) {
       throw std::runtime_error("Uninteresting function call: \"" + name_ + "\"\nMissing EXPECTED_CALL!");
     }
   }
 
-  void operator()() {
-    f_();
-    called = true;
+  template <class T>
+  void add(const T &f) {
+    fs_.push(f);
   }
 
-  template <class T>
-  void operator=(const T &f) {
-    f_ = f;
+  void operator()() {
+    if (not fs_.empty()) {
+      fs_.front()();
+      fs_.pop();
+    }
   }
 
  private:
   std::string name_;
-  std::function<void()> f_{};
-  bool called = false;
+  std::queue<std::function<void()>> fs_;
 };
 }  // detail
 
@@ -606,9 +608,9 @@ auto object(TMock *mock) {
   ::testing::detail::Expected defer_##name{#name};                           \
   MOCK_METHOD1_T(name##_defer, __VA_ARGS__);                                 \
   GMOCK_RESULT_(, __VA_ARGS__) name(GMOCK_ARG_(, 1, __VA_ARGS__) gmock_a1) { \
-    defer_##name = [&] { this->name##_defer(gmock_a1); };                    \
+    defer_##name.add([&] { this->name##_defer(gmock_a1); });                 \
   }
 
 #define EXPECTED_CALL(mock, call, ...)          \
   EXPECT_CALL(mock, call##_defer(__VA_ARGS__)); \
-  mock.defer_##call()
+  mock.defer_##call();
