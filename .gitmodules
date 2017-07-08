@@ -4,3 +4,6 @@
 [submodule "libs/json"]
 	path = libs/json
 	url = https://github.com/nlohmann/json.git
+[submodule "libs/gherkin-cpp"]
+	path = libs/gherkin-cpp
+	url = https://github.com/c-libs/gherkin-cpp.git
