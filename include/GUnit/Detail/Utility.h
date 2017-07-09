@@ -306,7 +306,7 @@ inline std::pair<std::string, int> addr2line(void *addr) {
 
 template <class T>
 inline auto lexical_cast(const std::string &str) {
-  T var;
+  std::remove_cv_t<std::remove_reference_t<T>> var;
   std::istringstream iss;
   iss.str(str);
   iss >> var;

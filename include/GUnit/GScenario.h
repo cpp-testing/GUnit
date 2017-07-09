@@ -182,15 +182,17 @@ struct steps {
   }
 };
 
-template <class T>
-inline auto lexical_table_cast(const std::string&, const Table& table) {
-  static_assert(std::is_same<T, decltype(table)>::value, "");
+template<class T>
+inline auto lexical_table_cast(const std::string& str, const Table&, detail::identity<T>) {
+  return detail::lexical_cast<T>(str);
+}
+
+inline auto lexical_table_cast(const std::string&, const Table& table, detail::identity<const Table&>) {
   return table;
 }
 
-template <class T>
-inline auto lexical_table_cast(const std::string& str, const T&) {
-  return detail::lexical_cast<T>(str);
+inline auto lexical_table_cast(const std::string&, const Table& table, detail::identity<Table>) {
+  return table;
 }
 
 }  // detail
@@ -303,7 +305,7 @@ static void call_impl(const TExpr& expr, const TMatches& matches, const Table&, 
 template <class TExpr, class TMatches, class... Ts, std::size_t... Ns>
 static void call_impl(const TExpr& expr, const TMatches& matches, const Table& table, detail::type_list<Ts...>,
                       std::index_sequence<Ns...>, std::true_type) {
-  expr(detail::lexical_table_cast<Ts>(matches.empty() ? "" : matches[Ns].c_str(), table)...);
+  expr(detail::lexical_table_cast(matches.empty() ? "" : matches[Ns].c_str(), table, detail::identity<Ts>{})...);
 }
 
 std::string step_name_;
