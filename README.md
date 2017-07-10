@@ -873,15 +873,11 @@ const auto CalcResult = [](auto& result) {
   };
 };
 
-STEPS("Calc *") = [](auto steps) {
-  Calculator calc{};
-  double result{};
-
+STEPS("Calc*") = [](auto steps, Calculator calc, double result) {
   steps.Given("I have entered {n} into the calculator")        = CalcPush(calc);
   steps.When ("I press add")                                   = CalcAdd(calc, result);
   steps.When ("I press divide")                                = CalcDivide(calc, result);
   steps.Then ("the result should be {expected} on the screen") = CalcResult(result);
-
   return steps;
 };
 ```
