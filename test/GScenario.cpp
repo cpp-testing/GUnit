@@ -56,6 +56,47 @@ STEPS("Calc *") = [](auto steps) {
   return steps;
 };
 
+STEPS("Calc *") = [](auto steps, Calculator calc, double result) {
+  using namespace testing;
+  auto b = 0;
+  auto a = 0;
+  auto first = 0;
+
+  steps.BeforeEach() = [&]{ ++b; };
+  steps.AfterEach() = [&]{ ++a; };
+
+  steps.Given("I have entered {n} into the calculator"_step) =
+    [&](double n) {
+      calc.push(n);
+      EXPECT_EQ(1 + first, b);
+      EXPECT_EQ(0 + first, a);
+      ++first;
+    };
+
+  steps.When("I press add"_step) =
+    [&] {
+      result = calc.add();
+      EXPECT_EQ(3, b);
+      EXPECT_EQ(2, a);
+    };
+
+  steps.When("I press divide"_step) =
+    [&] {
+      result = calc.divide();
+      EXPECT_EQ(3, b);
+      EXPECT_EQ(2, a);
+    };
+
+  steps.Then("the result should be {expected} on the screen"_step) =
+    [&](double expected) {
+      EXPECT_EQ(expected, result);
+      EXPECT_EQ(4, b);
+      EXPECT_EQ(3, a);
+    };
+
+  return steps;
+};
+
 STEPS("Calc*") = [](auto steps) {
   testing::GMock<IDisplay> display{DEFER_CALLS(IDisplay, show)};
   CalculatorUI calc{testing::object(display)};

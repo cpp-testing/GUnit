@@ -99,8 +99,9 @@ inline auto make_table(const nlohmann::json& step) {
 
 inline void run(
     const std::string& pickles,
-    const std::unordered_map<std::string, std::pair<std::string, std::function<void(const std::string&, const Table&)>>>&
-        steps) {
+    const std::function<void()>& before_each,
+    const std::unordered_map<std::string, std::pair<std::string, std::function<void(const std::string&, const Table&)>>>& steps,
+    const std::function<void()>& after_each) {
   const auto json = nlohmann::json::parse(pickles)["pickle"];
   for (const auto& expected_step : json["steps"]) {
     std::string line = expected_step["text"];
@@ -113,7 +114,13 @@ inline void run(
         }
         std::cout << "\033[0;96m"
                   << "[ " << std::right << std::setw(8) << given_step.second.first << " ] " << line << "\033[m" << '\n';
+        if (before_each) {
+          before_each();
+        }
         given_step.second.second(line, table);
+        if (after_each) {
+          after_each();
+        }
         found = true;
       }
     }
@@ -206,7 +213,7 @@ class Steps {
  public:
   explicit Steps(const std::string& scenario) : scenario_{scenario} {}
 
-  Steps(const Steps& steps) { detail::run(steps.scenario_, steps.steps_); }
+  Steps(const Steps& steps) { detail::run(steps.scenario_, steps.before_each_, steps.steps_, steps.after_each_); }
 
   template <class File = detail::string<>, int line = 0, class TPattern>
   auto Given(const TPattern& pattern) {
@@ -274,7 +281,30 @@ class Steps {
     return step<-1, true>{"Then", pattern, steps_[pattern]};
   }
 
+  auto BeforeEach() {
+    return each{before_each_};
+  }
+
+  auto AfterEach() {
+    return each{after_each_};
+  }
+
  private:
+  class each {
+    public:
+      explicit each(std::function<void()>& expr)
+        : expr_(expr)
+      { }
+
+    template <class TExpr>
+    void operator=(const TExpr& expr) {
+      expr_ = expr;
+    }
+
+    private:
+      std::function<void()>& expr_;
+  };
+
   template <int ArgsSize = -1, bool HasTable = false>
   class step {
    public:
@@ -321,6 +351,8 @@ std::pair<std::string, std::function<void(const std::string&, const Table&)>>& e
 private:
 std::string scenario_;
 std::unordered_map<std::string, std::pair<std::string, std::function<void(const std::string&, const Table&)>>> steps_{};
+std::function<void()> before_each_;
+std::function<void()> after_each_;
 };
 
 }  // v1
