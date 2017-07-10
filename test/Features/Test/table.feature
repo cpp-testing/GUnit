@@ -1,5 +1,3 @@
-#language: en
-
 Feature: Table
 
   Scenario Outline: Table

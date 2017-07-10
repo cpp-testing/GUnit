@@ -86,16 +86,13 @@ auto type_id() {
 template <class T>
 struct function_traits
   : function_traits<decltype(&T::operator())>
-{
-  using is_lambda_expr = std::true_type;
-};
+{ };
 
 template <class R, class... TArgs>
 struct function_traits<R (*)(TArgs...)> {
   using result_type = R;
   using base_type = void;
   using args = type_list<TArgs...>;
-  using is_lambda_expr = std::false_type;
 };
 
 template <class R, class... TArgs>
@@ -103,7 +100,6 @@ struct function_traits<R(TArgs...)> {
   using result_type = R;
   using base_type = void;
   using args = type_list<TArgs...>;
-  using is_lambda_expr = std::false_type;
 };
 
 template <class R, class T, class... TArgs>
@@ -111,7 +107,6 @@ struct function_traits<R (T::*)(TArgs...)> {
   using result_type = R;
   using base_type = T;
   using args = type_list<TArgs...>;
-  using is_lambda_expr = std::false_type;
 };
 
 template <class R, class T, class... TArgs>
@@ -119,7 +114,6 @@ struct function_traits<R (T::*)(TArgs...) const> {
   using result_type = R;
   using base_type = T;
   using args = type_list<TArgs...>;
-  using is_lambda_expr = std::false_type;
 };
 
 template <class T>
@@ -140,6 +134,15 @@ struct function_type<T, R(TArgs...) const> {
 
 template <class T, class U>
 using function_type_t = typename function_type<T, U>::type;
+
+template <class...>
+type_list<> function_args__(...);
+template<class T, class... TArgs>
+auto function_args__(int) -> function_traits_t<decltype(&T::template operator()<TArgs...>)>;
+template<class T, class...>
+auto function_args__(int) -> function_traits_t<decltype(&T::operator())>;
+template <class T, class... Args>
+using function_args_t = decltype(function_args__<T, Args...>(0));
 
 template <class, class>
 struct contains;

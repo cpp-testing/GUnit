@@ -124,6 +124,11 @@ inline void run(
   }
 }
 
+template<class TSteps, class T, class... Ts>
+inline auto call_steps(const TSteps& steps, const std::string& pickles, detail::type_list<T, Ts...>) {
+  return steps(T{pickles}, Ts{}...);
+}
+
 template <class TSteps>
 inline void parse_and_register(const std::string& name, const TSteps& steps, const std::string& feature) {
   const auto content = read_file(feature);
@@ -143,9 +148,9 @@ inline void parse_and_register(const std::string& name, const TSteps& steps, con
           test(const TSteps& steps, const std::string& pickles) : steps{steps}, pickles{pickles} {}
 
           void TestBody() {
-            static_assert(std::is_same<Steps, decltype(steps(Steps{pickles}))>{},
+            static_assert(std::is_same<Steps, decltype(call_steps(steps, pickles, detail::function_args_t<TSteps, Steps>{}))>{},
                           "STEPS implementation has to return testing::Steps type!");
-            steps(Steps{pickles});
+            call_steps(steps, pickles, detail::function_args_t<TSteps, Steps>{});
             std::cout << '\n';
           }
 

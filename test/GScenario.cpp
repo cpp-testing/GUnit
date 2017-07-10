@@ -142,4 +142,33 @@ STEPS("Table") = [](testing::Steps steps) {
 
   return steps;
 };
+
+struct Context {
+  testing::Table expected_table{};
+  std::string expected_desc{};
+};
+
+STEPS("Table") = [](testing::Steps steps, Context ctx) {
+  steps.$Given("I have the following table", "ids") =
+    [&](testing::Table ids) {
+      ctx.expected_table = ids;
+    };
+
+  steps.$When("I choose {id}") =
+    [&](int id) {
+      for (auto row : ctx.expected_table) {
+          if (row["id"] == std::to_string(id)) {
+              ctx.expected_desc = row["desc"];
+              break;
+          }
+      }
+    };
+
+  steps.$Then("I should get '{desc}'") =
+    [&](const std::string& desc) {
+      EXPECT_EQ(ctx.expected_desc, desc);
+    };
+
+  return steps;
+};
 // clang-format on
