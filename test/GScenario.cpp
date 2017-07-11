@@ -62,8 +62,8 @@ STEPS("Calc *") = [](auto steps, Calculator calc, double result) {
   auto a = 0;
   auto first = 0;
 
-  steps.BeforeEach() = [&]{ ++b; };
-  steps.AfterEach() = [&]{ ++a; };
+  steps.Before() = [&]{ ++b; };
+  steps.After() = [&]{ ++a; };
 
   steps.Given("I have entered {n} into the calculator"_step) =
     [&](double n) {
