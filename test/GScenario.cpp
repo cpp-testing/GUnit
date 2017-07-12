@@ -13,7 +13,7 @@
 
 GTEST("Steps") {
   using namespace testing;
-  testing::Steps steps{""};
+  testing::Steps steps{{}, {}};
   steps.Given("{}") = [](int) {};
   steps.$Given("{} {}") = [](int, double) {};
   steps.Given("{n}") = [](int) {};
