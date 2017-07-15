@@ -164,6 +164,18 @@ STEPS("Calc*") = [](auto steps, Calculator calc, double result) {
   return steps;
 };
 
+auto common_steps = [](auto& steps, auto& calc, auto& result) {
+  steps.When ("I press add")                                   = CalcAdd(calc, result);
+  steps.When ("I press divide")                                = CalcDivide(calc, result);
+};
+
+STEPS("Calc*") = [](auto steps, Calculator calc, double result) {
+  steps.Given("I have entered {n} into the calculator")        = CalcPush(calc);
+  steps.Then ("the result should be {expected} on the screen") = CalcResult(result);
+  common_steps(steps, calc, result);
+  return steps;
+};
+
 STEPS("Table") = [](testing::Steps steps) {
   using namespace testing;
   Table expected_table{};
