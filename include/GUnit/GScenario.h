@@ -253,7 +253,7 @@ class Steps {
  public:
   explicit Steps(const std::string& file, const std::string& scenario) : file_{file}, scenario_{scenario} {}
 
-  Steps(const Steps& steps) { detail::run(steps.file_, steps.scenario_, steps.before__, steps.steps_, steps.after__); }
+  Steps(const Steps& steps) { detail::run(steps.file_, steps.scenario_, steps.before_, steps.steps_, steps.after_); }
 
   template <class File = detail::string<>, int line = 0, class TPattern>
   auto Given(const TPattern& pattern) {
@@ -322,11 +322,11 @@ class Steps {
   }
 
   auto Before() {
-    return around{before__};
+    return around{before_};
   }
 
   auto After() {
-    return around{after__};
+    return around{after_};
   }
 
  private:
@@ -392,8 +392,8 @@ private:
 std::string file_;
 std::string scenario_;
 std::unordered_map<std::string, std::pair<detail::step_info, std::function<void(const std::string&, const Table&)>>> steps_{};
-std::function<void()> before__;
-std::function<void()> after__;
+std::function<void()> before_;
+std::function<void()> after_;
 };
 
 }  // v1
