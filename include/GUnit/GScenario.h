@@ -147,6 +147,29 @@ inline auto call_steps(const TSteps& steps, const std::string& pickles, const st
   return steps(T{file, pickles}, Ts{}...);
 }
 
+inline std::pair<bool, std::string> make_tags(const nlohmann::json& tags) {
+  if (tags.empty()) {
+    return {};
+  }
+
+  std::string result{"["};
+  auto disabled = false;
+  auto i = 0;
+  for (const auto& tag :tags ) {
+    std::string tag_name = tag["name"];
+    if (i++) {
+      result += ",";
+    }
+    if (tag_name == "@disabled") {
+      disabled = true;
+    } else {
+      result += tag_name;
+    }
+  }
+  result += "]";
+  return {disabled, result};
+}
+
 template <class TSteps>
 inline void parse_and_register(const std::string& name, const TSteps& steps, const std::string& feature) {
   const auto content = read_file(feature);
@@ -157,7 +180,10 @@ inline void parse_and_register(const std::string& name, const TSteps& steps, con
   const auto ast = nlohmann::json::parse(compiler.ast(gherkin_document));
   for (const auto& pickle : pickles) {
     const std::string feature_name = ast["document"]["feature"]["name"];
-    const std::string scenario_name = nlohmann::json::parse(pickle)["pickle"]["name"];
+    const auto pickle_json = nlohmann::json::parse(pickle)["pickle"];
+    const std::string scenario_name = pickle_json["name"];
+    const auto tags = make_tags(pickle_json["tags"]);
+    const auto disabled = tags.first ? "DISABLED_" : "";
 
     if (PatternMatchesString2(name.c_str(), feature_name.c_str())) {
       class TestFactory : public internal::TestFactoryBase {
@@ -188,7 +214,8 @@ inline void parse_and_register(const std::string& name, const TSteps& steps, con
         std::string file;
       };
 
-      MakeAndRegisterTestInfo(new TestFactory{steps, pickle, feature}, feature_name, scenario_name, __FILE__, __LINE__,
+
+      MakeAndRegisterTestInfo(new TestFactory{steps, pickle, feature}, disabled + feature_name + tags.second , scenario_name, __FILE__, __LINE__,
                               detail::type<decltype(internal::MakeAndRegisterTestInfo)>{});
     }
   }

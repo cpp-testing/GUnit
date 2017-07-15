@@ -233,3 +233,11 @@ STEPS("Table") = [](testing::Steps steps, Context ctx) {
   return steps;
 };
 // clang-format on
+
+STEPS("Tags*") = [](testing::Steps steps) {
+  using namespace testing;
+  steps.Given("I have a tag"_step) = [] {};
+  steps.When("I select a test with that tag"_step) = [] {};
+  steps.Then("I should see test being run"_step) = [] {};
+  return steps;
+};
