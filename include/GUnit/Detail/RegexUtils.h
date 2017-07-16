@@ -117,15 +117,5 @@ inline bool FilterMatchesShould(const std::string& name, const std::string& shou
 }
 
 }  // detail
-
-#if defined(__clang__)
-#pragma clang diagnostic ignored "-Wgnu-string-literal-operator-template"
-#endif
-
-template <class T, T... Chrs>
-constexpr auto operator""_step() {
-  return detail::string<Chrs...>{};
-}
-
 }  // v1
 }  // testing

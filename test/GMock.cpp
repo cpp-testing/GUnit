@@ -1041,6 +1041,41 @@ TEST(GMock, ShouldDeferCallsWithExpected) {
   EXPECT_EQ(77, mock.object().get(0));
 
   // then
-  EXPECT_CALL(mock, (foo)(42));
-  EXPECT_CALL(mock, (bar)(_, _));
+  EXPECTED_CALL(mock, (foo)(42));
+  EXPECTED_CALL(mock, (bar)(_, _));
+}
+
+struct Generic {
+  template<class... Ts>
+  void foo(Ts...) const;
+};
+
+template<class T>
+class GenericExample {
+public:
+  explicit GenericExample(const T& t)
+    : t{t}
+  { }
+
+  void bar() {
+    t.foo(42, 77.0);
+  }
+
+private:
+  const T& t;
+};
+
+struct IGeneric {
+  virtual ~IGeneric() = 0;
+  virtual void foo(int, double) const = 0;
+};
+
+TEST(GMock, ShouldMockTemplates) {
+  using namespace testing;
+  StrictGMock<IGeneric> generic{};
+  GenericExample<IGeneric> sut{object(generic)};
+
+  EXPECT_CALL(generic, (foo)(42, 77.0));
+
+  sut.bar();
 }

@@ -13,10 +13,10 @@
 > GoogleTest/GoogleMock/Cucumber on steroids
 
 If you like/and or are struck with GoogleTest/GoogleMock/Cucmber-cpp on clang/gcc with C++14 you may want to consider using GUnit in order to improve your testing experience by:
-* **No more hand written mocks**! (No more MOCK_CONST_METHOD3)
-* **No more base classes and label as identifiers for GoogleTest** (GTEST/SHOULD)
-* **No need to create mocks by hand** (GMake - Automatic mocks injection)
-* **No need for ruby to run BDD scenarios** (Gherkin - Given/When/Then)
+* **No more hand written mocks**! (No more MOCK_CONST_METHODX)
+* **No more base classes (SetUp/TearDown) and label as identifiers for GoogleTest** (GTEST/SHOULD)
+* **No more need to instansiate and maintain mocks by hand** (GMake - Automatic mocks injection)
+* **No more need for another tool (cucumber) and ruby to run BDD scenarios** (Gherkin - Given/When/Then)
 
 ## Motivation for GUnit (Towards Painless Testing)
 
@@ -139,10 +139,10 @@ SCENARIO="test/Features/Calc/addition.feature" ./test --gtest_filter="Calc Addit
 [----------] Global test environment set-up.
 [----------] 1 tests from Calc Addition
 [ RUN      ] Calc Addition.Add two numbers
-[    Given ] I have entered 20 into the calculator
-[    Given ] I have entered 30 into the calculator
-[     When ] I press add
-[     Then ] the result should be 50 on the screen
+[    Given ] I have entered 20 into the calculator            # CalcSteps.cpp:12
+[    Given ] I have entered 30 into the calculator            # CalcSteps.cpp:14
+[     When ] I press add                                      # CalcSteps.cpp:16
+[     Then ] the result should be 50 on the screen            # CalcSteps.cpp:19
 [----------] Global test environment tear-down
 [==========] 1 test from 1 test case ran. (7 ms total)
 [  PASSED  ] 1 tests.
@@ -174,7 +174,8 @@ SCENARIO="test/Features/Calc/addition.feature" ./test --gtest_filter="Calc Addit
   * [C++14](https://ubershmekel.github.io/cppdrafts/c++14-cd.html)
   * [GoogleTest](https://github.com/google/googletest) (compatible with all versions)
   * Tested compilers
-    * [Clang-3.6+ / GCC-5+](https://travis-ci.org/cpp-testing/GUnit)
+    * [Clang-3.6+](https://travis-ci.org/cpp-testing/GUnit)
+    * [GCC-5+](https://travis-ci.org/cpp-testing/GUnit)
 * Quick start
   ```sh
   $mkdir build && cd build && cmake ..
@@ -184,7 +185,7 @@ SCENARIO="test/Features/Calc/addition.feature" ./test --gtest_filter="Calc Addit
 ## Why GUnit it's based on GoogleTest/GoogleMock?
 
 * [GoogleTest](https://github.com/google/googletest)
-  * (+) Widely used
+  * (+) Widely used (The most popular testing framework according to https://www.jetbrains.com/research/devecosystem-2017/cpp)
   * (+) Stable
   * (+) Powerful
   * (+) **Comes with GoogleMock**
@@ -449,6 +450,45 @@ struct IFoo {
 GMock<IFoo> mock;
 EXPECT_INVOKE(mock, foo, 42).WillOnce(Return(42));
 // same as EXPECT_CALL(mock, (foo)(42)).WillOnce(Return(42));
+```
+
+### Mocking templates?
+
+* Simple, just put an interface on it!
+
+#### Example
+```cpp
+struct Generic {
+  template<class... Ts>
+  void foo(Ts...) const;
+};
+
+template<class T>
+class GenericExample {
+public:
+  explicit GenericExample(const T&);
+  void bar() {
+    t.foo(42, 77.0); // call via templated object
+  }
+
+private:
+  const T& t;
+};
+
+/**
+ * Needed for testing but it's still better than MOCK_CONST_METHOD2
+ */
+struct IGeneric {
+  virtual ~IGeneric() = 0;
+  virtual void foo(int, double) const = 0;
+};
+
+StrictGMock<IGeneric> generic{};
+GenericExample<IGeneric> sut{object(generic)};
+
+EXPECT_CALL(generic, (foo)(42, 77.0));
+
+sut.bar();
 ```
 
 ### [Advanced] Constructors with non-interface parameters and make (Assisted Injection)
@@ -824,7 +864,74 @@ GTEST(example) {
 
 ---
 
-## BDD (Given/When/Then) Scenarios with GScenario (Gherkin/Cucumber)
+## GUnit.GScenario - BDD (Given/When/Then - Gherkin) scenarios
+
+* Synopsis
+  ```cpp
+  /**
+   * @param feature regex expression matching a feature name
+   *        example: "Calc*"
+   */
+  #define STEPS(feature) // register steps for a feature
+
+  namespace testing {
+
+    /**
+     * Thrown when implementation for given step can't be found
+     */
+    struct StepIsNotImplemented : std::runtime_error;
+
+    /**
+     * Thrown when more than one implementation for given step was be found
+     */
+    struct StepIsAmbiguous : std::runtime_error;
+
+    /**
+     * Verify whether parameters provided in the step and lambda expression
+     * matches at compile-time
+     */
+    constexpr auto operator""_step();
+
+    /**
+     * Table parameters from the scenario
+     */
+    using Table = vector<unordered_map<string_key, string_value>>;
+
+    /**
+     * Map Gherkin steps (feature file) to implementation
+     */
+    class Steps {
+      /**
+       * @param pattern step description (support simple regex)
+       *        might be followed by _step to verify parameters at compile time
+       * @param table optional table parameter, lambda expression will need a Table parameter
+       *
+       * Lambda expression has to be assigned
+       */
+      auto Given(auto pattern, auto table = none);
+
+      /**
+       * Same as Given but it will show file/line from cpp files instead of feature file
+       */
+      auto $Given(auto pattern, auto table = none);
+
+      auto When(auto pattern, auto table = none);
+      auto $When(auto pattern, auto table = none);
+
+      auto Then(auto pattern, auto table = none);
+      auto $Then(auto pattern, auto table = none);
+
+    };
+  } // testing
+
+  /**
+   * @param args default-constructible types to be injected
+   */
+  STEPS("*") = [](auto steps, args...) {
+    // initialize test objects here
+    return steps; // has to return steps
+  };
+  ```
 
 * test/Features/Calc/addition.feature
 ```gherkin
@@ -874,7 +981,7 @@ const auto CalcResult = [](auto& result) {
 };
 
 STEPS("Calc*") = [](auto steps, Calculator calc, double result) {
-  steps.Given("I have entered {n} into the calculator")        = CalcPush(calc);
+  steps.Given("I have entered {n} into the calculator"_step)   = CalcPush(calc);
   steps.When ("I press add")                                   = CalcAdd(calc, result);
   steps.When ("I press divide")                                = CalcDivide(calc, result);
   steps.Then ("the result should be {expected} on the screen") = CalcResult(result);
@@ -953,9 +1060,6 @@ STEPS("Calc*") = [](auto steps) {
     * [Devirtualization in C++](http://hubicka.blogspot.co.uk/2014/01/devirtualization-in-c-part-2-low-level.html)
     * [Using final - C++11](https://godbolt.org/g/ASLk4B)
     * [Link Time Optimization - LTO](http://hubicka.blogspot.co.uk/2014/04/linktime-optimization-in-gcc-1-brief.html)
-
-* Can GUnit be used with [Catch](https://github.com/philsquared/Catch)?
-  * Yes, GUnit isn't tied to GoogleTest, however it's tied to GoogleMock
 
 ### Acknowledgements
 * Thanks to Eran Pe'er and Peter Bindels for [FakeIt](https://github.com/eranpeer/FakeIt) and [HippoMocks](https://github.com/dascandy/hippomocks)
