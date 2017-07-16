@@ -875,7 +875,6 @@ GTEST(example) {
   #define STEPS(feature) // register steps for a feature
 
   namespace testing {
-
     /**
      * Thrown when implementation for given step can't be found
      */
@@ -920,18 +919,21 @@ GTEST(example) {
 
       auto Then(auto pattern, auto table = none);
       auto $Then(auto pattern, auto table = none);
-
     };
   } // testing
-
-  /**
-   * @param args default-constructible types to be injected
-   */
-  STEPS("*") = [](auto steps, args...) {
-    // initialize test objects here
-    return steps; // has to return steps
-  };
   ```
+
+* Example
+
+```cpp
+/**
+ * @param args default-constructible types to be injected
+ */
+STEPS("*") = [](auto steps, args...) {
+  // initialize test objects here
+  return steps; // has to return steps
+};
+```
 
 * test/Features/Calc/addition.feature
 ```gherkin
