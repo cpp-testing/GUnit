@@ -20,6 +20,9 @@
 #include <vector>
 #include "GUnit/Detail/Preprocessor.h"
 #include "GUnit/Detail/TypeTraits.h"
+#include "GUnit/Detail/ProgUtils.h"
+#include "GUnit/Detail/FileUtils.h"
+#include "GUnit/Detail/StringUtils.h"
 #include "GUnit/Detail/Utility.h"
 
 #if defined(__clang__)
@@ -207,32 +210,6 @@ struct GetAccess {
 CallReactionType GetCallReaction();
 template struct GetAccess<&Mock::GetReactionOnUninterestingCalls>;
 
-class Expected {
- public:
-  explicit Expected(const std::string &name) : name_{name} {}
-
-  ~Expected() {
-    if (not fs_.empty()) {
-      throw std::runtime_error("Uninteresting function call: \"" + name_ + "\"\nMissing EXPECTED_CALL!");
-    }
-  }
-
-  template <class T>
-  void add(const T &f) {
-    fs_.push(f);
-  }
-
-  void operator()() {
-    if (not fs_.empty()) {
-      fs_.front()();
-      fs_.pop();
-    }
-  }
-
- private:
-  std::string name_;
-  std::queue<std::function<void()>> fs_;
-};
 }  // detail
 
 template <class T>
@@ -603,14 +580,3 @@ auto object(TMock *mock) {
 #define __GMOCK_DEFER_CALLS_IMPL_1(I, f1) __GMOCK_DEFER_CALLS_IMPL(I, f1)
 
 #define DEFER_CALLS(I, ...) __GUNIT_CAT(__GMOCK_DEFER_CALLS_IMPL_, __GUNIT_SIZE(__VA_ARGS__))(I, __VA_ARGS__)
-
-#define MOCK_METHOD1_T_DEFER(name, ...)                                      \
-  ::testing::detail::Expected defer_##name{#name};                           \
-  MOCK_METHOD1_T(name##_defer, __VA_ARGS__);                                 \
-  GMOCK_RESULT_(, __VA_ARGS__) name(GMOCK_ARG_(, 1, __VA_ARGS__) gmock_a1) { \
-    defer_##name.add([&] { this->name##_defer(gmock_a1); });                 \
-  }
-
-#define EXPECTED_CALL(mock, call, ...)          \
-  EXPECT_CALL(mock, call##_defer(__VA_ARGS__)); \
-  mock.defer_##call();

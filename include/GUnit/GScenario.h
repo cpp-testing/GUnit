@@ -18,6 +18,9 @@
 #include <utility>
 #include <vector>
 #include "GUnit/Detail/Preprocessor.h"
+#include "GUnit/Detail/RegexUtils.h"
+#include "GUnit/Detail/FileUtils.h"
+#include "GUnit/Detail/StringUtils.h"
 #include "GUnit/Detail/Utility.h"
 
 namespace testing {
@@ -49,20 +52,6 @@ void MakeAndRegisterTestInfo(const T& test, const std::string& type, const std::
                              detail::type<TestInfo*(Ts...)>) {
   internal::MakeAndRegisterTestInfo(type.c_str(), name.c_str(), nullptr, nullptr, {file.c_str(), line},
                                     internal::GetTestTypeId(), Test::SetUpTestCase, Test::TearDownTestCase, test);
-}
-
-inline bool PatternMatchesString2(const char* pattern, const char* str) {
-  switch (*pattern) {
-    case '\0':
-    case ':':  // Either ':' or '\0' marks the end of the pattern.
-      return *str == '\0';
-    case '?':  // Matches any single character.
-      return *str != '\0' && PatternMatchesString2(pattern + 1, str + 1);
-    case '*':  // Matches any string (possibly empty) of characters.
-      return (*str != '\0' && PatternMatchesString2(pattern, str + 1)) || PatternMatchesString2(pattern + 1, str);
-    default:  // Non-special character.  Matches itself.
-      return *pattern == *str && PatternMatchesString2(pattern + 1, str + 1);
-  }
 }
 
 struct step_info {
@@ -185,7 +174,7 @@ inline void parse_and_register(const std::string& name, const TSteps& steps, con
     const auto tags = make_tags(pickle_json["tags"]);
     const auto disabled = tags.first ? "DISABLED_" : "";
 
-    if (PatternMatchesString2(name.c_str(), feature_name.c_str())) {
+    if (PatternMatchesString(name.c_str(), feature_name.c_str())) {
       class TestFactory : public internal::TestFactoryBase {
         class test : public Test {
          public:

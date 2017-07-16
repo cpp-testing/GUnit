@@ -13,94 +13,15 @@
 #include <string>
 #include "GUnit/Detail/Preprocessor.h"
 #include "GUnit/Detail/TypeTraits.h"
+#include "GUnit/Detail/RegexUtils.h"
+#include "GUnit/Detail/StringUtils.h"
+#include "GUnit/Detail/TermUtils.h"
 #include "GUnit/GMake.h"
 #include "GUnit/GMock.h"
 
 namespace testing {
 inline namespace v1 {
 namespace detail {
-
-inline bool PatternMatchesString(const char* pattern, const char* str) {
-  switch (*pattern) {
-    case '\0':
-    case ':':  // Either ':' or '\0' marks the end of the pattern.
-      return *str == '\0';
-    case '?':  // Matches any single character.
-      return *str != '\0' && PatternMatchesString(pattern + 1, str + 1);
-    case '*':  // Matches any string (possibly empty) of characters.
-      return (*str != '\0' && PatternMatchesString(pattern, str + 1)) || PatternMatchesString(pattern + 1, str);
-    default:  // Non-special character.  Matches itself.
-      return *pattern == *str && PatternMatchesString(pattern + 1, str + 1);
-  }
-}
-
-inline bool MatchesFilter(const std::string& name, const char* filter) {
-  const char* cur_pattern = filter;
-  for (;;) {
-    if (PatternMatchesString(cur_pattern, name.c_str())) {
-      return true;
-    }
-
-    // Finds the next pattern in the filter.
-    cur_pattern = strchr(cur_pattern, ':');
-
-    // Returns if no more pattern can be found.
-    if (cur_pattern == nullptr) {
-      return false;
-    }
-
-    // Skips the pattern separater (the ':' character).
-    cur_pattern++;
-  }
-}
-
-inline bool FilterMatchesShould(const std::string& name, const std::string& should) {
-  // Split --gtest_filter at '-', if there is one, to separate into
-  // positive filter and negative filter portions
-  const char* const p = should.c_str();
-  const char* const dash = strchr(p, '-');
-  std::string positive;
-  std::string negative;
-  if (dash == nullptr) {
-    positive = should.c_str();  // Whole string is a positive filter
-    negative = "";
-  } else {
-    positive = std::string(p, dash);   // Everything up to the dash
-    negative = std::string(dash + 1);  // Everything after the dash
-    if (positive.empty()) {
-      // Treat '-test1' as the same as '*-test1'
-      positive = "*";
-    }
-  }
-
-  return MatchesFilter(name, positive.c_str()) && !MatchesFilter(name, negative.c_str());
-}
-
-// This function is lifted from GTest's internals.
-// Returns true iff colors should be used in the output.
-inline bool ShouldUseColor(bool stdout_is_tty) {
-  using internal::String;
-
-  const char* const gtest_color = GTEST_FLAG(color).c_str();
-
-  if (String::CaseInsensitiveCStringEquals(gtest_color, "auto")) {
-    const char* const term = internal::posix::GetEnv("TERM");
-    const bool term_supports_color = String::CStringEquals(term, "xterm") || String::CStringEquals(term, "xterm-color") ||
-                                     String::CStringEquals(term, "xterm-256color") || String::CStringEquals(term, "screen") ||
-                                     String::CStringEquals(term, "screen-256color") || String::CStringEquals(term, "tmux") ||
-                                     String::CStringEquals(term, "tmux-256color") ||
-                                     String::CStringEquals(term, "rxvt-unicode") ||
-                                     String::CStringEquals(term, "rxvt-unicode-256color") ||
-                                     String::CStringEquals(term, "linux") || String::CStringEquals(term, "cygwin");
-    return stdout_is_tty && term_supports_color;
-  }
-
-  return String::CaseInsensitiveCStringEquals(gtest_color, "yes") ||
-         String::CaseInsensitiveCStringEquals(gtest_color, "true") || String::CaseInsensitiveCStringEquals(gtest_color, "t") ||
-         String::CStringEquals(gtest_color, "1");
-  // We take "yes", "true", "t", and "1" as meaning "yes".  If the value is neither one of these nor "auto", we treat it as "no"
-  // to be conservative.
-}
 
 struct TestRun {
   std::string should_param = GetShouldParam();

@@ -8,8 +8,8 @@
 #pragma once
 
 #include <memory>
-#include <tuple>
 #include <type_traits>
+#include <utility>
 
 #define GUNIT_REQUIRES(...) typename std::enable_if<__VA_ARGS__, int>::type = 0
 
@@ -144,14 +144,20 @@ auto function_args__(int) -> function_traits_t<decltype(&T::operator())>;
 template <class T, class... Args>
 using function_args_t = decltype(function_args__<T, Args...>(0));
 
-template <class, class>
-struct contains;
+template <class, std::size_t N, std::size_t... Ns>
+auto get_type_name_impl(const char *ptr, std::index_sequence<Ns...>) {
+  static const char str[] = {ptr[N + Ns]..., 0};
+  return str;
+}
 
-template <class T, class... TArgs>
-struct contains<T, std::tuple<TArgs...>>
-    : std::integral_constant<bool,
-                             !std::is_same<std::integer_sequence<bool, false, std::is_same<T, TArgs>::value...>,
-                                           std::integer_sequence<bool, std::is_same<T, TArgs>::value..., false>>::value> {};
+template <class T>
+const char *get_type_name() {
+#if defined(__clang__)
+  return get_type_name_impl<T, 54>(__PRETTY_FUNCTION__, std::make_index_sequence<sizeof(__PRETTY_FUNCTION__) - 54 - 2>{});
+#elif defined(__GNUC__)
+  return get_type_name_impl<T, 59>(__PRETTY_FUNCTION__, std::make_index_sequence<sizeof(__PRETTY_FUNCTION__) - 59 - 2>{});
+#endif
+}
 
 }  // detail
 }  // v1

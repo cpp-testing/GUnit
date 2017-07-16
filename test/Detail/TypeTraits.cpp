@@ -8,6 +8,8 @@
 #include "GUnit/Detail/TypeTraits.h"
 #include <gtest/gtest.h>
 
+struct a {};
+
 namespace testing {
 inline namespace v1 {
 namespace detail {
@@ -61,15 +63,6 @@ TEST(TypeTraits, ShouldReturnUniqueTypeId) {
   EXPECT_FALSE(type_id<a>() == type_id<b>());
 }
 
-TEST(TypeTraits, ShouldReturnTrueIfTupleContaintsType) {
-  EXPECT_FALSE((contains<int, std::tuple<>>::value));
-  EXPECT_FALSE((contains<int, std::tuple<double, float, char>>::value));
-  EXPECT_TRUE((contains<int, std::tuple<int>>::value));
-  EXPECT_TRUE((contains<int, std::tuple<int, double>>::value));
-  EXPECT_TRUE((contains<int, std::tuple<int, double, int>>::value));
-  EXPECT_TRUE((contains<int, std::tuple<double, float, int>>::value));
-}
-
 void f1() {}
 int f2(int) { return {}; }
 int f3(int, const double&) { return {}; }
@@ -107,6 +100,14 @@ TEST(TypeTraits, ShouldReturnFunctionArguments) {
   EXPECT_TRUE((std::is_same<type_list<int, const double&>, typename function_traits<decltype(&c2::f3)>::args>::value));
 }
 
+struct n {};
+
+TEST(TypeTraits, ShouldGetTypeName) {
+  EXPECT_STREQ("int", get_type_name<int>());
+  EXPECT_STREQ("const double", get_type_name<const double>());
+  EXPECT_STREQ("a", get_type_name<a>());
+  EXPECT_STREQ("testing::v1::detail::n", get_type_name<n>());
 }
-}
-}
+} // detail
+} // v1
+} // testing

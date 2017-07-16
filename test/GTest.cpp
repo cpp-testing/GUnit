@@ -943,10 +943,10 @@ GTEST(di_complex_example, "[Complex Example]") {
 
   // clang-format off
   const auto injector = di::make_injector(
-    di::bind<interface>.to(di::GMock{mocks}) [di::override]
-  , di::bind<interface2>.to(di::StrictGMock{mocks}) [di::override]
-  , di::bind<interface4>.to(di::StrictGMock{mocks}) [di::override]
-  , di::bind<interface_dtor>.to(di::StrictGMock{mocks}) [di::override]
+     di::bind<interface>.to(di::GMock{mocks}) [di::override]
+   , di::bind<interface2>.to(di::StrictGMock{mocks}) [di::override]
+   , di::bind<interface4>.to(di::StrictGMock{mocks}) [di::override]
+   , di::bind<interface_dtor>.to(di::StrictGMock{mocks}) [di::override]
   );
   // clang-format on
 
