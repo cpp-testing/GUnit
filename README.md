@@ -923,7 +923,7 @@ GTEST(example) {
   } // testing
   ```
 
-* Example
+* Usage
 
 ```cpp
 /**
