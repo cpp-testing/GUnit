@@ -47,6 +47,16 @@ constexpr auto operator""_step() {
 
 namespace detail {
 
+struct step_info {
+  std::string name{};
+  std::string file{};
+  int line{};
+};
+
+using call_step_t = std::function<void(const std::string&, const Table&)>;
+using step_info_call_step_t = std::pair<step_info, call_step_t>;
+using step_info_call_map_t = std::unordered_map<std::string, step_info_call_step_t>;
+
 template <class T>
 void MakeAndRegisterTestInfo(const T& test, const std::string& type, const std::string& name, const std::string& /*file*/,
                              int /*line*/,
@@ -62,12 +72,6 @@ void MakeAndRegisterTestInfo(const T& test, const std::string& type, const std::
   internal::MakeAndRegisterTestInfo(type.c_str(), name.c_str(), nullptr, nullptr, {file.c_str(), line},
                                     internal::GetTestTypeId(), Test::SetUpTestCase, Test::TearDownTestCase, test);
 }
-
-struct step_info {
-  std::string name{};
-  std::string file{};
-  int line{};
-};
 
 inline auto parse(const std::string& feature, const std::wstring& content) {
   gherkin::parser parser{L"en"};
@@ -105,7 +109,7 @@ inline void run(
     const std::string& feature_file,
     const std::string& pickles,
     const std::function<void()>& before,
-    const std::unordered_map<std::string, std::pair<step_info, std::function<void(const std::string&, const Table&)>>>& steps,
+    const step_info_call_map_t& steps,
     const std::function<void()>& after) {
   const auto json = nlohmann::json::parse(pickles)["pickle"];
   for (const auto& expected_step : json["steps"]) {
@@ -347,7 +351,7 @@ class Steps {
   class step {
    public:
     step(const detail::step_info& step_info, const std::string& pattern,
-         std::pair<detail::step_info, std::function<void(const std::string&, const Table&)>>& expr)
+         detail::step_info_call_step_t& expr)
         : step_info_(step_info), pattern_{pattern}, expr_{expr} {}
 
     template <class TExpr>
@@ -383,13 +387,13 @@ static void call_impl(const TExpr& expr, const TMatches& matches, const Table& t
 
 detail::step_info step_info_;
 std::string pattern_;
-std::pair<detail::step_info, std::function<void(const std::string&, const Table&)>>& expr_;
+detail::step_info_call_step_t& expr_;
 };
 
 private:
 std::string file_;
 std::string scenario_;
-std::unordered_map<std::string, std::pair<detail::step_info, std::function<void(const std::string&, const Table&)>>> steps_{};
+detail::step_info_call_map_t steps_{};
 std::function<void()> before_;
 std::function<void()> after_;
 };
