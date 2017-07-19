@@ -19,7 +19,8 @@ namespace detail {
 
 using byte = unsigned char;
 
-template<class...> struct type_list{};
+template <class...>
+struct type_list {};
 
 template <class...>
 using void_t = void;
@@ -84,9 +85,7 @@ auto type_id() {
 }
 
 template <class T>
-struct function_traits
-  : function_traits<decltype(&T::operator())>
-{ };
+struct function_traits : function_traits<decltype(&T::operator())> {};
 
 template <class R, class... TArgs>
 struct function_traits<R (*)(TArgs...)> {
@@ -137,9 +136,9 @@ using function_type_t = typename function_type<T, U>::type;
 
 template <class...>
 type_list<> function_args__(...);
-template<class T, class... TArgs>
+template <class T, class... TArgs>
 auto function_args__(int) -> function_traits_t<decltype(&T::template operator()<TArgs...>)>;
-template<class T, class...>
+template <class T, class...>
 auto function_args__(int) -> function_traits_t<decltype(&T::operator())>;
 template <class T, class... Args>
 using function_args_t = decltype(function_args__<T, Args...>(0));

@@ -7,10 +7,10 @@
 //
 #pragma once
 
+#include <sstream>
 #include <string>
 #include <type_traits>
 #include <vector>
-#include <sstream>
 
 namespace testing {
 inline namespace v1 {
@@ -68,7 +68,7 @@ inline auto lexical_cast(const std::string &str) {
   return var;
 }
 
-} // detail
+}  // detail
 
 #if defined(__clang__)
 #pragma clang diagnostic ignored "-Wgnu-string-literal-operator-template"

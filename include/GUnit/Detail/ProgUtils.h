@@ -7,10 +7,10 @@
 //
 #pragma once
 
-#include <string>
-#include <memory>
 #include <cxxabi.h>
 #include <execinfo.h>
+#include <memory>
+#include <string>
 #include "gtest/gtest.h"
 
 #if defined(__APPLE__)

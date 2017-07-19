@@ -22,12 +22,14 @@ TEST(RegexUtils, ShouldReturnMatches) {
   constexpr auto n4 = "I have a {} blah"_gtest_string;
   constexpr auto n5 = "I have a {} to read"_gtest_string;
   constexpr auto n6 = R"(I have a '{}' to read)"_gtest_string;
+  constexpr auto n7 = "I have the following {table}"_gtest_string;
 
   constexpr auto t0 = "I press add";
   constexpr auto t1 = "I have a 42 to read";
   constexpr auto t2 = "I have a 1234 and a fifty to read";
   constexpr auto t3 = R"(I have a 'text with spaces' and a fifty to read)";
   constexpr auto t4 = R"(I have a '42' to read)";
+  constexpr auto t5 = "I have the following table";
 
   static_assert(0 == args_size(n0), "");
   static_assert(1 == args_size(n1), "");
@@ -80,8 +82,11 @@ TEST(RegexUtils, ShouldReturnMatches) {
 
   EXPECT_EQ(1u, matches(n6, t4).size());
   EXPECT_EQ("42", matches(n6, t4)[0]);
+
+  EXPECT_EQ(1u, matches(n7, t5).size());
+  EXPECT_EQ("table", matches(n7, t5)[0]);
 }
 
-} // detail
-} // v1
-} // testing
+}  // detail
+}  // v1
+}  // testing

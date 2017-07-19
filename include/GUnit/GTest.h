@@ -12,10 +12,10 @@
 #include <memory>
 #include <string>
 #include "GUnit/Detail/Preprocessor.h"
-#include "GUnit/Detail/TypeTraits.h"
 #include "GUnit/Detail/RegexUtils.h"
 #include "GUnit/Detail/StringUtils.h"
 #include "GUnit/Detail/TermUtils.h"
+#include "GUnit/Detail/TypeTraits.h"
 #include "GUnit/GMake.h"
 #include "GUnit/GMock.h"
 

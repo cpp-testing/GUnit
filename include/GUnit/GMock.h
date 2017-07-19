@@ -18,11 +18,11 @@
 #include <typeinfo>
 #include <unordered_map>
 #include <vector>
-#include "GUnit/Detail/Preprocessor.h"
-#include "GUnit/Detail/TypeTraits.h"
-#include "GUnit/Detail/ProgUtils.h"
 #include "GUnit/Detail/FileUtils.h"
+#include "GUnit/Detail/Preprocessor.h"
+#include "GUnit/Detail/ProgUtils.h"
 #include "GUnit/Detail/StringUtils.h"
+#include "GUnit/Detail/TypeTraits.h"
 #include "GUnit/Detail/Utility.h"
 
 #if defined(__clang__)

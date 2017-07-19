@@ -12,8 +12,8 @@
 #include <typeinfo>
 #include <unordered_map>
 #include <utility>
-#include "GUnit/Detail/TypeTraits.h"
 #include "GUnit/Detail/StringUtils.h"
+#include "GUnit/Detail/TypeTraits.h"
 #include "GUnit/Detail/Utility.h"
 #include "GUnit/GMock.h"
 

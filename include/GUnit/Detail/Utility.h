@@ -7,8 +7,8 @@
 //
 #pragma once
 
-#include <type_traits>
 #include <tuple>
+#include <type_traits>
 #include "GUnit/Detail/TypeTraits.h"
 
 namespace testing {

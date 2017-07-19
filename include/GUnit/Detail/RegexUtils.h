@@ -28,7 +28,7 @@ inline constexpr auto args_size(T str) {
 }
 
 template <class T>
-inline auto matches(T pattern, const std::string &str) {
+inline auto matches(T pattern, const std::string& str) {
   std::vector<std::string> matches{};
   auto pi = 0u, si = 0u;
 
@@ -56,7 +56,7 @@ inline auto matches(T pattern, const std::string &str) {
 }
 
 template <class T>
-inline auto match(T pattern, const std::string &str) {
+inline auto match(T pattern, const std::string& str) {
   return not matches(pattern, str).empty() || std::string{pattern.c_str()} == str;
 }
 

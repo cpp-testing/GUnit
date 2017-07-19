@@ -43,8 +43,9 @@ struct Context {
 };
 
 STEPS("Table") = [](testing::Steps steps, Context ctx) {
-  steps.$Given("I have the following table", "ids") =
-    [&](testing::Table ids) {
+  steps.$Given("I have the following {table}", "ids") =
+    [&](const std::string& txt, testing::Table ids) {
+      EXPECT_EQ("table", txt);
       ctx.expected_table = ids;
     };
 

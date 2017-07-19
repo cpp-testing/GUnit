@@ -17,9 +17,9 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
+#include "GUnit/Detail/FileUtils.h"
 #include "GUnit/Detail/Preprocessor.h"
 #include "GUnit/Detail/RegexUtils.h"
-#include "GUnit/Detail/FileUtils.h"
 #include "GUnit/Detail/StringUtils.h"
 #include "GUnit/Detail/Utility.h"
 
@@ -105,12 +105,8 @@ inline auto make_table(const nlohmann::json& step) {
   return table;
 }
 
-inline void run(
-    const std::string& feature_file,
-    const std::string& pickles,
-    const std::function<void()>& before,
-    const step_info_call_map_t& steps,
-    const std::function<void()>& after) {
+inline void run(const std::string& feature_file, const std::string& pickles, const std::function<void()>& before,
+                const step_info_call_map_t& steps, const std::function<void()>& after) {
   const auto json = nlohmann::json::parse(pickles)["pickle"];
   for (const auto& expected_step : json["steps"]) {
     std::string text = expected_step["text"];
@@ -123,10 +119,12 @@ inline void run(
         const auto name = given_step.second.first.name;
         const auto full_file = given_step.second.first.file.empty() ? feature_file : given_step.second.first.file;
         const auto file = full_file.substr(full_file.find_last_of("/\\") + 1);
-        const auto line = not given_step.second.first.line ? expected_step["locations"].back()["line"].get<int>() : given_step.second.first.line;
+        const auto line = not given_step.second.first.line ? expected_step["locations"].back()["line"].get<int>()
+                                                           : given_step.second.first.line;
 
         std::cout << "\033[0;96m"
-                  << "[ " << std::right << std::setw(8) << name << " ] " << std::left << std::setw(60) << text << "# " << file << ":" << line << "\033[m" << '\n';
+                  << "[ " << std::right << std::setw(8) << name << " ] " << std::left << std::setw(60) << text << "# " << file
+                  << ":" << line << "\033[m" << '\n';
         if (before) {
           before();
         }
@@ -144,7 +142,7 @@ inline void run(
   }
 }
 
-template<class TSteps, class T, class... Ts>
+template <class TSteps, class T, class... Ts>
 inline auto call_steps(const TSteps& steps, const std::string& pickles, const std::string& file, detail::type_list<T, Ts...>) {
   return steps(T{file, pickles}, Ts{}...);
 }
@@ -157,7 +155,7 @@ inline std::pair<bool, std::string> make_tags(const nlohmann::json& tags) {
   std::string result{"["};
   auto disabled = false;
   auto i = 0;
-  for (const auto& tag :tags ) {
+  for (const auto& tag : tags) {
     std::string tag_name = tag["name"];
     if (i++) {
       result += ",";
@@ -191,11 +189,13 @@ inline void parse_and_register(const std::string& name, const TSteps& steps, con
       class TestFactory : public internal::TestFactoryBase {
         class test : public Test {
          public:
-          test(const TSteps& steps, const std::string& pickles, const std::string& file) : steps{steps}, pickles{pickles}, file{file} {}
+          test(const TSteps& steps, const std::string& pickles, const std::string& file)
+              : steps{steps}, pickles{pickles}, file{file} {}
 
           void TestBody() {
-            static_assert(std::is_same<Steps, decltype(call_steps(steps, pickles, file, detail::function_args_t<TSteps, Steps>{}))>{},
-                          "STEPS implementation has to return testing::Steps type!");
+            static_assert(
+                std::is_same<Steps, decltype(call_steps(steps, pickles, file, detail::function_args_t<TSteps, Steps>{}))>{},
+                "STEPS implementation has to return testing::Steps type!");
             call_steps(steps, pickles, file, detail::function_args_t<TSteps, Steps>{});
             std::cout << '\n';
           }
@@ -207,7 +207,8 @@ inline void parse_and_register(const std::string& name, const TSteps& steps, con
         };
 
        public:
-        TestFactory(const TSteps& steps, const std::string& pickles, const std::string& file) : steps{steps}, pickles{pickles}, file{file} {}
+        TestFactory(const TSteps& steps, const std::string& pickles, const std::string& file)
+            : steps{steps}, pickles{pickles}, file{file} {}
         Test* CreateTest() override { return new test{steps, pickles, file}; }
 
        private:
@@ -216,9 +217,8 @@ inline void parse_and_register(const std::string& name, const TSteps& steps, con
         std::string file;
       };
 
-
-      MakeAndRegisterTestInfo(new TestFactory{steps, pickle, feature}, disabled + feature_name + tags.second , scenario_name, __FILE__, __LINE__,
-                              detail::type<decltype(internal::MakeAndRegisterTestInfo)>{});
+      MakeAndRegisterTestInfo(new TestFactory{steps, pickle, feature}, disabled + feature_name + tags.second, scenario_name,
+                              __FILE__, __LINE__, detail::type<decltype(internal::MakeAndRegisterTestInfo)>{});
     }
   }
 }
@@ -236,18 +236,12 @@ struct steps {
   }
 };
 
-template<class T>
+template <class T>
 inline auto lexical_table_cast(const std::string& str, const Table&, detail::identity<T>) {
   return detail::lexical_cast<T>(str);
 }
-
-inline auto lexical_table_cast(const std::string&, const Table& table, detail::identity<const Table&>) {
-  return table;
-}
-
-inline auto lexical_table_cast(const std::string&, const Table& table, detail::identity<Table>) {
-  return table;
-}
+inline auto lexical_table_cast(const std::string&, const Table& table, detail::identity<const Table&>) { return table; }
+inline auto lexical_table_cast(const std::string&, const Table& table, detail::identity<Table>) { return table; }
 
 }  // detail
 
@@ -323,35 +317,28 @@ class Steps {
     return step<-1, true>{{"Then", File::c_str(), line}, pattern, steps_[pattern]};
   }
 
-  auto Before() {
-    return around{before_};
-  }
+  auto Before() { return around{before_}; }
 
-  auto After() {
-    return around{after_};
-  }
+  auto After() { return around{after_}; }
 
  private:
   class around {
-    public:
-      explicit around(std::function<void()>& expr)
-        : expr_(expr)
-      { }
+   public:
+    explicit around(std::function<void()>& expr) : expr_(expr) {}
 
     template <class TExpr>
     void operator=(const TExpr& expr) {
       expr_ = expr;
     }
 
-    private:
-      std::function<void()>& expr_;
+   private:
+    std::function<void()>& expr_;
   };
 
   template <int ArgsSize = -1, bool HasTable = false>
   class step {
    public:
-    step(const detail::step_info& step_info, const std::string& pattern,
-         detail::step_info_call_step_t& expr)
+    step(const detail::step_info& step_info, const std::string& pattern, detail::step_info_call_step_t& expr)
         : step_info_(step_info), pattern_{pattern}, expr_{expr} {}
 
     template <class TExpr>
@@ -382,7 +369,7 @@ static void call_impl(const TExpr& expr, const TMatches& matches, const Table&, 
 template <class TExpr, class TMatches, class... Ts, std::size_t... Ns>
 static void call_impl(const TExpr& expr, const TMatches& matches, const Table& table, detail::type_list<Ts...>,
                       std::index_sequence<Ns...>, std::true_type) {
-  expr(detail::lexical_table_cast(matches.empty() ? "" : matches[Ns].c_str(), table, detail::identity<Ts>{})...);
+  expr(detail::lexical_table_cast(Ns < matches.size() ? matches[Ns].c_str() : "", table, detail::identity<Ts>{})...);
 }
 
 detail::step_info step_info_;
