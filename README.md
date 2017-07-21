@@ -18,7 +18,9 @@ If you like/and or are struck with GoogleTest/GoogleMock/Cucmber-cpp on clang/gc
 * **No more need to instansiate and maintain mocks by hand** (GMake - Automatic mocks injection)
 * **No more need for another tool (cucumber) and ruby to run BDD scenarios** (Gherkin - Given/When/Then)
 
-## Motivation for GUnit (Towards Painless Testing)
+## Motivation for GUnit
+
+* [C++ Now 2017: Towards Painless Testing](https://www.youtube.com/watch?v=NVrZjT5lW5o)
 
 ### Example (TDD)
 
@@ -1067,7 +1069,6 @@ STEPS("Calc*") = [](auto steps) {
 * Thanks to Eran Pe'er and Peter Bindels for [FakeIt](https://github.com/eranpeer/FakeIt) and [HippoMocks](https://github.com/dascandy/hippomocks)
 
 ### References
-* [C++ Now 2017: Towards Painless Testing](https://www.youtube.com/watch?v=NVrZjT5lW5o)
 * [C++ Now 2017: Mocking C++](https://www.youtube.com/watch?v=t0wLm2iiEH0)
 * [Meeting C++ 2016: TDD/BDD and Dependency Injection](https://www.youtube.com/watch?v=T3uMcxhzRUE)
 * [Automatic Mocks Injector](https://github.com/cpp-testing/mocks_injector)

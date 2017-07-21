@@ -318,7 +318,6 @@ class Steps {
   }
 
   auto Before() { return around{before_}; }
-
   auto After() { return around{after_}; }
 
  private:

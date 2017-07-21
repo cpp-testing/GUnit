@@ -29,6 +29,12 @@ matrix:
         packages: ["clang-3.8", "libstdc++-5-dev", "valgrind"]
         sources: ["ubuntu-toolchain-r-test", "llvm-toolchain-precise-3.8"]
   - os: linux
+    env: CXX=clang++-3.9
+    addons:
+      apt:
+        packages: ["clang-3.9", "libstdc++-5-dev", "valgrind"]
+        sources: ["ubuntu-toolchain-r-test", "llvm-toolchain-precise-3.8"]
+  - os: linux
     env: CXX=g++-5
     addons:
       apt:
@@ -48,7 +54,7 @@ install:
   - if [ "$TRAVIS_OS_NAME" == "osx" ]; then (brew install valgrind); fi
 
 script:
-  - mkdir build_debug && cd build_debug && cmake -DCMAKE_BUILD_TYPE=debug .. && make -j2 && ctest --output-on-failure && cd ..
-  - mkdir build_debug_memcheck && cd build_debug_memcheck && cmake -DCMAKE_BUILD_TYPE=debug -DENABLE_MEMCHECK=ON .. && make -j2 && ctest --output-on-failure && cd ..
-  - mkdir build_release && cd build_release && cmake -DCMAKE_BUILD_TYPE=release .. && make -j2 && ctest --output-on-failure && cd ..
-  - mkdir build_release_memcheck && cd build_release_memcheck && cmake -DCMAKE_BUILD_TYPE=release -DENABLE_MEMCHECK=ON .. && make -j2 && ctest --output-on-failure && cd ..
+  - mkdir build_debug && cd build_debug && cmake -DCMAKE_BUILD_TYPE=debug .. && make -j2 && cd ..
+  - mkdir build_debug_memcheck && cd build_debug_memcheck && cmake -DCMAKE_BUILD_TYPE=debug -DENABLE_MEMCHECK=ON .. && make -j2 && cd ..
+  - mkdir build_release && cd build_release && cmake -DCMAKE_BUILD_TYPE=release .. && make -j2  && cd ..
+  - mkdir build_release_memcheck && cd build_release_memcheck && cmake -DCMAKE_BUILD_TYPE=release -DENABLE_MEMCHECK=ON .. && make -j2 && cd ..
