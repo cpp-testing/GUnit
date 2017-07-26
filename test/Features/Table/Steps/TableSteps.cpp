@@ -8,6 +8,14 @@
 #include "GUnit/GScenario.h"
 #include "GUnit/GTest.h"
 
+const auto access_data = [](testing::Data id_value) {
+  const int id = id_value["id"];
+  EXPECT_EQ(42, id);
+
+  const std::string value = id_value["value"];
+  EXPECT_EQ("number", value);
+};
+
 // clang-format off
 STEPS("Table") = [](testing::Steps steps) {
   using namespace testing;
@@ -18,6 +26,8 @@ STEPS("Table") = [](testing::Steps steps) {
     [&](const Table& table) {
       expected_table = table;
     };
+
+  steps.$Given("I access table with 1 row"_step, "ids") = access_data;
 
   steps.$When("I choose {id}"_step) =
     [&](int id) {
@@ -34,6 +44,7 @@ STEPS("Table") = [](testing::Steps steps) {
       EXPECT_EQ(expected_desc, desc);
     };
 
+
   return steps;
 };
 
@@ -48,6 +59,8 @@ STEPS("Table") = [](testing::Steps steps, Context ctx) {
       EXPECT_EQ("table", txt);
       ctx.expected_table = ids;
     };
+
+  steps.$Given("I access table with 1 row", "ids") = access_data;
 
   steps.$When("I choose {id}") =
     [&](int id) {

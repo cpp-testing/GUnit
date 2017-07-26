@@ -32,7 +32,31 @@ struct StepIsAmbiguous : std::runtime_error {
   using std::runtime_error::runtime_error;
 };
 
-using Table = std::vector<std::unordered_map<std::string, std::string>>;
+namespace detail {
+
+template <class T>
+struct Vector : std::vector<T> {
+  using std::vector<T>::operator[];
+
+  decltype(auto) operator[](const std::string& id) {
+    assert(1 == this->size());
+    return (*this)[0][id];
+  }
+};
+
+template <class T>
+struct Convertible : T {
+  using T::T;
+  template <class U>
+  operator U() {
+    return lexical_cast<U>(*this);
+  }
+};
+
+}  // detail
+
+using Table = detail::Vector<std::unordered_map<std::string, detail::Convertible<std::string>>>;
+using Data = Table;
 
 class Steps;
 
@@ -92,10 +116,10 @@ inline auto make_table(const nlohmann::json& step) {
         }
         first = false;
       } else {
-        std::unordered_map<std::string, std::string> r;
+        typename Table::value_type r;
         int i = 0;
         for (const auto& cell : row["cells"]) {
-          std::string value = cell["value"];
+          auto value = cell["value"];
           r[ids[i++]] = value;
         }
         table.push_back(r);

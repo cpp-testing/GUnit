@@ -12,3 +12,8 @@ Feature: Table
        | id | desc |
        | 42 | number |
        | 11 | text |
+
+  Scenario: Table Access
+    Given I access table with 1 row
+        | id | value  |
+        | 42 | number |
