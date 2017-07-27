@@ -61,8 +61,8 @@ inline std::vector<std::string> split(const std::string &str, char delimiter) {
 
 template <class T>
 inline auto lexical_cast(const std::string &str) {
-  std::remove_cv_t<std::remove_reference_t<T>> var;
-  std::istringstream iss;
+  std::remove_cv_t<std::remove_reference_t<T>> var{};
+  std::istringstream iss{};
   iss.str(str);
   iss >> var;
   return var;

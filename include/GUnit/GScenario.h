@@ -40,7 +40,8 @@ struct Vector : std::vector<T> {
 
   decltype(auto) operator[](const std::string& id) {
     assert(1 == this->size());
-    return (*this)[0][id];
+    static typename T::mapped_type default_value{};
+    return ((*this)[0].count(id)) ? (*this)[0][id] : default_value;
   }
 };
 

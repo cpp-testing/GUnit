@@ -9,11 +9,21 @@
 #include "GUnit/GTest.h"
 
 const auto access_data = [](testing::Data id_value) {
-  const int id = id_value["id"];
-  EXPECT_EQ(42, id);
+  {
+    const int id = id_value["id"];
+    EXPECT_EQ(42, id);
+  }
 
-  const std::string value = id_value["value"];
-  EXPECT_EQ("number", value);
+  {
+    const std::string value = id_value["value"];
+    EXPECT_EQ("number", value);
+  }
+
+  // access not-defined data
+  {
+    const std::string value = id_value["not-defined"];
+    EXPECT_EQ("", value);
+  }
 };
 
 // clang-format off
