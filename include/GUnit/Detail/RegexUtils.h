@@ -52,6 +52,10 @@ inline auto matches(T pattern, const std::string& str) {
     ++pi, ++si;
   }
 
+  if (si < str.size()) {
+    return std::vector<std::string>{};
+  }
+
   return matches;
 }
 

@@ -17,3 +17,15 @@ Feature: Table
     Given I access table with 1 row
         | id | value  |
         | 42 | number |
+
+  Scenario Outline: Table Ambigious
+    Given I access table with 1 row
+        | id | value  |
+        | 42 | number |
+      And I access table with <n>
+        | value |
+        | 42    |
+
+  Examples:
+    | n  |
+    | 42 |

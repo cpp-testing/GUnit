@@ -39,6 +39,10 @@ STEPS("Table") = [](testing::Steps steps) {
 
   steps.$Given("I access table with 1 row"_step, "ids") = access_data;
 
+  steps.$Given("I access table with {n}", "ids") = [](int n, Data data) {
+    EXPECT_EQ(n, int(data["value"]));
+  };
+
   steps.$When("I choose {id}"_step) =
     [&](int id) {
       for (auto row : expected_table) {
@@ -71,6 +75,10 @@ STEPS("Table") = [](testing::Steps steps, Context ctx) {
     };
 
   steps.$Given("I access table with 1 row", "ids") = access_data;
+
+  steps.$Given("I access table with {n}", "ids") = [](int n, testing::Data data) {
+    EXPECT_EQ(n, int(data["value"]));
+  };
 
   steps.$When("I choose {id}") =
     [&](int id) {

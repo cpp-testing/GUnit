@@ -23,6 +23,8 @@ TEST(RegexUtils, ShouldReturnMatches) {
   constexpr auto n5 = "I have a {} to read"_gtest_string;
   constexpr auto n6 = R"(I have a '{}' to read)"_gtest_string;
   constexpr auto n7 = "I have the following {table}"_gtest_string;
+  constexpr auto n8 = "I access table with 1 row"_gtest_string;
+  constexpr auto n9 = "I access table with {n}"_gtest_string;;
 
   constexpr auto t0 = "I press add";
   constexpr auto t1 = "I have a 42 to read";
@@ -30,11 +32,14 @@ TEST(RegexUtils, ShouldReturnMatches) {
   constexpr auto t3 = R"(I have a 'text with spaces' and a fifty to read)";
   constexpr auto t4 = R"(I have a '42' to read)";
   constexpr auto t5 = "I have the following table";
+  constexpr auto t6 = "I access table with 1 row";
+  constexpr auto t7 = "I access table with 42";
 
   static_assert(0 == args_size(n0), "");
   static_assert(1 == args_size(n1), "");
   static_assert(2 == args_size(n2), "");
   static_assert(2 == args_size(n3), "");
+  static_assert(1 == args_size(n9), "");
 
   EXPECT_TRUE(match(n0, t0));
   EXPECT_TRUE(not match(n0, t1));
@@ -63,6 +68,11 @@ TEST(RegexUtils, ShouldReturnMatches) {
   EXPECT_TRUE(match(n6, t4));
   EXPECT_TRUE(match(n6, t4));
   EXPECT_TRUE(not match(n6, t1));
+
+  EXPECT_TRUE(match(n8, t6));
+  EXPECT_FALSE(match(n8, t7));
+  EXPECT_TRUE(match(n9, t7));
+  EXPECT_FALSE(match(n9, t6));
 
   EXPECT_EQ(0u, matches(n4, t1).size());
 
