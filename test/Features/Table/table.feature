@@ -19,7 +19,7 @@ Feature: Table
         | 42 | number |
 
   Scenario Outline: Table Ambigious
-    Given I access table with 1 row
+    Given I access table with 1 row # comment
         | id | value  |
         | 42 | number |
       And I access table with <n>

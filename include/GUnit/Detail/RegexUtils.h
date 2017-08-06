@@ -27,8 +27,17 @@ inline constexpr auto args_size(T str) {
   return args;
 }
 
+inline auto remove_comments(const std::string& str) {
+  const auto comment = str.find("#");
+  if (comment != std::string::npos) {
+    return str.substr(0, comment - 1);
+  }
+  return str;
+}
+
 template <class T>
-inline auto matches(T pattern, const std::string& str) {
+inline auto matches(T pattern, const std::string& txt) {
+  std::string str{remove_comments(txt)};
   std::vector<std::string> matches{};
   auto pi = 0u, si = 0u;
 
@@ -61,7 +70,7 @@ inline auto matches(T pattern, const std::string& str) {
 
 template <class T>
 inline auto match(T pattern, const std::string& str) {
-  return not matches(pattern, str).empty() || std::string{pattern.c_str()} == str;
+  return not matches(pattern, str).empty() || std::string{pattern.c_str()} == remove_comments(str);
 }
 
 inline bool PatternMatchesString(const char* pattern, const char* str) {
