@@ -68,6 +68,16 @@ inline auto lexical_cast(const std::string &str) {
   return var;
 }
 
+template <>
+inline auto lexical_cast<std::string &>(const std::string &str) {
+  return str;
+}
+
+template <>
+inline auto lexical_cast<const std::string &>(const std::string &str) {
+  return str;
+}
+
 }  // detail
 
 #if defined(__clang__)
