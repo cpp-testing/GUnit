@@ -27,6 +27,48 @@ If you like/and or are struck with GoogleTest/GoogleMock/Cucmber-cpp on clang/gc
 ```cpp
 GoogleTest/GoogleMock                           | GUnit
 ------------------------------------------------+---------------------------------------------
+#include <gmock/gmock.h>                        | #include <GUnit.h>
+#include <gtest/gtest.h>                        |
+                                                |
+class mock_i : public i {                       |
+public:                                         |
+ MOCK_CONST_METHOD0(f1, bool());                |
+ MOCK_METHOD1(f2, void(int));                   |
+};                                              |
+```
+
+```cpp                                          |
+struct ExampleTest : testing::Test {            |
+ void SetUp() override {                        |
+   sut = std::make_unique<example>(m1);         | 
+ }                                              |
+                                                |
+ mock_i1 m1;                                    | 
+ std::unique_ptr<example> sut;                  | 
+};                                              |
+```
+
+```cpp
+TEST_F(ExampleTest, ShouldCallF1) {             |GTEST("Example test") {
+ using namespace testing;                       | using namespace testing;
+                                                |
+  EXPECT_CALL(m1,f1()).WillOnce(Return(true));  | StritctGMock<i1> mock{};
+  EXPECT_CALL(m2,f2(_)).Times(1);               | auto sut = example{object(mock)};
+                                                |
+  sut->test();                                  | SHOULD("call f1") {
+ }                                              |  EXPECT_CALL(mock,(f1)()).WillOnce(Return(true));
+                                                |  EXPECT_CALL(mock,(f2)(_)).Times(1);
+                                                |
+                                                |  sut->test();
+                                                | }
+                                                |} // tear-down
+```
+
+### Example (TDD) / Automatic SUT creation
+
+```cpp
+GoogleTest/GoogleMock                           | GUnit
+------------------------------------------------+---------------------------------------------
 #include <gmock/gmock.h>                        | #include <GUnit.h> // one header
 #include <gtest/gtest.h>                        |
                                                 |
@@ -102,31 +144,22 @@ Feature: Calc Addition
 
 #### Steps Implementation
 ```cpp
-STEPS("Calc*") = [](auto steps) {
-  Calculator calc{};
-  double result{};
-
-  steps.Given("I have entered {n} into the calculator") =
-    [&](double n) {
-      calc.push(n);
-    };
-
-  steps.When("I press add") =
-    [&] {
-      result = calc.add();
-    };
-
-  steps.When("I press divide") =
-    [&] {
-      result = calc.divide();
-    };
-
-  steps.Then("the result should be {expected} on the screen") =
-    [&] (double expected) {
-      EXPECT_EQ(expected, result);
-    };
-
-  return steps;
+STEPS("Calc*") = [calc = Calculator{}, result = 0.](auto steps) {
+  return steps
+    .Given("I have entered {n} into the calculator", 
+      [&](double n) {
+        calc.push(n);
+    })
+    .When("I press add", [&] {
+        result = calc.add();
+     })
+    .When("I press divide", [&] {
+        result = calc.divide();
+    })
+    .Then("the result should be {expected} on the screen",
+      [&] (double expected) {
+        EXPECT_EQ(expected, result);
+    });
 };
 ```
 
