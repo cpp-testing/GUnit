@@ -37,14 +37,14 @@ set(BUILD_GTEST)
 
 add_custom_command(
   OUTPUT libgherkin-cpp
-  COMMAND cd ../libs/gherkin-cpp && make
+  COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/libs/gherkin-cpp && make
 )
 
 add_custom_target(
   gherkin_cpp ALL DEPENDS libgherkin-cpp
 )
 
-#export SCENARIO="../test/Features/Calc/addition.feature:../test/Features/Calc/division.feature:../test/Features/Table/table.feature:../test/Features/Tags/tags.feature"
+#export SCENARIO="${CMAKE_CURRENT_SOURCE_DIR}/test/Features/Calc/addition.feature:${CMAKE_CURRENT_SOURCE_DIR}/test/Features/Calc/division.feature:${CMAKE_CURRENT_SOURCE_DIR}/test/Features/Table/table.feature:${CMAKE_CURRENT_SOURCE_DIR}/test/Features/Tags/tags.feature"
 
 find_program(MEMORYCHECK_COMMAND valgrind)
 if (ENABLE_MEMCHECK AND MEMORYCHECK_COMMAND)
@@ -75,9 +75,9 @@ include_directories(test)
 test(test/GMake SCENARIO=)
 test(test/GMock SCENARIO=)
 test(test/GScenario SCENARIO=)
-test(test/Features/Calc/Steps/CalcSteps SCENARIO=../test/Features/Calc/addition.feature:../test/Features/Calc/division.feature)
-test(test/Features/Table/Steps/TableSteps SCENARIO=../test/Features/Table/table.feature)
-test(test/Features/Tags/Steps/TagsSteps SCENARIO=../test/Features/Tags/tags.feature)
+test(test/Features/Calc/Steps/CalcSteps SCENARIO=${CMAKE_CURRENT_SOURCE_DIR}/test/Features/Calc/addition.feature:${CMAKE_CURRENT_SOURCE_DIR}/test/Features/Calc/division.feature)
+test(test/Features/Table/Steps/TableSteps SCENARIO=${CMAKE_CURRENT_SOURCE_DIR}/test/Features/Table/table.feature)
+test(test/Features/Tags/Steps/TagsSteps SCENARIO=${CMAKE_CURRENT_SOURCE_DIR}/test/Features/Tags/tags.feature)
 test(test/GTest SCENARIO=)
 test(test/GTest-Lite SCENARIO=)
 test(test/Detail/FileUtils SCENARIO=)
