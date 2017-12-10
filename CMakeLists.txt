@@ -25,10 +25,12 @@ enable_testing()
 add_subdirectory(libs/googletest)
 
 include_directories(include)
-include_directories(${gtest_SOURCE_DIR}/include)
-include_directories(${gmock_SOURCE_DIR}/include)
-include_directories(libs/json/src)
-include_directories(libs/gherkin-cpp/include)
+include_directories(SYSTEM 
+  ${gtest_SOURCE_DIR}/include
+  ${gmock_SOURCE_DIR}/include
+  libs/json/src
+  libs/gherkin-cpp/include
+)
 
 link_directories(${CMAKE_CURRENT_LIST_DIR}/libs/gherkin-cpp)
 
