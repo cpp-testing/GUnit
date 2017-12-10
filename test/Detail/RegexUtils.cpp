@@ -17,8 +17,10 @@ namespace detail {
 TEST(RegexUtils, ShouldReturnMatches) {
   constexpr auto n0 = "I press add"_gtest_string;
   constexpr auto n1 = "I have a {number} to read"_gtest_string;
-  constexpr auto n2 = "I have a {number} and a {second number} to read"_gtest_string;
-  constexpr auto n3 = R"(I have a '{text}' and a {second number} to read)"_gtest_string;
+  constexpr auto n2 =
+      "I have a {number} and a {second number} to read"_gtest_string;
+  constexpr auto n3 =
+      R"(I have a '{text}' and a {second number} to read)"_gtest_string;
   constexpr auto n4 = "I have a {} blah"_gtest_string;
   constexpr auto n5 = "I have a {} to read"_gtest_string;
   constexpr auto n6 = R"(I have a '{}' to read)"_gtest_string;

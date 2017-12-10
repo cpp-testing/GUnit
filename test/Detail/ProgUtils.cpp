@@ -18,18 +18,26 @@ TEST(ProgUtils, ShouldReturnDemangledName) {
   EXPECT_EQ(std::string{}, demangle(""));
   EXPECT_EQ(std::string{}, demangle("!!!"));
   EXPECT_EQ(std::string{"std::ignore"}, demangle("_ZStL6ignore"));
-  EXPECT_EQ(std::string{"std::vector<double, std::allocator<double> >::~vector()"}, demangle("_ZNSt6vectorIdSaIdEED1Ev"));
+  EXPECT_EQ(
+      std::string{"std::vector<double, std::allocator<double> >::~vector()"},
+      demangle("_ZNSt6vectorIdSaIdEED1Ev"));
 }
 
 #if !defined(__APPLE__)
-TEST(ProgUtils, ShouldReturnProgFullPath) { EXPECT_EQ(internal::GetArgvs()[0], progname()); }
+TEST(ProgUtils, ShouldReturnProgFullPath) {
+  EXPECT_EQ(internal::GetArgvs()[0], progname());
+}
 #endif
 
 TEST(ProgUtils, ShouldReturnCallStack) {
   EXPECT_EQ(std::string{}, call_stack("\n", 0, 0));
   EXPECT_EQ(std::string{}, call_stack("\n", 1, 0));
-  EXPECT_THAT(call_stack("\n", 1, 1), testing::MatchesRegex(".*ProgUtils_ShouldReturnCallStack_Test.*"));
-  EXPECT_THAT(call_stack("\n", 1, 2), testing::MatchesRegex(".*ProgUtils_ShouldReturnCallStack_Test.*"));
+  EXPECT_THAT(
+      call_stack("\n", 1, 1),
+      testing::MatchesRegex(".*ProgUtils_ShouldReturnCallStack_Test.*"));
+  EXPECT_THAT(
+      call_stack("\n", 1, 2),
+      testing::MatchesRegex(".*ProgUtils_ShouldReturnCallStack_Test.*"));
 }
 
 }  // detail

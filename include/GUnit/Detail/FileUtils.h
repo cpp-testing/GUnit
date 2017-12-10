@@ -15,14 +15,17 @@ namespace testing {
 inline namespace v1 {
 namespace detail {
 
-inline auto basename(const std::string &path) { return path.substr(path.find_last_of("/\\") + 1); }
+inline auto basename(const std::string &path) {
+  return path.substr(path.find_last_of("/\\") + 1);
+}
 
 inline std::wstring read_file(const std::string &feature) {
   std::ifstream file{feature};
   if (!file.good()) {
     throw std::runtime_error("File \"" + feature + "\" not found!");
   }
-  return {(std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>()};
+  return {(std::istreambuf_iterator<char>(file)),
+          std::istreambuf_iterator<char>()};
 }
 
 }  // detail

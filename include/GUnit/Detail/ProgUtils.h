@@ -46,7 +46,8 @@ inline auto &progname() {
   return self;
 }
 
-inline std::string call_stack(const std::string &newline, int stack_begin = 1, int stack_size = GUNIT_SHOW_STACK_SIZE) {
+inline std::string call_stack(const std::string &newline, int stack_begin = 1,
+                              int stack_size = GUNIT_SHOW_STACK_SIZE) {
   static constexpr auto MAX_CALL_STACK_SIZE = 64;
   void *bt[MAX_CALL_STACK_SIZE];
   const auto frames = backtrace(bt, sizeof(bt) / sizeof(bt[0]));
@@ -55,7 +56,8 @@ inline std::string call_stack(const std::string &newline, int stack_begin = 1, i
   std::stringstream result;
   stack_size += stack_begin;
 
-  for (auto i = stack_begin; i < (frames > stack_size ? stack_size : frames); ++i) {
+  for (auto i = stack_begin; i < (frames > stack_size ? stack_size : frames);
+       ++i) {
     const auto symbol = std::string{symbols[i]};
     const auto name_begin = symbol.find("(");
     const auto name_end = symbol.find("+");
@@ -65,9 +67,12 @@ inline std::string call_stack(const std::string &newline, int stack_begin = 1, i
     if (i > stack_begin) {
       result << newline;
     }
-    if (name_begin != std::string::npos && name_end != std::string::npos && address_begin != std::string::npos &&
+    if (name_begin != std::string::npos && name_end != std::string::npos &&
+        address_begin != std::string::npos &&
         address_end != std::string::npos) {
-      result << demangle(symbol.substr(name_begin + 1, name_end - name_begin - 1)) << " "
+      result << demangle(
+                    symbol.substr(name_begin + 1, name_end - name_begin - 1))
+             << " "
              << symbol.substr(address_begin, address_end - address_begin + 1);
     } else {
       result << symbol;

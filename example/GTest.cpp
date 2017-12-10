@@ -86,7 +86,8 @@ GTEST(VectorTest, "[Using Test]") {
 }
 
 GTEST(example) {
-  // SetUp - will be run for each SHOULD section and it will create sut and mocks if possible
+  // SetUp - will be run for each SHOULD section and it will create sut and
+  // mocks if possible
   using namespace testing;
   std::tie(sut, mocks) = make<SUT, StrictGMock>(42);
 
@@ -113,7 +114,8 @@ GTEST(example) {
 }
 
 GTEST(example_no_data) {
-  // SetUp - will be run for each SHOULD section and it will create sut and mocks if possible
+  // SetUp - will be run for each SHOULD section and it will create sut and
+  // mocks if possible
   using namespace testing;
 
   SHOULD("make simple example") {

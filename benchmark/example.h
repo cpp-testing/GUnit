@@ -13,7 +13,8 @@
 
 class example {
  public:
-  example(const interface1& i1, interface2& i2, interface3& i3) : i1(i1), i2(i2), i3(i3) {}
+  example(const interface1& i1, interface2& i2, interface3& i3)
+      : i1(i1), i2(i2), i3(i3) {}
 
   void test() {
     if (i1.f1(42)) {

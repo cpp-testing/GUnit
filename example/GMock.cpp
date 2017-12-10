@@ -58,7 +58,8 @@ TEST(GMock, ShouldMockExtendedInterface) {
   EXPECT_CALL(imock, (get)()).WillOnce(Return(true));
   EXPECT_CALL(emock, (foo)(true)).Times(1);
 
-  example e{static_cast<const interface&>(imock), static_cast<extended_interface&>(emock)};
+  example e{static_cast<const interface&>(imock),
+            static_cast<extended_interface&>(emock)};
   e.update();
 }
 
@@ -70,7 +71,8 @@ TEST(GMock, ShouldMockExtendedInterfaceDifferentMockTypes) {
   EXPECT_CALL(imock, (get)()).WillOnce(Return(false));
   EXPECT_CALL(emock, (bar)(false)).Times(1);
 
-  example e{static_cast<const interface&>(imock), static_cast<extended_interface&>(emock)};
+  example e{static_cast<const interface&>(imock),
+            static_cast<extended_interface&>(emock)};
   e.update();
 }
 
@@ -86,7 +88,8 @@ TEST(GMock, ShouldWorkWithMacroDefinedMocks) {
   EXPECT_CALL(imock, (get)()).WillOnce(Return(false));
   EXPECT_CALL(emock, bar(false)).Times(1);
 
-  example e{static_cast<const interface&>(imock), static_cast<extended_interface&>(emock)};
+  example e{static_cast<const interface&>(imock),
+            static_cast<extended_interface&>(emock)};
   e.update();
 }
 
@@ -132,7 +135,8 @@ TEST(GMock, ShouldMakeSharedPtrExample) {
 TEST(GMock, ShouldFailDueToUninterestingGetCall) {
   using namespace testing;
   StrictGMock<interface> mock;
-  EXPECT_CALL(mock, (get)()).WillOnce(Return(true));  // Comment to get an UNINTERESTING CALL
+  EXPECT_CALL(mock, (get)())
+      .WillOnce(Return(true));  // Comment to get an UNINTERESTING CALL
   static_cast<interface&>(mock).get();
 }
 

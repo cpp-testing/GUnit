@@ -60,13 +60,17 @@ template <class T, class U>
 struct is_complete_base_of_impl<T, U, std::false_type> : std::false_type {};
 
 template <class T, class U>
-using is_complete_base_of = typename is_complete_base_of_impl<T, U, typename is_complete<U>::type>::type;
+using is_complete_base_of =
+    typename is_complete_base_of_impl<T, U,
+                                      typename is_complete<U>::type>::type;
 
 template <class, class = void>
 struct is_callable : std::false_type {};
 
 template <class T, class... TArgs>
-struct is_callable<T(TArgs...), void_t<decltype(std::declval<T>()(std::declval<TArgs>()...))>> : std::true_type {};
+struct is_callable<
+    T(TArgs...), void_t<decltype(std::declval<T>()(std::declval<TArgs>()...))>>
+    : std::true_type {};
 
 template <bool...>
 struct bool_list {};
@@ -137,7 +141,8 @@ using function_type_t = typename function_type<T, U>::type;
 template <class...>
 type_list<> function_args__(...);
 template <class T, class... TArgs>
-auto function_args__(int) -> function_traits_t<decltype(&T::template operator()<TArgs...>)>;
+auto function_args__(int)
+    -> function_traits_t<decltype(&T::template operator()<TArgs...>)>;
 template <class T, class...>
 auto function_args__(int) -> function_traits_t<decltype(&T::operator())>;
 template <class T, class... Args>
@@ -152,9 +157,13 @@ auto get_type_name_impl(const char *ptr, std::index_sequence<Ns...>) {
 template <class T>
 const char *get_type_name() {
 #if defined(__clang__)
-  return get_type_name_impl<T, 54>(__PRETTY_FUNCTION__, std::make_index_sequence<sizeof(__PRETTY_FUNCTION__) - 54 - 2>{});
+  return get_type_name_impl<T, 54>(
+      __PRETTY_FUNCTION__,
+      std::make_index_sequence<sizeof(__PRETTY_FUNCTION__) - 54 - 2>{});
 #elif defined(__GNUC__)
-  return get_type_name_impl<T, 59>(__PRETTY_FUNCTION__, std::make_index_sequence<sizeof(__PRETTY_FUNCTION__) - 59 - 2>{});
+  return get_type_name_impl<T, 59>(
+      __PRETTY_FUNCTION__,
+      std::make_index_sequence<sizeof(__PRETTY_FUNCTION__) - 59 - 2>{});
 #endif
 }
 

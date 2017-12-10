@@ -37,7 +37,8 @@
 namespace testing {
 namespace internal {
 template <class R, class... TArgs>
-class FunctionMocker<R(TArgs...)> : public internal::FunctionMockerBase<R(TArgs...)> {
+class FunctionMocker<R(TArgs...)>
+    : public internal::FunctionMockerBase<R(TArgs...)> {
  public:
   using F = R(TArgs...);
   using ArgumentTuple = typename internal::Function<F>::ArgumentTuple;
@@ -215,8 +216,10 @@ template struct GetAccess<&Mock::GetReactionOnUninterestingCalls>;
 template <class T>
 class GMock {
   static_assert(detail::is_complete<T>::value, "T has to be a complete type");
-  static_assert(std::is_polymorphic<T>::value, "T has to be a polymorphic type");
-  static_assert(std::has_virtual_destructor<T>::value, "T has to have a virtual destructor");
+  static_assert(std::is_polymorphic<T>::value,
+                "T has to be a polymorphic type");
+  static_assert(std::has_virtual_destructor<T>::value,
+                "T has to have a virtual destructor");
 
   detail::vtable<T> vtable;
   detail::byte _[sizeof(T)] = {0};
@@ -228,10 +231,12 @@ class GMock {
     const auto addr = (volatile int *)__builtin_return_address(0) - 1;
     auto *ptr = [this] {
       fs[__PRETTY_FUNCTION__] = std::make_unique<FunctionMocker<R(TArgs...)>>();
-      return static_cast<FunctionMocker<R(TArgs...)> *>(fs[__PRETTY_FUNCTION__].get());
+      return static_cast<FunctionMocker<R(TArgs...)> *>(
+          fs[__PRETTY_FUNCTION__].get());
     }();
 
-    if (internal::CallReaction::kAllow == detail::GetCallReaction()(internal::ImplicitCast_<GMock<T> *>(this))) {
+    if (internal::CallReaction::kAllow ==
+        detail::GetCallReaction()(internal::ImplicitCast_<GMock<T> *>(this))) {
       ptr->SetOwnerAndName(this, __PRETTY_FUNCTION__);
     } else {
       const auto info = [](const std::string &file, int line) {
@@ -239,24 +244,32 @@ class GMock {
         std::string buf;
         for (auto i = 0; i < line; ++i) getline(input, buf);
         detail::trim(buf);
-        return buf + "\n\t       At: [" + detail::basename(file) + ":" + std::to_string(line) + "]";
+        return buf + "\n\t       At: [" + detail::basename(file) + ":" +
+               std::to_string(line) + "]";
       };
       const auto al = detail::addr2line((void *)addr);
-      msgs.emplace_back(info(al.first, al.second) + "\n\t     From: " + detail::call_stack("\n\t\t   ", 2));
-      ptr->SetOwnerAndName(this, std::is_same<TName, void>::value ? msgs.back().c_str() : TName::c_str());
+      msgs.emplace_back(info(al.first, al.second) +
+                        "\n\t     From: " + detail::call_stack("\n\t\t   ", 2));
+      ptr->SetOwnerAndName(this,
+                           std::is_same<TName, void>::value
+                               ? msgs.back().c_str()
+                               : TName::c_str());
     }
     return ptr->Invoke(args...);
   }
 
   template <class TName, class R, class... TArgs>
-  decltype(auto) gmock_call_impl(int offset, const detail::identity_t<Matcher<TArgs>> &... args) {
-    vtable.set(offset, detail::union_cast<void *>(&GMock::template original_call<TName, R, TArgs...>));
+  decltype(auto) gmock_call_impl(
+      int offset, const detail::identity_t<Matcher<TArgs>> &... args) {
+    vtable.set(offset, detail::union_cast<void *>(
+                           &GMock::template original_call<TName, R, TArgs...>));
 
     const auto it = fs.find(TName::c_str());
     auto *ptr = [&it, this] {
       if (it == fs.end()) {
         fs[TName::c_str()] = std::make_unique<FunctionMocker<R(TArgs...)>>();
-        return static_cast<FunctionMocker<R(TArgs...)> *>(fs[TName::c_str()].get());
+        return static_cast<FunctionMocker<R(TArgs...)> *>(
+            fs[TName::c_str()].get());
       }
       return static_cast<FunctionMocker<R(TArgs...)> *>(it->second.get());
     }();
@@ -268,7 +281,8 @@ class GMock {
   template <class TName, class R, class... TArgs>
   R original_call(TArgs... args) {
     if (fs.find(TName::c_str()) != fs.end()) {
-      auto *f = static_cast<FunctionMocker<R(TArgs...)> *>(fs[TName::c_str()].get());
+      auto *f =
+          static_cast<FunctionMocker<R(TArgs...)> *>(fs[TName::c_str()].get());
       f->SetOwnerAndName(this, TName::c_str());
       return f->Invoke(args...);
     }
@@ -278,12 +292,16 @@ class GMock {
 
   template <class TName, class R, class B, class... TArgs>
   void defer_call(R (B::*f)(TArgs...)) {
-    vtable.set(detail::offset(f), detail::union_cast<void *>(&GMock::template original_defer_call<TName, R, TArgs...>));
+    vtable.set(detail::offset(f),
+               detail::union_cast<void *>(
+                   &GMock::template original_defer_call<TName, R, TArgs...>));
   }
 
   template <class TName, class R, class B, class... TArgs>
   void defer_call(R (B::*f)(TArgs...) const) {
-    vtable.set(detail::offset(f), detail::union_cast<void *>(&GMock::template original_defer_call<TName, R, TArgs...>));
+    vtable.set(detail::offset(f),
+               detail::union_cast<void *>(
+                   &GMock::template original_defer_call<TName, R, TArgs...>));
   }
 
   template <class TName, class R, class... TArgs>
@@ -294,7 +312,9 @@ class GMock {
  public:
   using type = T;
 
-  GMock() : vtable{detail::union_cast<void *>(&GMock::template not_expected<>), detail::union_cast<void *>(&GMock::expected)} {}
+  GMock()
+      : vtable{detail::union_cast<void *>(&GMock::template not_expected<>),
+               detail::union_cast<void *>(&GMock::expected)} {}
   GMock(const GMock &) = delete;
   GMock(GMock &&) = default;
   ~GMock() noexcept {
@@ -310,12 +330,15 @@ class GMock {
   }
 
   template <class TName, class R, class B, class... TArgs>
-  decltype(auto) gmock_call(R (B::*f)(TArgs...), const detail::identity_t<Matcher<TArgs>> &... args) {
+  decltype(auto) gmock_call(
+      R (B::*f)(TArgs...), const detail::identity_t<Matcher<TArgs>> &... args) {
     return gmock_call_impl<TName, R, TArgs...>(detail::offset(f), args...);
   }
 
   template <class TName, class R, class B, class... TArgs>
-  decltype(auto) gmock_call(R (B::*f)(TArgs...) const, const typename detail::identity_t<Matcher<TArgs>> &... args) {
+  decltype(auto) gmock_call(
+      R (B::*f)(TArgs...) const,
+      const typename detail::identity_t<Matcher<TArgs>> &... args) {
     return gmock_call_impl<TName, R, TArgs...>(detail::offset(f), args...);
   }
 
@@ -325,7 +348,9 @@ class GMock {
   explicit operator const T &() const { return object(); }
 
  private:
-  std::unordered_map<std::string, std::unique_ptr<internal::UntypedFunctionMockerBase>> fs;
+  std::unordered_map<std::string,
+                     std::unique_ptr<internal::UntypedFunctionMockerBase>>
+      fs;
   std::vector<std::string> msgs;
   std::vector<std::function<void()>> calls;
 };
@@ -341,8 +366,12 @@ class NiceMock<GMock<T>> final : public GMock<T> {
 
   NiceMock(NiceMock &&) = default;
   NiceMock(const NiceMock &) = delete;
-  NiceMock() { Mock::AllowUninterestingCalls(internal::ImplicitCast_<GMock<T> *>(this)); }
-  ~NiceMock() { Mock::UnregisterCallReaction(internal::ImplicitCast_<GMock<T> *>(this)); }
+  NiceMock() {
+    Mock::AllowUninterestingCalls(internal::ImplicitCast_<GMock<T> *>(this));
+  }
+  ~NiceMock() {
+    Mock::UnregisterCallReaction(internal::ImplicitCast_<GMock<T> *>(this));
+  }
 };
 
 template <class T>
@@ -354,8 +383,12 @@ class StrictMock<GMock<T>> final : public GMock<T> {
   }
   StrictMock(StrictMock &&) = default;
   StrictMock(const StrictMock &) = delete;
-  StrictMock() { Mock::FailUninterestingCalls(internal::ImplicitCast_<GMock<T> *>(this)); }
-  ~StrictMock() { Mock::UnregisterCallReaction(internal::ImplicitCast_<GMock<T> *>(this)); }
+  StrictMock() {
+    Mock::FailUninterestingCalls(internal::ImplicitCast_<GMock<T> *>(this));
+  }
+  ~StrictMock() {
+    Mock::UnregisterCallReaction(internal::ImplicitCast_<GMock<T> *>(this));
+  }
 };
 
 inline namespace v1 {
@@ -385,31 +418,40 @@ auto move(unique_ptr<testing::NiceGMock<T>, TDeleter> &mock) noexcept {
 }
 
 template <class T, class U>
-auto static_pointer_cast(const std::shared_ptr<testing::GMock<U>> &mock) noexcept {
-  return std::shared_ptr<T>{mock, reinterpret_cast<T *>(mock.get())};  // it's not release
+auto static_pointer_cast(
+    const std::shared_ptr<testing::GMock<U>> &mock) noexcept {
+  return std::shared_ptr<T>{
+      mock, reinterpret_cast<T *>(mock.get())};  // it's not release
 }
 template <class T, class U>
-auto static_pointer_cast(const std::shared_ptr<testing::StrictGMock<U>> &mock) noexcept {
-  return std::shared_ptr<T>{mock, reinterpret_cast<T *>(mock.get())};  // it's not release
+auto static_pointer_cast(
+    const std::shared_ptr<testing::StrictGMock<U>> &mock) noexcept {
+  return std::shared_ptr<T>{
+      mock, reinterpret_cast<T *>(mock.get())};  // it's not release
 }
 template <class T, class U>
-auto static_pointer_cast(const std::shared_ptr<testing::NiceGMock<U>> &mock) noexcept {
-  return std::shared_ptr<T>{mock, reinterpret_cast<T *>(mock.get())};  // it's not release
+auto static_pointer_cast(
+    const std::shared_ptr<testing::NiceGMock<U>> &mock) noexcept {
+  return std::shared_ptr<T>{
+      mock, reinterpret_cast<T *>(mock.get())};  // it's not release
 }
 }  // std
 
 namespace testing {
 template <class R>
 auto Return(const std::shared_ptr<GMock<R>> &value) {
-  return internal::ReturnAction<std::shared_ptr<R>>(std::move(std::static_pointer_cast<R>(value)));
+  return internal::ReturnAction<std::shared_ptr<R>>(
+      std::move(std::static_pointer_cast<R>(value)));
 }
 template <class R>
 auto Return(const std::shared_ptr<StrictGMock<R>> &value) {
-  return internal::ReturnAction<std::shared_ptr<R>>(std::move(std::static_pointer_cast<R>(value)));
+  return internal::ReturnAction<std::shared_ptr<R>>(
+      std::move(std::static_pointer_cast<R>(value)));
 }
 template <class R>
 auto Return(const std::shared_ptr<NiceGMock<R>> &value) {
-  return internal::ReturnAction<std::shared_ptr<R>>(std::move(std::static_pointer_cast<R>(value)));
+  return internal::ReturnAction<std::shared_ptr<R>>(
+      std::move(std::static_pointer_cast<R>(value)));
 }
 
 template <class R>
@@ -486,7 +528,9 @@ struct Object<std::shared_ptr<T>, TMock> {
   operator mock_t &() { return mock->object(); }
   operator mock_t *() { return &mock->object(); }
   operator const mock_t *() const { return &mock->object(); }
-  operator std::shared_ptr<mock_t>() { return std::static_pointer_cast<mock_t>(mock); }
+  operator std::shared_ptr<mock_t>() {
+    return std::static_pointer_cast<mock_t>(mock);
+  }
 
   TMock &mock;
 };
@@ -509,76 +553,110 @@ auto object(TMock *mock) {
 #pragma GCC pop_options
 #endif
 
-#define __GMOCK_QNAME(...) decltype(__GUNIT_CAT(#__VA_ARGS__, _gtest_string)) __GUNIT_IGNORE
+#define __GMOCK_QNAME(...) \
+  decltype(__GUNIT_CAT(#__VA_ARGS__, _gtest_string)) __GUNIT_IGNORE
 #define __GMOCK_FUNCTION(a, b) b __GUNIT_IGNORE
-#define __GMOCK_NAME(...) __GUNIT_CAT(__GMOCK_NAME_, __GUNIT_SIZE(__VA_ARGS__))(__VA_ARGS__)
+#define __GMOCK_NAME(...) \
+  __GUNIT_CAT(__GMOCK_NAME_, __GUNIT_SIZE(__VA_ARGS__))(__VA_ARGS__)
 #define __GMOCK_NAME_1(a) a __GUNIT_IGNORE
 #define __GMOCK_NAME_2(a, b) a __GUNIT_IGNORE
 #define __GMOCK_OVERLOAD_CALL(...) __GUNIT_SIZE(__VA_ARGS__) __GUNIT_IGNORE
 #define __GMOCK_OVERLOAD_CAST_IMPL_1(obj, call)
-#define __GMOCK_OVERLOAD_CAST_IMPL_2(obj, call) \
-  (::testing::detail::function_type_t<std::decay_t<decltype(obj)>::type, __GMOCK_FUNCTION call>)
+#define __GMOCK_OVERLOAD_CAST_IMPL_2(obj, call)                          \
+  (::testing::detail::function_type_t<std::decay_t<decltype(obj)>::type, \
+                                      __GMOCK_FUNCTION call>)
 #define __GMOCK_INTERNAL(...)               \
   __GUNIT_IF(__GUNIT_IS_EMPTY(__VA_ARGS__)) \
   (__GUNIT_IGNORE, __GUNIT_COMMA)() __VA_ARGS__
 #define __GMOCK_CALL(...) __GMOCK_INTERNAL
 
 #undef EXPECT_CALL
-#define EXPECT_CALL(obj, call) __GUNIT_CAT(__GMOCK_EXPECT_CALL_, __GUNIT_IBP(call))(obj, call, call)
+#define EXPECT_CALL(obj, call) \
+  __GUNIT_CAT(__GMOCK_EXPECT_CALL_, __GUNIT_IBP(call))(obj, call, call)
 #define __GMOCK_EXPECT_CALL_0(obj, _, call) GMOCK_EXPECT_CALL_IMPL_(obj, call)
-#define __GMOCK_EXPECT_CALL_1(obj, qcall, call)                                          \
-  ((obj).template gmock_call<__GMOCK_QNAME call>(                                        \
-       __GUNIT_CAT(__GMOCK_OVERLOAD_CAST_IMPL_, __GMOCK_OVERLOAD_CALL call)(obj, call) & \
-       std::decay_t<decltype(obj)>::type::__GMOCK_NAME call __GMOCK_CALL call))          \
+#define __GMOCK_EXPECT_CALL_1(obj, qcall, call)                              \
+  ((obj).template gmock_call<__GMOCK_QNAME call>(                            \
+       __GUNIT_CAT(__GMOCK_OVERLOAD_CAST_IMPL_, __GMOCK_OVERLOAD_CALL call)( \
+           obj, call) &                                                      \
+       std::decay_t<decltype(obj)>::type::__GMOCK_NAME call __GMOCK_CALL     \
+           call))                                                            \
       .InternalExpectedAt(__FILE__, __LINE__, #obj, #qcall)
 
-#define EXPECT_INVOKE(obj, f, ...) __GUNIT_CAT(__GMOCK_EXPECT_INVOKE_IMPL_, __GUNIT_IBP(f))(obj, f, __VA_ARGS__)
-#define __GMOCK_EXPECT_INVOKE_IMPL_0(obj, f, ...)                                                                        \
-  ::testing::detail::constexpr_if(::testing::detail::is_valid([](auto &&x) -> decltype(x.f(__VA_ARGS__)) {}),            \
-                                  [](auto &&x) -> decltype(auto) { return GMOCK_EXPECT_CALL_IMPL_(x, f(__VA_ARGS__)); }, \
-                                  [](auto &&x) -> decltype(auto) {                                                       \
-                                    return __GMOCK_EXPECT_CALL_1(x, f(__VA_ARGS__),                                      \
-                                                                 __GUNIT_IF(__GUNIT_IBP(f))(f, (f))(__VA_ARGS__));       \
-                                  })(obj)
-#define __GMOCK_EXPECT_INVOKE_IMPL_1(obj, f, ...) __GMOCK_EXPECT_CALL_1(obj, f(__VA_ARGS__), f(__VA_ARGS__))
+#define EXPECT_INVOKE(obj, f, ...) \
+  __GUNIT_CAT(__GMOCK_EXPECT_INVOKE_IMPL_, __GUNIT_IBP(f))(obj, f, __VA_ARGS__)
+#define __GMOCK_EXPECT_INVOKE_IMPL_0(obj, f, ...)             \
+  ::testing::detail::constexpr_if(                            \
+      ::testing::detail::is_valid(                            \
+          [](auto &&x) -> decltype(x.f(__VA_ARGS__)) {}),     \
+      [](auto &&x) -> decltype(auto) {                        \
+        return GMOCK_EXPECT_CALL_IMPL_(x, f(__VA_ARGS__));    \
+      },                                                      \
+      [](auto &&x) -> decltype(auto) {                        \
+        return __GMOCK_EXPECT_CALL_1(                         \
+            x, f(__VA_ARGS__),                                \
+            __GUNIT_IF(__GUNIT_IBP(f))(f, (f))(__VA_ARGS__)); \
+      })(obj)
+#define __GMOCK_EXPECT_INVOKE_IMPL_1(obj, f, ...) \
+  __GMOCK_EXPECT_CALL_1(obj, f(__VA_ARGS__), f(__VA_ARGS__))
 
 #undef ON_CALL
-#define ON_CALL(obj, call) __GUNIT_CAT(__GMOCK_ON_CALL_, __GUNIT_IBP(call))(obj, call, call)
+#define ON_CALL(obj, call) \
+  __GUNIT_CAT(__GMOCK_ON_CALL_, __GUNIT_IBP(call))(obj, call, call)
 #define __GMOCK_ON_CALL_0(obj, _, call) GMOCK_ON_CALL_IMPL_(obj, call)
-#define __GMOCK_ON_CALL_1(obj, qcall, call)                                              \
-  ((obj).template gmock_call<__GMOCK_QNAME call>(                                        \
-       __GUNIT_CAT(__GMOCK_OVERLOAD_CAST_IMPL_, __GMOCK_OVERLOAD_CALL call)(obj, call) & \
-       std::decay_t<decltype(obj)>::type::__GMOCK_NAME call __GMOCK_CALL call))          \
+#define __GMOCK_ON_CALL_1(obj, qcall, call)                                  \
+  ((obj).template gmock_call<__GMOCK_QNAME call>(                            \
+       __GUNIT_CAT(__GMOCK_OVERLOAD_CAST_IMPL_, __GMOCK_OVERLOAD_CALL call)( \
+           obj, call) &                                                      \
+       std::decay_t<decltype(obj)>::type::__GMOCK_NAME call __GMOCK_CALL     \
+           call))                                                            \
       .InternalDefaultActionSetAt(__FILE__, __LINE__, #obj, #qcall)
 
-#define ON_INVOKE(obj, f, ...) __GUNIT_CAT(__GMOCK_ON_INVOKE_IMPL_, __GUNIT_IBP(f))(obj, f, __VA_ARGS__)
-#define __GMOCK_ON_INVOKE_IMPL_0(obj, f, ...)                                                                        \
-  ::testing::detail::constexpr_if(::testing::detail::is_valid([](auto &&x) -> decltype(x.f(__VA_ARGS__)) {}),        \
-                                  [](auto &&x) -> decltype(auto) { return GMOCK_ON_CALL_IMPL_(x, f(__VA_ARGS__)); }, \
-                                  [](auto &&x) -> decltype(auto) {                                                   \
-                                    return __GMOCK_ON_CALL_1(x, f(__VA_ARGS__),                                      \
-                                                             __GUNIT_IF(__GUNIT_IBP(f))(f, (f))(__VA_ARGS__));       \
-                                  })(obj)
-#define __GMOCK_ON_INVOKE_IMPL_1(obj, f, ...) __GMOCK_ON_CALL_1(obj, f(__VA_ARGS__), f(__VA_ARGS__))
+#define ON_INVOKE(obj, f, ...) \
+  __GUNIT_CAT(__GMOCK_ON_INVOKE_IMPL_, __GUNIT_IBP(f))(obj, f, __VA_ARGS__)
+#define __GMOCK_ON_INVOKE_IMPL_0(obj, f, ...)                 \
+  ::testing::detail::constexpr_if(                            \
+      ::testing::detail::is_valid(                            \
+          [](auto &&x) -> decltype(x.f(__VA_ARGS__)) {}),     \
+      [](auto &&x) -> decltype(auto) {                        \
+        return GMOCK_ON_CALL_IMPL_(x, f(__VA_ARGS__));        \
+      },                                                      \
+      [](auto &&x) -> decltype(auto) {                        \
+        return __GMOCK_ON_CALL_1(                             \
+            x, f(__VA_ARGS__),                                \
+            __GUNIT_IF(__GUNIT_IBP(f))(f, (f))(__VA_ARGS__)); \
+      })(obj)
+#define __GMOCK_ON_INVOKE_IMPL_1(obj, f, ...) \
+  __GMOCK_ON_CALL_1(obj, f(__VA_ARGS__), f(__VA_ARGS__))
 
 #define __GMOCK_DEFER_CALLS_IMPL(I, f) std::make_pair(#f##_gtest_string, &I::f)
-#define __GMOCK_DEFER_CALLS_IMPL_10(I, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10) \
-  __GMOCK_DEFER_CALLS_IMPL_9(I, f1, f2, f3, f4, f5, f6, f7, f8, f9), __GMOCK_DEFER_CALLS_IMPL(I, f10)
+#define __GMOCK_DEFER_CALLS_IMPL_10(I, f1, f2, f3, f4, f5, f6, f7, f8, f9, \
+                                    f10)                                   \
+  __GMOCK_DEFER_CALLS_IMPL_9(I, f1, f2, f3, f4, f5, f6, f7, f8, f9)        \
+  , __GMOCK_DEFER_CALLS_IMPL(I, f10)
 #define __GMOCK_DEFER_CALLS_IMPL_9(I, f1, f2, f3, f4, f5, f6, f7, f8, f9) \
-  __GMOCK_DEFER_CALLS_IMPL_8(I, f1, f2, f3, f4, f5, f6, f7, f8), __GMOCK_DEFER_CALLS_IMPL(I, f9)
+  __GMOCK_DEFER_CALLS_IMPL_8(I, f1, f2, f3, f4, f5, f6, f7, f8)           \
+  , __GMOCK_DEFER_CALLS_IMPL(I, f9)
 #define __GMOCK_DEFER_CALLS_IMPL_8(I, f1, f2, f3, f4, f5, f6, f7, f8) \
-  __GMOCK_DEFER_CALLS_IMPL_7(I, f1, f2, f3, f4, f5, f6, f7), __GMOCK_DEFER_CALLS_IMPL(I, f8)
+  __GMOCK_DEFER_CALLS_IMPL_7(I, f1, f2, f3, f4, f5, f6, f7)           \
+  , __GMOCK_DEFER_CALLS_IMPL(I, f8)
 #define __GMOCK_DEFER_CALLS_IMPL_7(I, f1, f2, f3, f4, f5, f6, f7) \
-  __GMOCK_DEFER_CALLS_IMPL_6(I, f1, f2, f3, f4, f5, f6), __GMOCK_DEFER_CALLS_IMPL(I, f7)
+  __GMOCK_DEFER_CALLS_IMPL_6(I, f1, f2, f3, f4, f5, f6)           \
+  , __GMOCK_DEFER_CALLS_IMPL(I, f7)
 #define __GMOCK_DEFER_CALLS_IMPL_6(I, f1, f2, f3, f4, f5, f6) \
-  __GMOCK_DEFER_CALLS_IMPL_5(I, f1, f2, f3, f4, f5), __GMOCK_DEFER_CALLS_IMPL(I, f6)
+  __GMOCK_DEFER_CALLS_IMPL_5(I, f1, f2, f3, f4, f5)           \
+  , __GMOCK_DEFER_CALLS_IMPL(I, f6)
 #define __GMOCK_DEFER_CALLS_IMPL_5(I, f1, f2, f3, f4, f5) \
   __GMOCK_DEFER_CALLS_IMPL_4(I, f1, f2, f3, f4), __GMOCK_DEFER_CALLS_IMPL(I, f5)
-#define __GMOCK_DEFER_CALLS_IMPL_4(I, f1, f2, f3, f4) __GMOCK_DEFER_CALLS_IMPL_3(I, f1, f2, f3), __GMOCK_DEFER_CALLS_IMPL(I, f4)
-#define __GMOCK_DEFER_CALLS_IMPL_3(I, f1, f2, f3) __GMOCK_DEFER_CALLS_IMPL_2(I, f1, f2), __GMOCK_DEFER_CALLS_IMPL(I, f3)
-#define __GMOCK_DEFER_CALLS_IMPL_2(I, f1, f2) __GMOCK_DEFER_CALLS_IMPL_1(I, f1), __GMOCK_DEFER_CALLS_IMPL(I, f2)
+#define __GMOCK_DEFER_CALLS_IMPL_4(I, f1, f2, f3, f4) \
+  __GMOCK_DEFER_CALLS_IMPL_3(I, f1, f2, f3), __GMOCK_DEFER_CALLS_IMPL(I, f4)
+#define __GMOCK_DEFER_CALLS_IMPL_3(I, f1, f2, f3) \
+  __GMOCK_DEFER_CALLS_IMPL_2(I, f1, f2), __GMOCK_DEFER_CALLS_IMPL(I, f3)
+#define __GMOCK_DEFER_CALLS_IMPL_2(I, f1, f2) \
+  __GMOCK_DEFER_CALLS_IMPL_1(I, f1), __GMOCK_DEFER_CALLS_IMPL(I, f2)
 #define __GMOCK_DEFER_CALLS_IMPL_1(I, f1) __GMOCK_DEFER_CALLS_IMPL(I, f1)
 
-#define DEFER_CALLS(I, ...) __GUNIT_CAT(__GMOCK_DEFER_CALLS_IMPL_, __GUNIT_SIZE(__VA_ARGS__))(I, __VA_ARGS__)
+#define DEFER_CALLS(I, ...)                                         \
+  __GUNIT_CAT(__GMOCK_DEFER_CALLS_IMPL_, __GUNIT_SIZE(__VA_ARGS__)) \
+  (I, __VA_ARGS__)
 #define EXPECTED_CALL EXPECT_CALL
 #define EXPECTED_INVOKE EXPECT_INVOKE

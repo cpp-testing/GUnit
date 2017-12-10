@@ -106,7 +106,8 @@ class example {
 
 class example_data {
  public:
-  example_data(int data1, interface& i, const std::string& data2) : data1(data1), i(i), data2(data2) {}
+  example_data(int data1, interface& i, const std::string& data2)
+      : data1(data1), i(i), data2(data2) {}
 
   void update() {
     i.foo(42);
@@ -124,7 +125,8 @@ class example_data {
 
 class example_data_ref {
  public:
-  example_data_ref(int data1, interface& i, int& ref, const std::string& data2, const int& cref)
+  example_data_ref(int data1, interface& i, int& ref, const std::string& data2,
+                   const int& cref)
       : data1(data1), i(i), ref(ref), data2(data2), cref(cref) {}
 
   void update() {
@@ -147,7 +149,9 @@ class example_data_ref {
 
 class complex_example {
  public:
-  complex_example(const std::shared_ptr<interface>& csp, std::shared_ptr<interface2> sp, interface4* ptr, interface_dtor& ref)
+  complex_example(const std::shared_ptr<interface>& csp,
+                  std::shared_ptr<interface2> sp, interface4* ptr,
+                  interface_dtor& ref)
       : csp(csp), sp(sp), ptr(ptr), ref(ref) {}
 
   void update() {
@@ -166,8 +170,9 @@ class complex_example {
 
 class complex_example_const {
  public:
-  complex_example_const(const std::shared_ptr<interface>& csp, const std::shared_ptr<interface2>& sp, const interface4* ptr,
-                        const interface_dtor& ref)
+  complex_example_const(const std::shared_ptr<interface>& csp,
+                        const std::shared_ptr<interface2>& sp,
+                        const interface4* ptr, const interface_dtor& ref)
       : csp(csp), sp(sp), ptr(ptr), ref(ref) {}
 
   void update() {
@@ -186,8 +191,10 @@ class complex_example_const {
 
 class complex_example_const_string {
  public:
-  complex_example_const_string(const std::shared_ptr<interface>& csp, const std::shared_ptr<interface2>& sp,
-                               const interface4* ptr, const interface_dtor& ref, const std::string& name)
+  complex_example_const_string(const std::shared_ptr<interface>& csp,
+                               const std::shared_ptr<interface2>& sp,
+                               const interface4* ptr, const interface_dtor& ref,
+                               const std::string& name)
       : csp(csp), sp(sp), ptr(ptr), ref(ref), name(name) {}
 
   void update() {
@@ -208,7 +215,9 @@ class complex_example_const_string {
 };
 
 struct same_mock {
-  same_mock(const std::shared_ptr<interface>& csp, std::shared_ptr<interface> sp) : csp(csp), sp(sp) {}
+  same_mock(const std::shared_ptr<interface>& csp,
+            std::shared_ptr<interface> sp)
+      : csp(csp), sp(sp) {}
 
   void update() {
     csp->get(42);
@@ -234,7 +243,8 @@ struct non_default_constructible {
 
 class nexample {
  public:
-  explicit nexample(std::unique_ptr<interface> i, non_default_constructible) : i(std::move(i)) {}
+  explicit nexample(std::unique_ptr<interface> i, non_default_constructible)
+      : i(std::move(i)) {}
   void update() { i->bar(1, "str"); }
 
  private:
@@ -288,9 +298,11 @@ class mptrexample final {
 
 class longest_ctor final {
  public:
-  longest_ctor(short s, double d, std::shared_ptr<interface> i) : s(s), d(d), i(i) {}
+  longest_ctor(short s, double d, std::shared_ptr<interface> i)
+      : s(s), d(d), i(i) {}
 
-  longest_ctor(short s, double d, std::shared_ptr<interface> i, const std::shared_ptr<interface2>& i2)
+  longest_ctor(short s, double d, std::shared_ptr<interface> i,
+               const std::shared_ptr<interface2>& i2)
       : s(s), d(d), i(i), i2(i2) {}
 
   short s = {};
@@ -301,9 +313,11 @@ class longest_ctor final {
 
 class longest_ctor_force final {
  public:
-  longest_ctor_force(short s, double d, std::shared_ptr<interface> i, ...) : s(s), d(d), i(i) {}
+  longest_ctor_force(short s, double d, std::shared_ptr<interface> i, ...)
+      : s(s), d(d), i(i) {}
 
-  longest_ctor_force(short s, double d, std::shared_ptr<interface> i, const std::shared_ptr<interface2>& i2)
+  longest_ctor_force(short s, double d, std::shared_ptr<interface> i,
+                     const std::shared_ptr<interface2>& i2)
       : s(s), d(d), i(i), i2(i2) {}
 
   short s = {};
@@ -374,7 +388,8 @@ TEST(PassingArgTest, ShouldMakePassingRef) {
   mocks_t mocks;
   std::unique_ptr<passing_ref> sut;
   auto a = std::make_unique<arg>();
-  std::tie(sut, mocks) = make<std::unique_ptr<passing_ref>, testing::NaggyGMock>(*a);
+  std::tie(sut, mocks) =
+      make<std::unique_ptr<passing_ref>, testing::NaggyGMock>(*a);
   EXPECT_TRUE(sut.get());
 }
 
@@ -393,13 +408,16 @@ TEST(MakeTest, ShouldMakeComplexExampleUsingMakeAndTie) {
   std::unique_ptr<complex_example> sut;
   mocks_t mocks;
 
-  std::tie(sut, mocks) = make<std::unique_ptr<complex_example>, testing::NaggyGMock>();
+  std::tie(sut, mocks) =
+      make<std::unique_ptr<complex_example>, testing::NaggyGMock>();
   EXPECT_TRUE(nullptr != sut.get());
   ASSERT_EQ(4u, mocks.size());
 }
 
 struct Test : testing::GTest<example> {
-  void SetUp() override { std::tie(sut, mocks) = testing::make<SUT, testing::NaggyGMock>(42); }
+  void SetUp() override {
+    std::tie(sut, mocks) = testing::make<SUT, testing::NaggyGMock>(42);
+  }
 };
 
 TEST_F(Test, ShouldMakeExample) {
@@ -440,7 +458,9 @@ TEST_F(UninitializedTest, ShouldNotCreateSUTAndMocks) {
 }
 
 struct CtorTest : testing::GTest<example> {
-  void SetUp() override { std::tie(sut, mocks) = testing::make<SUT, testing::NaggyGMock>(77); }
+  void SetUp() override {
+    std::tie(sut, mocks) = testing::make<SUT, testing::NaggyGMock>(77);
+  }
 };
 
 TEST_F(CtorTest, ShouldPassValueIntoExampleCtor) {
@@ -457,7 +477,10 @@ TEST_F(CtorTest, ShouldPassValueIntoExampleCtor) {
 }
 
 struct CtorMultipleTest : testing::GTest<example_data> {
-  void SetUp() override { std::tie(sut, mocks) = testing::make<SUT, testing::NaggyGMock>(77, std::string{"text"}); }
+  void SetUp() override {
+    std::tie(sut, mocks) =
+        testing::make<SUT, testing::NaggyGMock>(77, std::string{"text"});
+  }
 };
 
 TEST_F(CtorMultipleTest, ShouldPassMultipleValuesIntoExampleCtor) {
@@ -475,7 +498,10 @@ TEST_F(CtorMultipleTest, ShouldPassMultipleValuesIntoExampleCtor) {
 }
 
 struct CtorMultiplePlusRefTest : testing::GTest<example_data_ref> {
-  void SetUp() override { std::tie(sut, mocks) = testing::make<SUT, testing::NaggyGMock>(77, ref, std::string{"text"}, cref); }
+  void SetUp() override {
+    std::tie(sut, mocks) = testing::make<SUT, testing::NaggyGMock>(
+        77, ref, std::string{"text"}, cref);
+  }
   int ref = 42;
   const int cref = 7;
 };
@@ -499,7 +525,10 @@ TEST_F(CtorMultiplePlusRefTest, ShouldPassMultipleValuesIntoExampleCtor) {
 }
 
 struct CtorMultiplePlusRefOrderTest : testing::GTest<example_data_ref> {
-  void SetUp() override { std::tie(sut, mocks) = testing::make<SUT, testing::NaggyGMock>(cref, 77, ref, std::string{"text"}); }
+  void SetUp() override {
+    std::tie(sut, mocks) = testing::make<SUT, testing::NaggyGMock>(
+        cref, 77, ref, std::string{"text"});
+  }
   int ref = 42;
   const int cref = 7;
 };
@@ -523,7 +552,9 @@ TEST_F(CtorMultiplePlusRefOrderTest, ShouldPassMultipleValuesIntoExampleCtor) {
 }
 
 struct ComplexTest : testing::GTest<complex_example> {
-  void SetUp() override { std::tie(sut, mocks) = testing::make<SUT, testing::NaggyGMock>(); }
+  void SetUp() override {
+    std::tie(sut, mocks) = testing::make<SUT, testing::NaggyGMock>();
+  }
 };
 
 TEST_F(ComplexTest, ShouldMakeComplexExample) {
@@ -566,7 +597,9 @@ TEST_F(ComplexNiceMocksTest, ShouldMakeComplexExampleWithNiceMocks) {
 }
 
 struct ComplexConstTest : testing::GTest<complex_example_const> {
-  void SetUp() override { std::tie(sut, mocks) = testing::make<SUT, testing::NaggyGMock>(); }
+  void SetUp() override {
+    std::tie(sut, mocks) = testing::make<SUT, testing::NaggyGMock>();
+  }
 };
 
 TEST_F(ComplexConstTest, ShouldMakeComplexConstExample) {
@@ -581,7 +614,10 @@ TEST_F(ComplexConstTest, ShouldMakeComplexConstExample) {
 }
 
 struct ComplexWithStringTest : testing::GTest<complex_example_const_string> {
-  void SetUp() override { std::tie(sut, mocks) = testing::make<SUT, testing::NaggyGMock>(std::string{"str"}); }
+  void SetUp() override {
+    std::tie(sut, mocks) =
+        testing::make<SUT, testing::NaggyGMock>(std::string{"str"});
+  }
 };
 
 TEST_F(ComplexWithStringTest, ShouldMakeComplexConstExample) {
@@ -638,7 +674,8 @@ GTEST(mexample) {
 
   SHOULD("pass GMock type") {
     constexpr auto value = true;
-    EXPECT_CALL(mock<imock_return>(), (get)(value)).WillOnce(ReturnRef(mockInterface));
+    EXPECT_CALL(mock<imock_return>(), (get)(value))
+        .WillOnce(ReturnRef(mockInterface));
     EXPECT_CALL(mockInterface, (foo)(42)).Times(1);
 
     sut->update(value);
@@ -648,11 +685,13 @@ GTEST(mexample) {
 GTEST(mspexample) {
   using namespace testing;
   std::tie(sut, mocks) = testing::make<SUT, testing::NaggyGMock>();
-  std::shared_ptr<testing::StrictGMock<interface>> mockInterface = std::make_shared<testing::StrictGMock<interface>>();
+  std::shared_ptr<testing::StrictGMock<interface>> mockInterface =
+      std::make_shared<testing::StrictGMock<interface>>();
 
   SHOULD("pass GMock shared ptr type") {
     constexpr auto value = false;
-    EXPECT_CALL(mock<imock_return_sp>(), (get)(value)).WillOnce(Return(mockInterface));
+    EXPECT_CALL(mock<imock_return_sp>(), (get)(value))
+        .WillOnce(Return(mockInterface));
     EXPECT_CALL(*mockInterface, (foo)(42)).Times(1);
 
     sut->update(value);
@@ -666,7 +705,8 @@ GTEST(mptrexample) {
 
   SHOULD("pass GMock ptr type") {
     constexpr auto value = false;
-    EXPECT_CALL(mock<imock_return_ptr>(), (get)(value)).WillOnce(Return(&mockInterface));
+    EXPECT_CALL(mock<imock_return_ptr>(), (get)(value))
+        .WillOnce(Return(&mockInterface));
     EXPECT_CALL(mockInterface, (foo)(42)).Times(1);
 
     sut->update(value);
@@ -675,7 +715,8 @@ GTEST(mptrexample) {
 
 GTEST(longest_ctor) {
   using namespace testing;
-  std::tie(sut, mocks) = testing::make<SUT, testing::NaggyGMock>(short{42}, 77.0);
+  std::tie(sut, mocks) =
+      testing::make<SUT, testing::NaggyGMock>(short{42}, 77.0);
 
   SHOULD("take the longest ctor") {
     EXPECT_EQ(short{42}, sut->s);
@@ -693,7 +734,8 @@ GTEST(longest_ctor_force) {
     EXPECT_FALSE(sut.get());
   }
 
-  std::tie(sut, mocks) = testing::make<SUT, testing::NaggyGMock>(short{42}, 77.0);
+  std::tie(sut, mocks) =
+      testing::make<SUT, testing::NaggyGMock>(short{42}, 77.0);
 
   SHOULD("take injected, longest ctor") {
     EXPECT_EQ(short{42}, sut->s);
@@ -721,7 +763,8 @@ GTEST(complex_example) {
   }
 
   SHOULD("make complex example with strict mocks") {
-    std::tie(sut, mocks) = testing::make<SUT, StrictGMock, NiceGMock<interface_dtor>>();
+    std::tie(sut, mocks) =
+        testing::make<SUT, StrictGMock, NiceGMock<interface_dtor>>();
     EXPECT_CALL(mock<interface>(), (get)(_)).WillOnce(Return(123));
     EXPECT_CALL(mock<interface2>(), (f1)(77.0)).Times(1);
     EXPECT_CALL(mock<interface4>(), (f2)(_)).Times(1);
@@ -785,10 +828,15 @@ GTEST("Make with mocks") {
     SUT sut;
     mocks_t mocks;
 
-    std::tie(sut, mocks) = testing::make<SUT, testing::StrictGMock, NiceGMock<interface_dtor>>();
-    std::tie(sut, mocks) = testing::make<SUT, testing::NiceGMock, StrictGMock<interface_dtor>>();
-    std::tie(sut, mocks) = testing::make<SUT, testing::NiceGMock, NaggyGMock<interface_dtor>>();
-    std::tie(sut, mocks) = testing::make<SUT, testing::NaggyGMock, StrictGMock<interface_dtor>, NiceGMock<interface>>();
+    std::tie(sut, mocks) =
+        testing::make<SUT, testing::StrictGMock, NiceGMock<interface_dtor>>();
+    std::tie(sut, mocks) =
+        testing::make<SUT, testing::NiceGMock, StrictGMock<interface_dtor>>();
+    std::tie(sut, mocks) =
+        testing::make<SUT, testing::NiceGMock, NaggyGMock<interface_dtor>>();
+    std::tie(sut, mocks) =
+        testing::make<SUT, testing::NaggyGMock, StrictGMock<interface_dtor>,
+                      NiceGMock<interface>>();
   }
 }
 
@@ -816,7 +864,9 @@ GTEST(MyTest, "[Custom Test]") {
   }
 }
 
-GTEST("Test without should", "Should Register the test case itself") { EXPECT_TRUE(true); }
+GTEST("Test without should", "Should Register the test case itself") {
+  EXPECT_TRUE(true);
+}
 
 GTEST("ParamTest", "[Info]", testing::Values(1, 2, 3)) {
   SHOULD("be true") { EXPECT_TRUE(GetParam() >= 1 && GetParam() <= 3); }
@@ -919,7 +969,8 @@ GTEST(di_example) {
 
 class di_complex_example {
  public:
-  di_complex_example(std::shared_ptr<interface> csp, std::shared_ptr<interface2> sp, const interface4& cref,
+  di_complex_example(std::shared_ptr<interface> csp,
+                     std::shared_ptr<interface2> sp, const interface4& cref,
                      interface_dtor& ref)
       : csp(csp), sp(sp), cref(cref), ref(ref) {}
 

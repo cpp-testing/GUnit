@@ -14,11 +14,14 @@
 STEPS("Example*") = [](auto steps) {
   std::vector<std::string> given_steps{};
 
-  steps.Given("I have step {name}") = [&](const std::string& step) { given_steps.emplace_back(step); };
+  steps.Given("I have step {name}") = [&](const std::string& step) {
+    given_steps.emplace_back(step);
+  };
 
   steps.When("I run the scenario") = [] { std::cout << "Running...\n"; };
 
-  steps.Then("The following steps should be shown on the screen", "steps") = [&](const testing::Table& table) {
+  steps.Then("The following steps should be shown on the screen",
+             "steps") = [&](const testing::Table& table) {
     ASSERT_EQ(given_steps.size(), table.size());
     auto i = 0;
     for (auto row : table) {

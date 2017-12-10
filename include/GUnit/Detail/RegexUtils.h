@@ -70,7 +70,8 @@ inline auto matches(T pattern, const std::string& txt) {
 
 template <class T>
 inline auto match(T pattern, const std::string& str) {
-  return not matches(pattern, str).empty() || std::string{pattern.c_str()} == remove_comments(str);
+  return not matches(pattern, str).empty() ||
+         std::string{pattern.c_str()} == remove_comments(str);
 }
 
 inline bool PatternMatchesString(const char* pattern, const char* str) {
@@ -81,7 +82,8 @@ inline bool PatternMatchesString(const char* pattern, const char* str) {
     case '?':  // Matches any single character.
       return *str != '\0' && PatternMatchesString(pattern + 1, str + 1);
     case '*':  // Matches any string (possibly empty) of characters.
-      return (*str != '\0' && PatternMatchesString(pattern, str + 1)) || PatternMatchesString(pattern + 1, str);
+      return (*str != '\0' && PatternMatchesString(pattern, str + 1)) ||
+             PatternMatchesString(pattern + 1, str);
     default:  // Non-special character.  Matches itself.
       return *pattern == *str && PatternMatchesString(pattern + 1, str + 1);
   }
@@ -107,7 +109,8 @@ inline bool MatchesFilter(const std::string& name, const char* filter) {
   }
 }
 
-inline bool FilterMatchesShould(const std::string& name, const std::string& should) {
+inline bool FilterMatchesShould(const std::string& name,
+                                const std::string& should) {
   // Split --gtest_filter at '-', if there is one, to separate into
   // positive filter and negative filter portions
   const char* const p = should.c_str();
@@ -126,7 +129,8 @@ inline bool FilterMatchesShould(const std::string& name, const std::string& shou
     }
   }
 
-  return MatchesFilter(name, positive.c_str()) && !MatchesFilter(name, negative.c_str());
+  return MatchesFilter(name, positive.c_str()) &&
+         !MatchesFilter(name, negative.c_str());
 }
 
 }  // detail

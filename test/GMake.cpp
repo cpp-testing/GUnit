@@ -59,7 +59,9 @@ class example {
 
 class complex_example {
  public:
-  complex_example(const std::shared_ptr<interface>& csp, std::shared_ptr<interface2> sp, interface4* ptr, interface_dtor& ref)
+  complex_example(const std::shared_ptr<interface>& csp,
+                  std::shared_ptr<interface2> sp, interface4* ptr,
+                  interface_dtor& ref)
       : csp(csp), sp(sp), ptr(ptr), ref(ref) {}
 
   void update() {
@@ -110,7 +112,8 @@ TEST(GMake, ShouldMakeComplexExampleUsingMakeType) {
 
 class up_example {
  public:
-  up_example(std::unique_ptr<interface>&& i1, std::unique_ptr<interface2> i2) : i1(std::move(i1)), i2(std::move(i2)) {}
+  up_example(std::unique_ptr<interface>&& i1, std::unique_ptr<interface2> i2)
+      : i1(std::move(i1)), i2(std::move(i2)) {}
 
  private:
   std::unique_ptr<interface> i1;
@@ -118,7 +121,9 @@ class up_example {
 };
 
 struct polymorphic_example {
-  polymorphic_example(std::shared_ptr<interface> i1, const std::shared_ptr<interface2>& i2, polymorphic_type* i3)
+  polymorphic_example(std::shared_ptr<interface> i1,
+                      const std::shared_ptr<interface2>& i2,
+                      polymorphic_type* i3)
       : i1(i1), i2(i2), i3(i3) {}
 
   std::shared_ptr<interface> i1;
@@ -136,7 +141,8 @@ TEST(GMake, ShouldMakeUniquePtrExampleUsingMake) {
 
 TEST(GMake, ShouldMakeUniquePtrInPlaceExampleUsingMake) {
   using namespace testing;
-  make<up_example>(std::make_unique<GMock<interface>>(), std::make_unique<GMock<interface2>>());
+  make<up_example>(std::make_unique<GMock<interface>>(),
+                   std::make_unique<GMock<interface2>>());
 }
 
 TEST(GMake, ShouldMakeUsingAutoMocksInjection) {
@@ -152,7 +158,8 @@ TEST(GMake, ShouldMakePolymorphicTypeUsingAutoMocksInjection) {
   using namespace testing;
   mocks_t mocks;
   std::unique_ptr<polymorphic_example> sut;
-  std::tie(sut, mocks) = make<std::unique_ptr<polymorphic_example>, StrictGMock>();
+  std::tie(sut, mocks) =
+      make<std::unique_ptr<polymorphic_example>, StrictGMock>();
   EXPECT_TRUE(sut.get());
   EXPECT_EQ(3u, mocks.size());
 
@@ -207,7 +214,8 @@ TEST(GMake, ShouldCreateExampleUsingInjector) {
 
 class di_complex_example {
  public:
-  di_complex_example(const std::shared_ptr<interface>& csp, std::shared_ptr<interface2> sp, const interface4& cref,
+  di_complex_example(const std::shared_ptr<interface>& csp,
+                     std::shared_ptr<interface2> sp, const interface4& cref,
                      interface_dtor& ref)
       : csp(csp), sp(sp), cref(cref), ref(ref) {}
 

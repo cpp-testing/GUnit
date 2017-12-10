@@ -62,7 +62,8 @@ struct interface3 : interface4 {
 
 struct interface5 : interface4 {
   virtual std::shared_ptr<interface> handle(interface4&) = 0;
-  virtual std::shared_ptr<interface> handle2(const interface3&, interface2*) = 0;
+  virtual std::shared_ptr<interface> handle2(const interface3&,
+                                             interface2*) = 0;
 };
 
 template <class T, class... TArgs>
@@ -122,7 +123,9 @@ class spexample {
 
 class complex_example {
  public:
-  complex_example(const std::shared_ptr<interface>& csp, std::shared_ptr<interface2> sp, interface4* ptr, interface_dtor& ref)
+  complex_example(const std::shared_ptr<interface>& csp,
+                  std::shared_ptr<interface2> sp, interface4* ptr,
+                  interface_dtor& ref)
       : csp(csp), sp(sp), ptr(ptr), ref(ref) {}
 
   void update() {
@@ -194,8 +197,10 @@ TEST(GMock, ShouldReturnVirtualOverloadedFunctionOffset) {
     virtual ~interface() = default;
   };
   using namespace testing;
-  EXPECT_EQ(0u, detail::offset(static_cast<int (interface::*)(int)>(&interface::f)));
-  EXPECT_EQ(1u, detail::offset(static_cast<int (interface::*)(double)>(&interface::f)));
+  EXPECT_EQ(
+      0u, detail::offset(static_cast<int (interface::*)(int)>(&interface::f)));
+  EXPECT_EQ(1u, detail::offset(
+                    static_cast<int (interface::*)(double)>(&interface::f)));
   EXPECT_EQ(2u, detail::offset(&interface::bar));
 }
 
@@ -216,7 +221,8 @@ inline void* call() { return nullptr; }
 inline int getn(int i) { return i; }
 TEST(GMock, ShouldSetGetVtable) {
   using namespace testing;
-  detail::vtable<interface> vt{detail::union_cast<void*>(call), detail::union_cast<void*>(call)};
+  detail::vtable<interface> vt{detail::union_cast<void*>(call),
+                               detail::union_cast<void*>(call)};
   const auto expected = detail::union_cast<void*>(getn);
   vt.set(detail::offset(&interface::get), expected);
   const auto given = vt.get(detail::offset(&interface::get));
@@ -381,7 +387,8 @@ TEST(GMock, ShouldMockUsingAndPassingSharedPtr) {
 
   EXPECT_CALL(*m, (bar)(_, "str"));
 
-  auto sut = std::make_unique<spexample>(std::static_pointer_cast<interface>(m));
+  auto sut =
+      std::make_unique<spexample>(std::static_pointer_cast<interface>(m));
   sut->update();
 }
 
@@ -397,8 +404,10 @@ TEST(GMock, ShouldMockComplexExample) {
   EXPECT_CALL(ptr, (f2)(_)).Times(1);
   EXPECT_CALL(ref, (get)(123)).Times(1);
 
-  complex_example sut{std::static_pointer_cast<interface>(csp), std::static_pointer_cast<interface2>(sp),
-                      &static_cast<interface4&>(ptr), static_cast<interface_dtor&>(ref)};
+  complex_example sut{std::static_pointer_cast<interface>(csp),
+                      std::static_pointer_cast<interface2>(sp),
+                      &static_cast<interface4&>(ptr),
+                      static_cast<interface_dtor&>(ref)};
 
   sut.update();
 }
@@ -415,9 +424,10 @@ TEST(GMock, ShouldMockComplexExampleUniquePtr) {
   EXPECT_CALL(ptr, (f2)(_)).Times(1);
   EXPECT_CALL(ref, (get)(123)).Times(1);
 
-  auto sut =
-      std::make_unique<complex_example>(std::static_pointer_cast<interface>(csp), std::static_pointer_cast<interface2>(sp),
-                                        &static_cast<interface4&>(ptr), static_cast<interface_dtor&>(ref));
+  auto sut = std::make_unique<complex_example>(
+      std::static_pointer_cast<interface>(csp),
+      std::static_pointer_cast<interface2>(sp), &static_cast<interface4&>(ptr),
+      static_cast<interface_dtor&>(ref));
   sut->update();
 }
 
@@ -518,14 +528,16 @@ TEST(GMock, ShouldHandleMissingExpectations) {
 TEST(GMock, ShouldNotTriggerUnexpectedCallForCtor) {
   using namespace testing;
   std::shared_ptr<void> mock = std::make_shared<GMock<interface>>();
-  std::unique_ptr<interface> up = std::unique_ptr<interface>(reinterpret_cast<interface*>(mock.get()));
+  std::unique_ptr<interface> up =
+      std::unique_ptr<interface>(reinterpret_cast<interface*>(mock.get()));
   (void)up;
 }
 
 TEST(GMock, ShouldNotTriggerUnexpectedCallForCtorOrder) {
   using namespace testing;
   std::shared_ptr<void> mock = std::make_shared<GMock<interface_dtor>>();
-  std::unique_ptr<interface_dtor> up = std::unique_ptr<interface_dtor>(reinterpret_cast<interface_dtor*>(mock.get()));
+  std::unique_ptr<interface_dtor> up = std::unique_ptr<interface_dtor>(
+      reinterpret_cast<interface_dtor*>(mock.get()));
   (void)up;
 }
 
@@ -560,7 +572,8 @@ TEST(GMock, ShouldHandleByRef) {
   }
 
   {
-    EXPECT_CALL(i5, (handle2)(Ref(i3), &static_cast<interface2&>(i2))).WillOnce(Return(i));
+    EXPECT_CALL(i5, (handle2)(Ref(i3), &static_cast<interface2&>(i2)))
+        .WillOnce(Return(i));
     sut.handle2(static_cast<interface3&>(i3), &static_cast<interface2&>(i2));
   }
 }
@@ -598,9 +611,11 @@ TEST(GMock, ShouldSupportOverloadedConstMethods) {
   mock.object().f(2);
 }
 
-struct averrrrrrrrrrrrrrrrrrrrrrylooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooongtype1 {
+struct
+    averrrrrrrrrrrrrrrrrrrrrrylooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooongtype1 {
 };
-struct averrrrrrrrrrrrrrrrrrrrrrylooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooongtype2 {
+struct
+    averrrrrrrrrrrrrrrrrrrrrrylooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooongtype2 {
 };
 struct interface_overload_long {
   virtual void f(
@@ -848,9 +863,11 @@ TEST(GMock, ShouldReturnExpectationFromExpectInvoke) {
 }
 
 struct interface11 {
-  virtual void f11(int p1, int p2, int p3, int p4, int p5, int p6, int p7, int p8, int p9, int p10, int p11) = 0;
-  virtual void f15(int p1, int p2, int p3, int p4, int p5, int p6, int p7, int p8, int p9, int p10, int p11, int p12, int p13,
-                   int p14, int p15) = 0;
+  virtual void f11(int p1, int p2, int p3, int p4, int p5, int p6, int p7,
+                   int p8, int p9, int p10, int p11) = 0;
+  virtual void f15(int p1, int p2, int p3, int p4, int p5, int p6, int p7,
+                   int p8, int p9, int p10, int p11, int p12, int p13, int p14,
+                   int p15) = 0;
   virtual ~interface11() = default;
 };
 
@@ -973,7 +990,8 @@ TEST(GMock, ShouldBeConvertibleUsingObjectToSharedPtr) {
 
 TEST(GMock, ShouldBeConvertibleUsingConstObjectToSharedPtr) {
   using namespace testing;
-  const std::shared_ptr<GMock<interface>> mock = std::make_shared<GMock<interface>>();
+  const std::shared_ptr<GMock<interface>> mock =
+      std::make_shared<GMock<interface>>();
 
   {
     interface& i = mock->object();

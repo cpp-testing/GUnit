@@ -61,7 +61,8 @@ struct constexpr_if_impl {
 
 template <class C, class FT, class FF>
 decltype(auto) constexpr_if(C &&c, FT &&ft, FF &&ff) {
-  return constexpr_if_impl<C, FT, FF>{std::forward<C>(c), std::forward<FT>(ft), std::forward<FF>(ff)};
+  return constexpr_if_impl<C, FT, FF>{std::forward<C>(c), std::forward<FT>(ft),
+                                      std::forward<FF>(ff)};
 }
 
 template <class TDst, class TSrc>
@@ -79,9 +80,13 @@ struct contains;
 
 template <class T, class... TArgs>
 struct contains<T, std::tuple<TArgs...>>
-    : std::integral_constant<bool,
-                             !std::is_same<std::integer_sequence<bool, false, std::is_same<T, TArgs>::value...>,
-                                           std::integer_sequence<bool, std::is_same<T, TArgs>::value..., false>>::value> {};
+    : std::integral_constant<
+          bool,
+          !std::is_same<
+              std::integer_sequence<bool, false,
+                                    std::is_same<T, TArgs>::value...>,
+              std::integer_sequence<bool, std::is_same<T, TArgs>::value...,
+                                    false>>::value> {};
 
 }  // detail
 }  // v1

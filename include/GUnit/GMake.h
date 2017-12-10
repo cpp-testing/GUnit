@@ -27,7 +27,8 @@ namespace detail {
 
 template <class T>
 struct deref {
-  using type = std::remove_cv_t<std::remove_reference_t<std::remove_pointer_t<T>>>;
+  using type =
+      std::remove_cv_t<std::remove_reference_t<std::remove_pointer_t<T>>>;
 };
 
 template <class T, class TDeleter>
@@ -94,7 +95,9 @@ template <class T>
 struct wrapper {
   operator T &() { return *reinterpret_cast<T *>(mock.get()); }
   operator T *() { return reinterpret_cast<T *>(mock.get()); }
-  operator std::unique_ptr<T>() { return std::unique_ptr<T>(reinterpret_cast<T *>(mock.get())); }
+  operator std::unique_ptr<T>() {
+    return std::unique_ptr<T>(reinterpret_cast<T *>(mock.get()));
+  }
   operator std::shared_ptr<T>() { return std::static_pointer_cast<T>(mock); }
   std::shared_ptr<void> &mock;
 };
@@ -196,7 +199,8 @@ class mocks_t : public std::unordered_map<std::size_t, std::shared_ptr<void>> {
   decltype(auto) mock() const {
     const auto it = find(detail::type_id<TMock>());
     if (it == end()) {
-      throw mock_exception<TMock>{std::string{"Requested mock \""} + typeid(TMock).name() + "\" wasn't created!"};
+      throw mock_exception<TMock>{std::string{"Requested mock \""} +
+                                  typeid(TMock).name() + "\" wasn't created!"};
     }
     return *static_cast<GMock<TMock> *>(it->second.get());
   }
@@ -204,7 +208,9 @@ class mocks_t : public std::unordered_map<std::size_t, std::shared_ptr<void>> {
   template <class TMock>
   void add() {
     if (find(detail::type_id<TMock>()) != end()) {
-      throw mock_exception<TMock>{std::string{"Requested mock \""} + typeid(TMock).name() + "\" was already created!"};
+      throw mock_exception<TMock>{std::string{"Requested mock \""} +
+                                  typeid(TMock).name() +
+                                  "\" was already created!"};
     }
     emplace(detail::type_id<typename TMock::type>(), std::make_shared<TMock>());
   }
@@ -213,7 +219,8 @@ class mocks_t : public std::unordered_map<std::size_t, std::shared_ptr<void>> {
   auto get() const {
     const auto it = find(detail::type_id<TMock>());
     if (it == end()) {
-      throw mock_exception<TMock>{std::string{"Requested mock \""} + typeid(TMock).name() + "\" wasn't created!"};
+      throw mock_exception<TMock>{std::string{"Requested mock \""} +
+                                  typeid(TMock).name() + "\" wasn't created!"};
     }
     return std::static_pointer_cast<TMock>(it->second);
   }
@@ -247,61 +254,75 @@ using resolve_size_t = resolve_size<T>;
 
 template <class TParent>
 struct resolve_creatable {
-  template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value && std::is_polymorphic<deref_t<T>>::value)>
+  template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value &&
+                                    std::is_polymorphic<deref_t<T>>::value)>
   operator T();
 
 #if defined(__GNUC__)
-  template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value && std::is_polymorphic<deref_t<T>>::value)>
+  template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value &&
+                                    std::is_polymorphic<deref_t<T>>::value)>
   operator T &&() const;
 #endif
 
-  template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value && std::is_polymorphic<deref_t<T>>::value)>
+  template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value &&
+                                    std::is_polymorphic<deref_t<T>>::value)>
   operator T &() const;
 
-  template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value && std::is_polymorphic<deref_t<T>>::value)>
+  template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value &&
+                                    std::is_polymorphic<deref_t<T>>::value)>
   operator const T &() const;
 };
 
 template <std::size_t, class T>
 using resolve_creatable_t = resolve_creatable<T>;
 
-template <class TParent, template <class> class TMock, class TArgs = std::tuple<>>
+template <class TParent, template <class> class TMock,
+          class TArgs = std::tuple<>>
 class resolve {
  public:
   resolve(mocks_t &mocks, TArgs &args) : mocks(mocks), args(args) {}
 
-  template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value && std::is_polymorphic<deref_t<T>>::value &&
+  template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value &&
+                                    std::is_polymorphic<deref_t<T>>::value &&
                                     !contains<T, TArgs>::value)>
   operator T() {
     return mock<T>();
   }
 
-  template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value && std::is_polymorphic<deref_t<T>>::value &&
-                                    !is_shared_ptr<T>::value && !contains<T &, TArgs>::value)>
+  template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value &&
+                                    std::is_polymorphic<deref_t<T>>::value &&
+                                    !is_shared_ptr<T>::value &&
+                                    !contains<T &, TArgs>::value)>
   operator T &() const {
     return mock<T>();
   }
 
-  template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value && std::is_polymorphic<deref_t<T>>::value &&
-                                    !is_shared_ptr<T>::value && contains<const T &, TArgs>::value)>
+  template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value &&
+                                    std::is_polymorphic<deref_t<T>>::value &&
+                                    !is_shared_ptr<T>::value &&
+                                    contains<const T &, TArgs>::value)>
   operator const T &() const {
     return mock<T>();
   }
 
-  template <class T,
-            GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value &&
-                           (contains<T, TArgs>::value || contains<T &, TArgs>::value || contains<const T &, TArgs>::value))>
+  template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value &&
+                                    (contains<T, TArgs>::value ||
+                                     contains<T &, TArgs>::value ||
+                                     contains<const T &, TArgs>::value))>
   operator T() {
-    return get(detail::type<T>{}, typename contains<T, TArgs>::type{}, typename contains<T &, TArgs>::type{},
+    return get(detail::type<T>{}, typename contains<T, TArgs>::type{},
+               typename contains<T &, TArgs>::type{},
                typename contains<const T &, TArgs>::type{});
   }
 
-  template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value && contains<T &, TArgs>::value)>
+  template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value &&
+                                    contains<T &, TArgs>::value)>
   operator T &() const {
     return const_cast<resolve *>(this)->get(detail::type<T &>{});
   }
 
-  template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value && contains<const T &, TArgs>::value)>
+  template <class T, GUNIT_REQUIRES(!is_copy_ctor<TParent, T>::value &&
+                                    contains<const T &, TArgs>::value)>
   operator const T &() const {
     return const_cast<resolve *>(this)->get(detail::type<const T &>{});
   }
@@ -313,22 +334,26 @@ class resolve {
   }
 
   template <class T>
-  decltype(auto) get(detail::type<T>, std::false_type, std::false_type, std::false_type) {
+  decltype(auto) get(detail::type<T>, std::false_type, std::false_type,
+                     std::false_type) {
     return required_type_not_found<T>();
   }
 
   template <class T>
-  decltype(auto) get(detail::type<T>, std::false_type, std::true_type, std::false_type) {
+  decltype(auto) get(detail::type<T>, std::false_type, std::true_type,
+                     std::false_type) {
     return std::get<T &>(args);
   }
 
   template <class T>
-  decltype(auto) get(detail::type<T>, std::false_type, std::false_type, std::true_type) {
+  decltype(auto) get(detail::type<T>, std::false_type, std::false_type,
+                     std::true_type) {
     return std::get<const T &>(args);
   }
 
   template <class T>
-  decltype(auto) get(detail::type<T>, std::false_type, std::true_type, std::true_type) {
+  decltype(auto) get(detail::type<T>, std::false_type, std::true_type,
+                     std::true_type) {
     return required_type_is_ambigious<T>();
   }
 
@@ -347,44 +372,60 @@ class resolve {
   TArgs &args;
 };
 
-template <std::size_t, class T, template <class> class TMock, class TArgs = std::tuple<>>
+template <std::size_t, class T, template <class> class TMock,
+          class TArgs = std::tuple<>>
 using resolve_t = resolve<T, TMock, TArgs>;
 
 template <class, class = std::make_index_sequence<GUNIT_MAX_CTOR_SIZE>>
 struct ctor_size;
 
 template <class T>
-struct ctor_size<T, std::index_sequence<>> : std::integral_constant<std::size_t, 0> {};
+struct ctor_size<T, std::index_sequence<>>
+    : std::integral_constant<std::size_t, 0> {};
 
 template <class T, std::size_t... Ns>
 struct ctor_size<T, std::index_sequence<Ns...>>
-    : std::conditional_t<std::is_constructible<T, resolve_size_t<Ns, T>...>::value,
-                         std::integral_constant<std::size_t, sizeof...(Ns)>,
-                         ctor_size<T, std::make_index_sequence<sizeof...(Ns) - 1>>> {};
+    : std::conditional_t<
+          std::is_constructible<T, resolve_size_t<Ns, T>...>::value,
+          std::integral_constant<std::size_t, sizeof...(Ns)>,
+          ctor_size<T, std::make_index_sequence<sizeof...(Ns) - 1>>> {};
 
-template <template <class> class TMock, class T, class... TArgs, std::size_t... Ns>
-auto make_impl(detail::identity<std::unique_ptr<T>>, mocks_t &mocks, std::tuple<TArgs...> &args, std::index_sequence<Ns...>) {
-  return std::make_unique<T>(resolve_t<Ns, detail::deref_t<T>, TMock, std::tuple<TArgs...>>{mocks, args}...);
+template <template <class> class TMock, class T, class... TArgs,
+          std::size_t... Ns>
+auto make_impl(detail::identity<std::unique_ptr<T>>, mocks_t &mocks,
+               std::tuple<TArgs...> &args, std::index_sequence<Ns...>) {
+  return std::make_unique<T>(
+      resolve_t<Ns, detail::deref_t<T>, TMock, std::tuple<TArgs...>>{mocks,
+                                                                     args}...);
 }
 
-template <template <class> class TMock, class T, class... TArgs, std::size_t... Ns>
-auto make_impl(detail::identity<std::shared_ptr<T>>, mocks_t &mocks, std::tuple<TArgs...> &args, std::index_sequence<Ns...>) {
-  return std::make_shared<T>(resolve_t<Ns, detail::deref_t<T>, TMock, std::tuple<TArgs...>>{mocks, args}...);
+template <template <class> class TMock, class T, class... TArgs,
+          std::size_t... Ns>
+auto make_impl(detail::identity<std::shared_ptr<T>>, mocks_t &mocks,
+               std::tuple<TArgs...> &args, std::index_sequence<Ns...>) {
+  return std::make_shared<T>(
+      resolve_t<Ns, detail::deref_t<T>, TMock, std::tuple<TArgs...>>{mocks,
+                                                                     args}...);
 }
 
-template <template <class> class TMock, class T, class... TArgs, std::size_t... Ns>
-auto make_impl(detail::identity<T>, mocks_t &mocks, std::tuple<TArgs...> &args, std::index_sequence<Ns...>) {
-  return T(resolve_t<Ns, detail::deref_t<T>, TMock, std::tuple<TArgs...>>{mocks, args}...);
+template <template <class> class TMock, class T, class... TArgs,
+          std::size_t... Ns>
+auto make_impl(detail::identity<T>, mocks_t &mocks, std::tuple<TArgs...> &args,
+               std::index_sequence<Ns...>) {
+  return T(resolve_t<Ns, detail::deref_t<T>, TMock, std::tuple<TArgs...>>{
+      mocks, args}...);
 }
 
 template <class, class>
 struct is_creatable_impl;
 
 template <class T, std::size_t... Ns>
-struct is_creatable_impl<T, std::index_sequence<Ns...>> : std::is_constructible<T, resolve_creatable_t<Ns, T>...> {};
+struct is_creatable_impl<T, std::index_sequence<Ns...>>
+    : std::is_constructible<T, resolve_creatable_t<Ns, T>...> {};
 
 template <class T>
-using is_creatable = is_creatable_impl<T, std::make_index_sequence<ctor_size<T>::value>>;
+using is_creatable =
+    is_creatable_impl<T, std::make_index_sequence<ctor_size<T>::value>>;
 
 }  // detail
 
@@ -393,19 +434,26 @@ auto make(TArgs &&... args) {
   return detail::make_impl(detail::identity<T>{}, std::forward<TArgs>(args)...);
 }
 
-template <class T, template <class> class TMock, class... TMocks,
-          GUNIT_REQUIRES(
-              detail::is_gmock<TMock>::value &&std::is_same<detail::bool_list<detail::always<TMocks>::value...>,
-                                                            detail::bool_list<detail::is_gmock_type<TMocks>::value...>>::value),
-          class... TArgs>
+template <
+    class T, template <class> class TMock, class... TMocks,
+    GUNIT_REQUIRES(
+        detail::is_gmock<TMock>::value &&std::is_same<
+            detail::bool_list<detail::always<TMocks>::value...>,
+            detail::bool_list<detail::is_gmock_type<TMocks>::value...>>::value),
+    class... TArgs>
 auto make(TArgs &&... args) {
   std::tuple<TArgs...> tuple{std::forward<TArgs>(args)...};
   mocks_t mocks;
   using swallow = int[];
-  (void)swallow{0, (mocks.emplace(detail::type_id<detail::deref_t<TMocks>>(), std::make_shared<TMocks>()), 0)...};
-  return std::make_pair(detail::make_impl<TMock>(detail::identity<T>{}, mocks, tuple,
-                                                 std::make_index_sequence<detail::ctor_size<detail::deref_t<T>>::value>{}),
-                        mocks);
+  (void)swallow{0, (mocks.emplace(detail::type_id<detail::deref_t<TMocks>>(),
+                                  std::make_shared<TMocks>()),
+                    0)...};
+  return std::make_pair(
+      detail::make_impl<TMock>(
+          detail::identity<T>{}, mocks, tuple,
+          std::make_index_sequence<
+              detail::ctor_size<detail::deref_t<T>>::value>{}),
+      mocks);
 }
 }  // v1
 }  // testing
@@ -443,7 +491,9 @@ BOOST_DI_NAMESPACE_END
 
 namespace testing {
 inline namespace v1 {
-template <class T, class TInjector, GUNIT_REQUIRES(std::is_base_of<boost::di::core::injector_base, TInjector>::value)>
+template <class T, class TInjector,
+          GUNIT_REQUIRES(std::is_base_of<boost::di::core::injector_base,
+                                         TInjector>::value)>
 decltype(auto) make(const TInjector &injector) {
   return injector.template create<T>();
 }
