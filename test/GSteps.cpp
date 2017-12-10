@@ -5,25 +5,28 @@
 // (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 //
-#include "GUnit/GScenario.h"
+#include "GUnit/GSteps.h"
 #include "GUnit/GTest.h"
 
 namespace testing {
 inline namespace v1 {
-GTEST("Steps") {
+
+GSTEPS("*") {
   using namespace testing;
-  testing::Steps steps{{}, {}};
-  steps.Given("{}") = [](int) {};
-  steps.$Given("{} {}") = [](int, double) {};
-  steps.Given("{n}") = [](int) {};
-  steps.Given("{n}") = [](std::string) {};
-  steps.Given("{n}") = [](const std::string&) {};
-  steps.Given("{a value}") = [](int) {};
-  steps.$When("", "table") = [](const Table&) {};
-  steps.When("", "table") = [](Table) {};
-  steps.Then("{}", "table") = [](int, const Table&) {};
-  steps.Then("{}", "table") = [](const std::string&, const Table&) {};
-  steps.$Then("{}", "table") = [](int, Table) {};
+  try {
+    Given("{}") = [](int) {};
+    $Given("{} {}") = [](int, double) {};
+    Given("{n}") = [](int) {};
+    Given("{n}") = [](std::string) {};
+    Given("{n}") = [](const std::string&) {};
+    Given("{a value}") = [](int) {};
+    $When("", "table") = [](const Table&) {};
+    When("", "table") = [](Table) {};
+    Then("{}", "table") = [](int, const Table&) {};
+    Then("{}", "table") = [](const std::string&, const Table&) {};
+    $Then("{}", "table") = [](int, Table) {};
+  } catch (...) {
+  }
 }
 
 GTEST("Table") {

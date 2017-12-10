@@ -5,6 +5,9 @@
 
 class Calculator {
  public:
+  Calculator() = default;
+  explicit Calculator(double){};
+
   void push(double);
   double add();
   double divide();

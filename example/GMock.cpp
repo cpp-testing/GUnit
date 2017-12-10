@@ -5,10 +5,11 @@
 // (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 //
-#include "GUnit/GMock.h"
 #include <gtest/gtest.h>
 #include <stdexcept>
+
 #include "GUnit/GMake.h"
+#include "GUnit/GMock.h"
 
 class interface {
  public:

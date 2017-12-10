@@ -5,7 +5,7 @@
 // (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 //
-#include "GUnit/GScenario.h"
+#include "GUnit/GSteps.h"
 #include "GUnit/GTest.h"
 
 const auto access_data = [](testing::Data id_value) {
@@ -27,74 +27,71 @@ const auto access_data = [](testing::Data id_value) {
 };
 
 // clang-format off
-STEPS("Table") = [](testing::Steps steps) {
+GSTEPS("Table") {
   using namespace testing;
   Table expected_table{};
   std::string expected_desc{};
 
-  steps.$Given("I have the following table"_step, "ids") =
-    [&](const Table& table) {
+  $Given("I have the following table"_step, "ids") =
+    [&](const Table table) {
       expected_table = table;
     };
 
-  steps.$Given("I access table with 1 row"_step, "ids") = access_data;
+  $Given("I access table with 1 row"_step, "ids") = access_data;
 
-  steps.$Given("I access table with {n}", "ids") = [](int n, Data data) {
+  $Given("I access table with {n}", "ids") = [](int n, const Data& data) {
     EXPECT_EQ(n, int(data["value"]));
   };
 
-  steps.$When("I choose {id}"_step) =
+  $When("I choose {id}"_step) =
     [&](int id) {
       for (auto row : expected_table) {
-          if (row["id"] == std::to_string(id)) {
-              expected_desc = row["desc"];
-              break;
-          }
+        if (row["id"] == std::to_string(id)) {
+          expected_desc = row["desc"];
+          break;
+        }
       }
     };
 
-  steps.$Then("I should get '{desc}'"_step) =
+  $Then("I should get '{desc}'"_step) =
     [&](const std::string& desc) {
       EXPECT_EQ(expected_desc, desc);
     };
-
-
-  return steps;
-};
+}
 
 struct Context {
   testing::Table expected_table{};
   std::string expected_desc{};
 };
 
-STEPS("Table") = [](testing::Steps steps, Context ctx) {
-  steps.$Given("I have the following {table}", "ids") =
+GSTEPS("Table") {
+  Context ctx{};
+
+  $Given("I have the following {table}", "ids") =
     [&](const std::string& txt, testing::Table ids) {
       EXPECT_EQ("table", txt);
       ctx.expected_table = ids;
     };
 
-  steps.$Given("I access table with 1 row", "ids") = access_data;
+  $Given("I access table with 1 row", "ids") = access_data;
 
-  steps.$Given("I access table with {n}", "ids") = [](int n, testing::Data data) {
+  $Given("I access table with {n}", "ids") = [](int n, testing::Data data) {
     EXPECT_EQ(n, int(data["value"]));
   };
 
-  steps.$When("I choose {id}") =
+  $When("I choose {id}") =
     [&](int id) {
       for (auto row : ctx.expected_table) {
-          if (row["id"] == std::to_string(id)) {
-              ctx.expected_desc = row["desc"];
-              break;
-          }
+        if (row["id"] == std::to_string(id)) {
+          ctx.expected_desc = row["desc"];
+          break;
+       }
       }
     };
 
-  steps.$Then("I should get '{desc}'") =
+  $Then("I should get '{desc}'") =
     [&](const std::string& desc) {
       EXPECT_EQ(ctx.expected_desc, desc);
     };
-
-  return steps;
-};
+}
 // clang-format on

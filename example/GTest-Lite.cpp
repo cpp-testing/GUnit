@@ -5,13 +5,15 @@
 // (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 //
-#pragma once
-
-#include "GUnit/GMake.h"
-#include "GUnit/GMock.h"
 #include "GUnit/GTest-Lite.h"
-#include "GUnit/GTest.h"
+#include "GUnit/GTest.h" // EXPECT_TRUE
 
-#if __has_include(<json.hpp>) and __has_include(<gherkin.hpp>)
-#include "GUnit/GSteps.h"
-#endif
+int main() {
+  "should be true"_test = [] {
+    EXPECT_TRUE(true);
+  };
+
+  "should not run"_test_disabled = [] {
+    throw 0;
+  };
+}

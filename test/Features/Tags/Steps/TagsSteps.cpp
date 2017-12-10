@@ -5,15 +5,22 @@
 // (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 //
-#include "GUnit/GScenario.h"
+#include "GUnit/GSteps.h"
 #include "GUnit/GTest.h"
 
 // clang-format off
-STEPS("Tags*") = [](testing::Steps steps) {
+GSTEPS("Tags*") {
   using namespace testing;
-  steps.Given("I have a tag"_step) = [] {};
-  steps.When("I select a test with that tag"_step) = [] {};
-  steps.Then("I should see test being run"_step) = [] {};
-  return steps;
-};
+
+  std::clog << Info() << std::endl;
+  Given("I have a tag"_step) = [] { };
+
+  std::clog << Info() << std::endl;
+  When("I select a test with that tag"_step) = [] { };
+
+  std::clog << Info() << std::endl;
+  Then("I should see test being run"_step) = [] { };
+
+  std::clog << Info() << std::endl;
+}
 // clang-format on

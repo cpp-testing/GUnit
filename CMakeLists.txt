@@ -25,7 +25,7 @@ enable_testing()
 add_subdirectory(libs/googletest)
 
 include_directories(include)
-include_directories(SYSTEM 
+include_directories(SYSTEM
   ${gtest_SOURCE_DIR}/include
   ${gmock_SOURCE_DIR}/include
   libs/json/src
@@ -38,45 +38,43 @@ set(BUILD_GMOCK)
 set(BUILD_GTEST)
 
 add_custom_command(
-  OUTPUT libgherkin-cpp
-  COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/libs/gherkin-cpp && make
+  OUTPUT libgherkin-cpp-static
+  COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/libs/gherkin-cpp && make lib-static
 )
-
 add_custom_target(
-  gherkin_cpp ALL DEPENDS libgherkin-cpp
+  gherkin_cpp-static ALL DEPENDS libgherkin-cpp-static
 )
-
-#export SCENARIO="${CMAKE_CURRENT_SOURCE_DIR}/test/Features/Calc/addition.feature:${CMAKE_CURRENT_SOURCE_DIR}/test/Features/Calc/division.feature:${CMAKE_CURRENT_SOURCE_DIR}/test/Features/Table/table.feature:${CMAKE_CURRENT_SOURCE_DIR}/test/Features/Tags/tags.feature"
 
 find_program(MEMORYCHECK_COMMAND valgrind)
 if (ENABLE_MEMCHECK AND MEMORYCHECK_COMMAND)
-    function(test name scenario)
-      string(REPLACE "/" "_" out ${name})
-      add_executable(${out} ${CMAKE_CURRENT_LIST_DIR}/${name}.cpp)
-      add_test(${out} ${MEMORYCHECK_COMMAND} --leak-check=full --error-exitcode=1 ./${out})
-      add_dependencies(${out} gherkin_cpp)
-      target_link_libraries(${out} gtest_main gmock_main gherkin-cpp.a)
-      add_custom_command(TARGET ${out} COMMAND ${scenario} ./${out})
-    endfunction()
+  function(test name scenario)
+    string(REPLACE "/" "_" out ${name})
+    add_executable(${out} ${CMAKE_CURRENT_LIST_DIR}/${name}.cpp)
+    add_test(${out} ${MEMORYCHECK_COMMAND} --leak-check=full --error-exitcode=1 ./${out})
+    add_dependencies(${out} gherkin_cpp-static)
+    target_link_libraries(${out} gtest_main gmock_main gherkin-cpp)
+    add_custom_command(TARGET ${out} COMMAND ${scenario} ./${out})
+  endfunction()
 else()
-    function(test name scenario)
-      string(REPLACE "/" "_" out ${name})
-      add_executable(${out} ${CMAKE_CURRENT_LIST_DIR}/${name}.cpp)
-      add_test(${out} ./${out})
-      add_dependencies(${out} gherkin_cpp)
-      target_link_libraries(${out} gtest_main gmock_main gherkin-cpp.a)
-      add_custom_command(TARGET ${out} COMMAND ${scenario} ./${out})
-    endfunction()
+  function(test name scenario)
+    string(REPLACE "/" "_" out ${name})
+    add_executable(${out} ${CMAKE_CURRENT_LIST_DIR}/${name}.cpp)
+    add_test(${out} ./${out})
+    add_dependencies(${out} gherkin_cpp-static)
+    target_link_libraries(${out} gtest_main gmock_main gherkin-cpp)
+    add_custom_command(TARGET ${out} COMMAND ${scenario} ./${out})
+  endfunction()
 endif()
 
 test(example/GMock SCENARIO=)
 test(example/GTest SCENARIO=)
-test(example/GScenario SCENARIO=)
+test(example/GTest-Lite SCENARIO=)
+test(example/GSteps SCENARIO=${CMAKE_CURRENT_SOURCE_DIR}/example/GSteps.feature)
 
 include_directories(test)
 test(test/GMake SCENARIO=)
 test(test/GMock SCENARIO=)
-test(test/GScenario SCENARIO=)
+test(test/GSteps SCENARIO=)
 test(test/Features/Calc/Steps/CalcSteps SCENARIO=${CMAKE_CURRENT_SOURCE_DIR}/test/Features/Calc/addition.feature:${CMAKE_CURRENT_SOURCE_DIR}/test/Features/Calc/division.feature)
 test(test/Features/Table/Steps/TableSteps SCENARIO=${CMAKE_CURRENT_SOURCE_DIR}/test/Features/Table/table.feature)
 test(test/Features/Tags/Steps/TagsSteps SCENARIO=${CMAKE_CURRENT_SOURCE_DIR}/test/Features/Tags/tags.feature)

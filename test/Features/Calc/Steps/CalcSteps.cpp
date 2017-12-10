@@ -6,103 +6,138 @@
 // http://www.boost.org/LICENSE_1_0.txt)
 //
 #include "GUnit/GMock.h"
-#include "GUnit/GScenario.h"
+#include "GUnit/GSteps.h"
 #include "GUnit/GTest.h"
 
 #include "Features/Calc/Impl/Calculator.h"
 
 // clang-format off
-STEPS("Calc *") = [](auto steps) {
+GSTEPS("Calc *") {
   using namespace testing;
   Calculator calc{};
   double result{};
 
-  steps.Given("I have entered {n} into the calculator"_step) =
+  Given("I created a calculator with initial value equals {n}"_step) =
+    [&](double) { /*ignore*/ };
+
+  Given("I have entered {n} into the calculator"_step) =
     [&](double n) {
       calc.push(n);
     };
 
-  steps.When("I press add"_step) =
+  When("I press add"_step) =
     [&] {
       result = calc.add();
     };
 
-  steps.When("I press divide"_step) =
+  When("I press divide"_step) =
     [&] {
       result = calc.divide();
     };
 
-  steps.Then("the result should be {expected} on the screen"_step) =
+  Then("the result should be {expected} on the screen"_step) =
     [&](double expected) {
       EXPECT_EQ(expected, result);
     };
+}
 
-  return steps;
-};
-
-STEPS("Calc *") = [](auto steps, Calculator calc, double result) {
+GSTEPS("Calc *") {
   using namespace testing;
-  auto b = 0;
-  auto a = 0;
-  auto first = 0;
+  double result{};
 
-  steps.Before() = [&]{ ++b; };
-  steps.After() = [&]{ ++a; };
+  Given("I created a calculator with initial value equals {n}"_step) =
+    [&](double n) {
+      Calculator calc{n};
 
-  steps.Given("I have entered {n} into the calculator"_step) =
+      Given("I have entered {n} into the calculator"_step) =
+        [&](double n) {
+          calc.push(n);
+        };
+
+      When("I press add"_step) =
+        [&] {
+          result = calc.add();
+        };
+
+      When("I press divide"_step) =
+        [&] {
+          result = calc.divide();
+        };
+
+      Then("the result should be {expected} on the screen"_step) =
+        [&](double expected) {
+          EXPECT_EQ(expected, result);
+        };
+    };
+}
+
+GSTEPS("Calc*") {
+  using namespace testing;
+  Calculator calc{};
+  auto result = 0.;
+  auto step = 0;
+
+  std::clog << "SetUp" << std::endl;
+  EXPECT_EQ(0, step++);
+
+  Given("I created a calculator with initial value equals {n}"_step) =
+    [&](double) {
+      EXPECT_EQ(1, step++);
+    };
+
+  Given("I have entered {n} into the calculator"_step) =
     [&](double n) {
       calc.push(n);
-      EXPECT_EQ(1 + first, b);
-      EXPECT_EQ(0 + first, a);
-      ++first;
+      EXPECT_TRUE(2 == step || 3 == step);
+      ++step;
     };
 
-  steps.When("I press add"_step) =
+  When("I press add"_step) =
     [&] {
       result = calc.add();
-      EXPECT_EQ(3, b);
-      EXPECT_EQ(2, a);
+      EXPECT_EQ(4, step++);
     };
 
-  steps.When("I press divide"_step) =
+  When("I press divide"_step) =
     [&] {
       result = calc.divide();
-      EXPECT_EQ(3, b);
-      EXPECT_EQ(2, a);
+      EXPECT_EQ(4, step++);
     };
 
-  steps.Then("the result should be {expected} on the screen"_step) =
+  Then("the result should be {expected} on the screen"_step) =
     [&](double expected) {
       EXPECT_EQ(expected, result);
-      EXPECT_EQ(4, b);
-      EXPECT_EQ(3, a);
+      EXPECT_EQ(5, step++);
     };
 
-  return steps;
-};
+  EXPECT_EQ(6, step);
+  std::clog << "TearDown" << std::endl;;
+}
 
-STEPS("Calc*") = [](auto steps) {
+GSTEPS("Calc*") {
+  using namespace ::testing;
   testing::GMock<IDisplay> display{DEFER_CALLS(IDisplay, show)};
   CalculatorUI calc{testing::object(display)};
 
-  steps.Given("I have entered {n} into the calculator") =
+  Given("I created a calculator with initial value equals {n}"_step) =
+    [&](double) { /*ignore*/ };
+
+  Given("I have entered {n} into the calculator") =
     [&](double n) {
       calc.push(n);
     };
 
-  steps.When("I press add") =
+  When("I press add") =
     [&]{ calc.add(); };
 
-  steps.Given("I press divide") =
+  Given("I press divide") =
     [&]{ calc.divide(); };
 
-  steps.Then("the result should be {expected} on the screen") =
+  Then("the result should be {expected} on the screen") =
     [&] (double expected) {
       EXPECT_CALL(display, (show)(expected));
     };
-
-  return steps;
-};
+}
 
 const auto CalcPush = [](auto& calc) {
   return [&](double n) {
@@ -128,34 +163,33 @@ const auto CalcResult = [](auto& result) {
   };
 };
 
-STEPS("Calc *") = [](auto steps) {
+GSTEPS("Calc*") {
+  using namespace testing;
   Calculator calc{};
   double result{};
 
-  steps.Given("I have entered {n} into the calculator")        = CalcPush(calc);
-  steps.When ("I press add")                                   = CalcAdd(calc, result);
-  steps.When ("I press divide")                                = CalcDivide(calc, result);
-  steps.Then ("the result should be {expected} on the screen") = CalcResult(result);
+  Given("I created a calculator with initial value equals {n}") = [&](double) { /*ignore*/ };
+  Given("I have entered {n} into the calculator")        = CalcPush(calc);
+   When("I press add")                                   = CalcAdd(calc, result);
+   Then("the result should be {expected} on the screen") = CalcResult(result);
+   When("I press divide")                                = CalcDivide(calc, result);
+}
 
-  return steps;
+auto when_steps = [](auto& steps, auto& calc, auto& result) {
+  using namespace testing;
+  steps.When("I press add")    = CalcAdd(calc, result);
+  steps.When("I press divide") = CalcDivide(calc, result);
 };
 
-STEPS("Calc*") = [](auto steps, Calculator calc, double result) {
-  steps.Given("I have entered {n} into the calculator")        = CalcPush(calc);
-  steps.When ("I press add")                                   = CalcAdd(calc, result);
-  steps.When ("I press divide")                                = CalcDivide(calc, result);
-  steps.Then ("the result should be {expected} on the screen") = CalcResult(result);
-  return steps;
-};
+GSTEPS("Calc*") {
+  using namespace testing;
+  Given("I created a calculator with initial value equals {n}") = [&](double n) {
+    double result{};
+    Calculator calc{n};
 
-auto common_steps = [](auto& steps, auto& calc, auto& result) {
-  steps.When ("I press add")                                   = CalcAdd(calc, result);
-  steps.When ("I press divide")                                = CalcDivide(calc, result);
-};
-
-STEPS("Calc*") = [](auto steps, Calculator calc, double result) {
-  steps.Given("I have entered {n} into the calculator")        = CalcPush(calc);
-  steps.Then ("the result should be {expected} on the screen") = CalcResult(result);
-  common_steps(steps, calc, result);
-  return steps;
-};
+    when_steps(*this, calc, result);
+    Given("I have entered {n} into the calculator")        = CalcPush(calc);
+    Then ("the result should be {expected} on the screen") = CalcResult(result);
+  };
+}
+// clang-format on
