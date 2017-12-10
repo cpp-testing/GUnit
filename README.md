@@ -40,11 +40,11 @@ public:                                         |
 ```cpp                                          |
 struct ExampleTest : testing::Test {            |
  void SetUp() override {                        |
-   sut = std::make_unique<example>(m1);         | 
+   sut = std::make_unique<example>(m1);         |
  }                                              |
                                                 |
- mock_i1 m1;                                    | 
- std::unique_ptr<example> sut;                  | 
+ mock_i1 m1;                                    |
+ std::unique_ptr<example> sut;                  |
 };                                              |
 ```
 
@@ -143,23 +143,27 @@ Feature: Calc Addition
 ```
 
 #### Steps Implementation
+
 ```cpp
-STEPS("Calc*") = [calc = Calculator{}, result = 0.](auto steps) {
-  return steps
-    .Given("I have entered {n} into the calculator", 
-      [&](double n) {
-        calc.push(n);
-    })
-    .When("I press add", [&] {
-        result = calc.add();
-     })
-    .When("I press divide", [&] {
-        result = calc.divide();
-    })
-    .Then("the result should be {expected} on the screen",
-      [&] (double expected) {
-        EXPECT_EQ(expected, result);
-    });
+STEPS("Calc*") = [](auto& steps) {
+  auto result = 0.;
+
+  auto calc = steps.given("I have created a calculator with {init}") =
+    [](auto init) { return Calculator{init}; };
+
+  steps.given("I have entered {n} into the calculator") =
+    [&](double n) { calc.push(n); };
+
+  steps.when("I press add") =
+    [&] { result = calc.add(); };
+
+  steps.when("I press divide") =
+    [&] { result = calc.divide(); };
+
+  steps.then("the result should be {expected} on the screen") =
+    [&] (double expected) { EXPECT_EQ(expected, result); };
+
+  testing::yield steps;
 };
 ```
 

@@ -5,22 +5,18 @@
 // (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 //
-#include <vector>
-#include <string>
-#include <iostream>
 #include "GUnit/GScenario.h"
+#include <iostream>
+#include <string>
+#include <vector>
 #include "GUnit/GTest.h"
 
 STEPS("Example*") = [](auto steps) {
   std::vector<std::string> given_steps{};
 
-  steps.Given("I have step {name}") = [&](const std::string& step) {
-    given_steps.emplace_back(step);
-  };
+  steps.Given("I have step {name}") = [&](const std::string& step) { given_steps.emplace_back(step); };
 
-  steps.When("I run the scenario") = []{
-    std::cout << "Running...\n";
-  };
+  steps.When("I run the scenario") = [] { std::cout << "Running...\n"; };
 
   steps.Then("The following steps should be shown on the screen", "steps") = [&](const testing::Table& table) {
     ASSERT_EQ(given_steps.size(), table.size());

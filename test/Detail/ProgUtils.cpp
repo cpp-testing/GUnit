@@ -5,8 +5,8 @@
 // (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 //
+#include <gmock/gmock.h>  // MatchesRegex
 #include <gtest/gtest.h>
-#include <gmock/gmock.h> // MatchesRegex
 
 #include "GUnit/Detail/ProgUtils.h"
 
@@ -32,6 +32,6 @@ TEST(ProgUtils, ShouldReturnCallStack) {
   EXPECT_THAT(call_stack("\n", 1, 2), testing::MatchesRegex(".*ProgUtils_ShouldReturnCallStack_Test.*"));
 }
 
-} // detail
-} // v1
-} // testing
+}  // detail
+}  // v1
+}  // testing

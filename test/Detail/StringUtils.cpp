@@ -65,6 +65,6 @@ TEST(StringUtils, ShouldReturnTrimmedString) {
   }
 }
 
-} // detail
-} // v1
-} // testing
+}  // detail
+}  // v1
+}  // testing

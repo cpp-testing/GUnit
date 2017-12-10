@@ -108,6 +108,6 @@ TEST(TypeTraits, ShouldGetTypeName) {
   EXPECT_STREQ("a", get_type_name<a>());
   EXPECT_STREQ("testing::v1::detail::n", get_type_name<n>());
 }
-} // detail
-} // v1
-} // testing
+}  // detail
+}  // v1
+}  // testing

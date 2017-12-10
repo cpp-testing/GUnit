@@ -5,8 +5,8 @@
 // (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 //
-#include "GUnit/GScenario.h"
 #include "GUnit/GMock.h"
+#include "GUnit/GScenario.h"
 #include "GUnit/GTest.h"
 
 #include "Features/Calc/Impl/Calculator.h"

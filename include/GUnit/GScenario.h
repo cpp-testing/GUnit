@@ -54,7 +54,7 @@ struct Convertible : T {
   }
 };
 
-}  // detail
+}  // namespace detail
 
 using Table = detail::Vector<std::unordered_map<std::string, detail::Convertible<std::string>>>;
 using Data = Table;
@@ -268,7 +268,7 @@ inline auto lexical_table_cast(const std::string& str, const Table&, detail::ide
 inline auto lexical_table_cast(const std::string&, const Table& table, detail::identity<const Table&>) { return table; }
 inline auto lexical_table_cast(const std::string&, const Table& table, detail::identity<Table>) { return table; }
 
-}  // detail
+}  // namespace detail
 
 class Steps {
  public:
@@ -399,7 +399,7 @@ static void call_impl(const TExpr& expr, const TMatches& matches, const Table& t
 detail::step_info step_info_;
 std::string pattern_;
 detail::step_info_call_step_t& expr_;
-};
+};  // namespace v1
 
 private:
 std::string file_;
@@ -407,7 +407,7 @@ std::string scenario_;
 detail::step_info_call_map_t steps_{};
 std::function<void()> before_;
 std::function<void()> after_;
-};
+};  // namespace testing
 
 }  // v1
 }  // testing

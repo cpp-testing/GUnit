@@ -4,12 +4,12 @@
 #include <list>
 
 class Calculator {
-public:
+ public:
   void push(double);
   double add();
   double divide();
 
-private:
+ private:
   std::list<double> values{};
 };
 
@@ -19,26 +19,18 @@ struct IDisplay {
 };
 
 class CalculatorUI : public Calculator {
-public:
-  explicit CalculatorUI(IDisplay& display):
-    display(display)
-  {}
+ public:
+  explicit CalculatorUI(IDisplay& display) : display(display) {}
 
-  void add() {
-    display.show(Calculator::add());
-  }
+  void add() { display.show(Calculator::add()); }
 
-  void divide() {
-    display.show(Calculator::divide());
-  }
+  void divide() { display.show(Calculator::divide()); }
 
-private:
+ private:
   IDisplay& display;
 };
 
-void Calculator::push(double n) {
-  values.push_back(n);
-}
+void Calculator::push(double n) { values.push_back(n); }
 
 double Calculator::add() {
   auto result = 0.;
@@ -50,7 +42,7 @@ double Calculator::add() {
 
 double Calculator::divide() {
   double result = std::numeric_limits<double>::quiet_NaN();
-  for(std::list<double>::const_iterator i = values.begin(); i != values.end(); ++i) {
+  for (std::list<double>::const_iterator i = values.begin(); i != values.end(); ++i) {
     if (i == values.begin()) {
       result = *i;
     } else {

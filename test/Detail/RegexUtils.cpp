@@ -24,7 +24,8 @@ TEST(RegexUtils, ShouldReturnMatches) {
   constexpr auto n6 = R"(I have a '{}' to read)"_gtest_string;
   constexpr auto n7 = "I have the following {table}"_gtest_string;
   constexpr auto n8 = "I access table with 1 row"_gtest_string;
-  constexpr auto n9 = "I access table with {n}"_gtest_string;;
+  constexpr auto n9 = "I access table with {n}"_gtest_string;
+  ;
 
   constexpr auto t0 = "I press add";
   constexpr auto t1 = "I have a 42 to read";

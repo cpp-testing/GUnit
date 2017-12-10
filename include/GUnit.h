@@ -13,5 +13,5 @@
 #include "GUnit/GTest.h"
 
 #if __has_include(<json.hpp>) and __has_include(<gherkin.hpp>)
-  #include "GUnit/GScenario.h"
+#include "GUnit/GScenario.h"
 #endif

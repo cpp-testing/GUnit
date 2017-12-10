@@ -1046,22 +1046,18 @@ TEST(GMock, ShouldDeferCallsWithExpected) {
 }
 
 struct Generic {
-  template<class... Ts>
+  template <class... Ts>
   void foo(Ts...) const;
 };
 
-template<class T>
+template <class T>
 class GenericExample {
-public:
-  explicit GenericExample(const T& t)
-    : t{t}
-  { }
+ public:
+  explicit GenericExample(const T& t) : t{t} {}
 
-  void bar() {
-    t.foo(42, 77.0);
-  }
+  void bar() { t.foo(42, 77.0); }
 
-private:
+ private:
   const T& t;
 };
 

@@ -19,6 +19,6 @@ TEST(FileUtils, ShouldReturnBaseName) {
   EXPECT_EQ(std::string{"file.hpp"}, basename("/b/file.hpp"));
 }
 
-} // detail
-} // v1
-} // testing
+}  // detail
+}  // v1
+}  // testing

@@ -46,6 +46,6 @@ TEST(Utility, ShouldReturnTrueIfTupleContaintsType) {
   EXPECT_TRUE((contains<int, std::tuple<double, float, int>>::value));
 }
 
-} // detail
-} // v1
-} // testing
+}  // detail
+}  // v1
+}  // testing
