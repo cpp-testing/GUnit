@@ -145,26 +145,29 @@ Feature: Calc Addition
 #### Steps Implementation
 
 ```cpp
-STEPS("Calc*") = [](auto& steps) {
+GSTEPS("Calc*") {
   auto result = 0.;
 
-  auto calc = steps.given("I have created a calculator with {init}") =
-    [](auto init) { return Calculator{init}; };
+   Given("I have created a calculator with {init}") = [&](double init) { 
+     Calculator calc{init}; 
+   
+     Given("I have entered {n} into the calculator") = [&](double n) { 
+        calc.push(n);
+     };
 
-  steps.given("I have entered {n} into the calculator") =
-    [&](double n) { calc.push(n); };
+     When("I press add") = [&] { 
+       result = calc.add();
+     };
 
-  steps.when("I press add") =
-    [&] { result = calc.add(); };
+     When("I press divide") = [&] { 
+       result = calc.divide();
+     };
 
-  steps.when("I press divide") =
-    [&] { result = calc.divide(); };
-
-  steps.then("the result should be {expected} on the screen") =
-    [&] (double expected) { EXPECT_EQ(expected, result); };
-
-  testing::yield steps;
-};
+     Then("the result should be {expected} on the screen") = [&] (double expected) {
+        EXPECT_EQ(expected, result);
+     };
+   };
+}
 ```
 
 #### Usage
