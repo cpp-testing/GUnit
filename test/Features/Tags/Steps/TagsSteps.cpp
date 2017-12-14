@@ -22,5 +22,8 @@ GSTEPS("Tags*") {
   Then("I should see test being run"_step) = [] { };
 
   std::clog << Info() << std::endl;
+  Then("I should see code being run"_step) = [] { };
+
+  std::clog << Info() << std::endl;
 }
 // clang-format on

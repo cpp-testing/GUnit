@@ -1,3 +1,4 @@
+@tag
 Feature: Tags
 
   Scenario: No tags
@@ -29,3 +30,14 @@ Feature: Tags
     Given I have a tag
      When I select a test with that tag
      Then I should see test being run
+
+  @slow
+  Scenario Outline: Outline tags
+    Given I have a tag
+     When I select a test with that tag
+     Then I should see <name> being run
+
+  Examples:
+    | name |
+    | test |
+    | code |
