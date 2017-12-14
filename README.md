@@ -12,7 +12,7 @@
 ## GUnit
 > [Google.Test/Google.Mock](https://github.com/google/googletest)/[Cucumber](https://github.com/cucumber/cucumber/wiki/Gherkin) on steroids
 
-* Improve your productivity with GUnit, a library based on [Google.Test/Google.Mock](https://github.com/google/googletest)/[Gherkin](https://github.com/cucumber/cucumber/wiki/Gherkin), which simplifies testing!
+* Improve your productivity with GUnit, a library which extends/simplifies [Google.Test/Google.Mock](https://github.com/google/googletest) and adds support for [Gherkin](https://github.com/cucumber/cucumber/wiki/Gherkin) to [Google.Test/Google.Mock](https://github.com/google/googletest).
 
 ## Motivation
 
@@ -168,6 +168,7 @@
   [----------] Global test environment set-up.
   [----------] 1 tests from Calc Addition
   [ RUN      ] Calc Addition.Add two numbers
+  [    Given ] I have created a calculator with value 0         # CalcSteps.cpp:10
   [    Given ] I have entered 20 into the calculator            # CalcSteps.cpp:12
   [    Given ] I have entered 30 into the calculator            # CalcSteps.cpp:14
   [     When ] I press add                                      # CalcSteps.cpp:16
