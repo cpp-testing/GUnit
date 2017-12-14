@@ -14,11 +14,6 @@ matrix:
   include:
 
   - os: linux
-    dist: precise
-    env: CXX=clang++-3.6
-    addons: { apt: { packages: ["clang-3.6", "libstdc++-5-dev", "valgrind"], sources: ["ubuntu-toolchain-r-test", "llvm-toolchain-precise-3.6"] } }
-
-  - os: linux
     env: CXX=clang++-3.7
     addons: { apt: { packages: ["clang-3.7", "libstdc++-5-dev", "valgrind"], sources: ["ubuntu-toolchain-r-test", "llvm-toolchain-precise-3.7"] } }
 
