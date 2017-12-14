@@ -12,7 +12,7 @@
 #include "Features/Calc/Impl/Calculator.h"
 
 // clang-format off
-GSTEPS("Calc *") {
+GSTEPS("Calc") {
   using namespace testing;
   Calculator calc{};
   double result{};

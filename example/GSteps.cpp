@@ -13,7 +13,7 @@
 #include "GUnit/GTest.h"
 
 // clang-format off
-GSTEPS("Example*") {
+GSTEPS("Example") {
   auto step_count = 0;
 
   std::clog << "Set Up\n" << Info() << std::endl;

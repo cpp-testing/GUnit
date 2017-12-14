@@ -12,7 +12,7 @@
 ## GUnit
 > [Google.Test/Google.Mock](https://github.com/google/googletest)/[Cucumber](https://github.com/cucumber/cucumber/wiki/Gherkin) on steroids
 
-* Improve your productivity with GUnit, a library which extends/simplifies [Google.Test/Google.Mock](https://github.com/google/googletest) and adds support for [Gherkin](https://github.com/cucumber/cucumber/wiki/Gherkin) to it.
+* Improve your productivity with GUnit, a library which extends/simplifies [Google.Test/Google.Mock](https://github.com/google/googletest) and adds support for [Gherkin](https://github.com/cucumber/cucumber/wiki/Gherkin) (BDD) to it.
 
 ## Motivation
 
@@ -136,7 +136,7 @@
   ```cpp
   #include <Gunit.h>
 
-  GSTEPS("Calc*") {
+  GSTEPS("Calc*") { // Calc Addition
     double result{};
 
     Given("I created a calculator with value {n}") =
