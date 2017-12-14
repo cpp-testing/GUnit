@@ -37,7 +37,7 @@ GSTEPS("Table") {
       expected_table = table;
     };
 
-  $Given("I access table with 1 row"_step, "ids") = access_data;
+  $Given("I access table with 1 row, 1 col"_step, "ids") = access_data;
 
   $Given("I access table with {n}", "ids") = [](int n, const Data& data) {
     EXPECT_EQ(n, int(data["value"]));
@@ -73,7 +73,12 @@ GSTEPS("Table") {
       ctx.expected_table = ids;
     };
 
-  $Given("I access table with 1 row", "ids") = access_data;
+  $Given("I access table with {row} row, {col} col", "ids") =
+    [](const int row, const int col, testing::Data id_value) {
+      EXPECT_EQ(1, row);
+      EXPECT_EQ(1, col);
+      access_data(id_value);
+    };
 
   $Given("I access table with {n}", "ids") = [](int n, testing::Data data) {
     EXPECT_EQ(n, int(data["value"]));

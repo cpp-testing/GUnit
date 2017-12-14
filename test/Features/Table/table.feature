@@ -14,12 +14,12 @@ Feature: Table
        | 11 | text |
 
   Scenario: Table Access
-    Given I access table with 1 row
+    Given I access table with 1 row, 1 col
         | id | value  |
         | 42 | number |
 
-  Scenario Outline: Table Ambigious
-    Given I access table with 1 row # comment
+  Scenario Outline: Table Ambiguous
+    Given I access table with 1 row, 1 col # comment
         | id | value  |
         | 42 | number |
       And I access table with <n>

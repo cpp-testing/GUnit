@@ -41,9 +41,9 @@ inline auto matches(T pattern, const std::string& txt) {
   std::vector<std::string> matches{};
   auto pi = 0u, si = 0u;
 
-  const auto matcher = [&](char b, char e) {
+  const auto matcher = [&](char b, char e, char c = 0) {
     const auto match = si;
-    while (str[si] && str[si] != b) ++si;
+    while (str[si] && str[si] != b && str[si] != c) ++si;
     matches.emplace_back(str.substr(match, si - match));
     while (pattern[pi] && pattern[pi] != e) ++pi;
     pi++;
@@ -54,14 +54,14 @@ inline auto matches(T pattern, const std::string& txt) {
       ++si;
       matcher('\'', '}');
     } else if (pattern[pi] == '{') {
-      matcher(' ', '}');
+      matcher(' ', '}', ',');
     } else if (pattern[pi] != str[si]) {
       return std::vector<std::string>{};
     }
     ++pi, ++si;
   }
 
-  if (si < str.size()) {
+  if (si < str.size() || pi < pattern.size()) {
     return std::vector<std::string>{};
   }
 

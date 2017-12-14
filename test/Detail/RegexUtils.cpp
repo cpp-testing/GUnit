@@ -27,7 +27,7 @@ TEST(RegexUtils, ShouldReturnMatches) {
   constexpr auto n7 = "I have the following {table}"_gtest_string;
   constexpr auto n8 = "I access table with 1 row"_gtest_string;
   constexpr auto n9 = "I access table with {n}"_gtest_string;
-  ;
+  constexpr auto n10 = "I have a: {a}, b: {b}"_gtest_string;
 
   constexpr auto t0 = "I press add";
   constexpr auto t1 = "I have a 42 to read";
@@ -37,6 +37,10 @@ TEST(RegexUtils, ShouldReturnMatches) {
   constexpr auto t5 = "I have the following table";
   constexpr auto t6 = "I access table with 1 row";
   constexpr auto t7 = "I access table with 42";
+  constexpr auto t8 = "I have a: 1, b: 2";
+  constexpr auto t9 = "I have a: value";
+  constexpr auto t10 = "I have a: {v}";
+  constexpr auto t11 = "I have a: {value}";
 
   static_assert(0 == args_size(n0), "");
   static_assert(1 == args_size(n1), "");
@@ -98,6 +102,14 @@ TEST(RegexUtils, ShouldReturnMatches) {
 
   EXPECT_EQ(1u, matches(n7, t5).size());
   EXPECT_EQ("table", matches(n7, t5)[0]);
+
+  EXPECT_EQ(2u, matches(n10, t8).size());
+  EXPECT_EQ("1", matches(n10, t8)[0]);
+  EXPECT_EQ("2", matches(n10, t8)[1]);
+
+  EXPECT_EQ(0u, matches(n10, t9).size());
+  EXPECT_EQ(0u, matches(n10, t10).size());
+  EXPECT_EQ(0u, matches(n10, t11).size());
 }
 
 }  // detail
