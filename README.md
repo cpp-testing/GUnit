@@ -123,7 +123,7 @@
 
     Scenario: Add two numbers
       Given I created a calculator with value 0
-      Given I have entered 20 into the calculator
+        And I have entered 20 into the calculator
         And I have entered 30 into the calculator
        When I press add
        Then The result should be 50
@@ -137,20 +137,20 @@
   #include <Gunit.h>
 
   GSTEPS("Calc*") { // "Calc Addition.Add two numbers"
-    double result{};
+    auto result = 0;
 
     Given("I created a calculator with value {n}") =
-      [&](double n) {
+      [&](int n) {
         Calculator calc{n};
 
         Given("I have entered {n} into the calculator") =
-         [&](double n) { calc.push(n); };
+         [&](int n) { calc.push(n); };
 
         When("I press add") =
          [&] { result = calc.add(); };
 
         Then("The result should be {expected}") =
-         [&](double expected) {
+         [&](int expected) {
            EXPECT_EQ(expected, result);
          };
       };
