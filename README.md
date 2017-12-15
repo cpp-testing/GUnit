@@ -237,5 +237,9 @@
   * [C++ Now 2017: Towards Painless Testing](https://www.youtube.com/watch?v=NVrZjT5lW5o)
 
 ### Acknowledgements
+* Thanks to [Google Open Source](https://opensource.google.com/) for [Google.Test/Google.Mock](https://github.com/google/googletest)
 * Thanks to Eran Pe'er for [FakeIt](https://github.com/eranpeer/FakeIt)
 * Thanks to Peter Bindels for [HippoMocks](https://github.com/dascandy/hippomocks)
+* Thanks to Niels Lohmann for [json](https://github.com/nlohmann/json)
+* Thanks to Aslak Hellesøy for [gherkin-c](https://github.com/cucumber/gherkin-c)
+* Thanks to [Cucumber Open Source](https://cucumber.io/) for [cucumber-cpp](https://github.com/cucumber/cucumber-cpp)
