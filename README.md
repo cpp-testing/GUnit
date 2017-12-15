@@ -1,7 +1,7 @@
 <a href="http://www.boost.org/LICENSE_1_0.txt" target="_blank">![Boost Licence](http://img.shields.io/badge/license-boost-blue.svg)</a>
+<a href="https://github.com/cpp-testing/GUnit/releases" target="_blank">![Version](https://badge.fury.io/gh/cpp-testing%2FGUnit.svg)</a>
 <a href="https://travis-ci.org/cpp-testing/GUnit" target="_blank">![Build Status](https://img.shields.io/travis/cpp-testing/GUnit/master.svg?label=linux/osx)</a>
 <a href="http://github.com/cpp-testing/GUnit/issues" target="_blank">![Github Issues](https://img.shields.io/github/issues/cpp-testing/GUnit.svg)</a>
-[![Join the chat at https://gitter.im/cpp-testing/GUnit](https://badges.gitter.im/cpp-testing/GUnit.svg)](https://gitter.im/cpp-testing/GUnit?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 ---
 
@@ -12,7 +12,7 @@
 ## GUnit
 > [Google.Test/Google.Mock](https://github.com/google/googletest)/[Cucumber](https://github.com/cucumber/cucumber/wiki/Gherkin) on steroids
 
-* Improve your productivity with GUnit, a library which extends/simplifies [Google.Test/Google.Mock](https://github.com/google/googletest) and adds support for [Gherkin](https://github.com/cucumber/cucumber/wiki/Gherkin) (BDD) to it.
+* Improve your productivity with GUnit, a library which extends/simplifies [Google.Test/Google.Mock](https://github.com/google/googletest) and adds support for [Gherkin](https://github.com/cucumber/cucumber/wiki/Gherkin) (Behaviour Driven Development) to it.
 
 ## Motivation
 
@@ -197,8 +197,8 @@
   * `GUnit.GMake` - Makes creation of System Under Test (SUT) and Mocks easier
     * No need to instantiate SUT (System Under Test) and mocks
       * Automatic mocks injection
-  * `GUnit.GSteps` - [Gherkin/Cucumber](https://github.com/cucumber/cucumber/wiki/Gherkin)
-    * Support for - gherkin style - feature tests
+  * `GUnit.GSteps` - Behaviour Driven Development
+    * Support for - [Gherkin](https://github.com/cucumber/cucumber/wiki/Gherkin) style - BDD tests
 * Based on top of [Google.Test/Google.Mock](https://github.com/google/googletest)
     * (+) Widely used (The most popular testing framework according to https://www.jetbrains.com/research/devecosystem-2017/cpp)
     * (+) Stable
