@@ -5,7 +5,7 @@
 
 ---
 
-## Testing
+### Testing
 
 > "If you liked it then you should have put a test on it", Beyonce rule
 
@@ -14,9 +14,18 @@
 
 * Improve your productivity with GUnit, a library which extends/simplifies [Google.Test/Google.Mock](https://github.com/google/googletest) and adds support for [Gherkin](https://github.com/cucumber/cucumber/wiki/Gherkin) (Behaviour Driven Development) to it.
 
-## Motivation
+    * Why it's based on [Google.Test/Google.Mock](https://github.com/google/googletest)?
+        * (+) Google.Test is **widely used** (The most popular testing framework according to https://www.jetbrains.com/research/devecosystem-2017/cpp)
+        * (+) Google.Test is **stable**
+        * (+) Google.Test is **powerful**
+        * (+) Google.Test comes with **Google.Mock**
+        * (+) Google.Test is **well documented**
+        * (-) Google.Test **doesn't have support for - [gherkin](https://github.com/cucumber/cucumber/wiki/Gherkin) style - tests**
+        * (-) Google.Test and Google.Mock have a lot **boilerplate macros**
 
-> ### No more base classes and labels as identifiers - [GUnit.GTest](docs/GTest.md) / [GUnit.GTest-Lite](docs/GTest-Lite.md)
+### Motivation Examples
+
+> #### No more base classes and labels as identifiers - [GUnit.GTest](docs/GTest.md) / [GUnit.GTest-Lite](docs/GTest-Lite.md)
   ```cpp
                  Google.Test                        |                     GUnit.GTest
   --------------------------------------------------+------------------------------------------------------
@@ -51,7 +60,7 @@
   [----------] 2 tests from CalcTest (1 ms total)   | [----------] 1 tests from Example (0 ms total)
   ```
 
-> ### No more hand written mocks - [GUnit.GMock](docs/GMock.md)
+> #### No more hand written mocks - [GUnit.GMock](docs/GMock.md)
   ```cpp
   struct interface {
     virtual ~interface() = default;
@@ -80,7 +89,7 @@
   }                                                 | }
   ```
 
-> ### Simplified creation and injection of SUT (System Under Test) and mocks - [GUnit.GMake](docs/GMake.md)
+> #### Simplified creation and injection of SUT (System Under Test) and mocks - [GUnit.GMake](docs/GMake.md)
   ```cpp
   class coffee_maker {
    public:
@@ -109,7 +118,7 @@
    }
   ```
 
-> ### Support for - [Gherkin](https://github.com/cucumber/cucumber/wiki/Gherkin) style - BDD (Behaviour Driven Development) scenarios - [GUnit.GSteps](docs/GSteps.md)
+> #### Support for - [Gherkin](https://github.com/cucumber/cucumber/wiki/Gherkin) style - BDD (Behaviour Driven Development) scenarios - [GUnit.GSteps](docs/GSteps.md)
 
   > Feature specification
 
@@ -178,65 +187,86 @@
   [  PASSED  ] 1 tests.
   ```
 
-## Overview
-* Extensions (independent)
-  * `GUnit.GTest` - Google.Test with strings and more friendly macros
-    * Test cases with string as names
-    * No more SetUp/TearDown (SHOULD clauses)
-    * One (GTEST) macro for all types of tests
-    * 100% Compatible with tests using GTest
-  * `GUnit.GTest-Lite` - lightweight, limited, no-macro way of defining simple tests
-  * `GUnit.GMock` - Google.Mock without hand written mocks
-    * No more hand written mocks!
-    * Support for more than 10 parameters
-    * Quicker compilation times
-    * Support for unique_ptr without any tricks
-    * Support for overloaded operators
-    * Support for mocking classes with constructors
-    * 100% Compatible with Google Mocks
-  * `GUnit.GMake` - Makes creation of System Under Test (SUT) and Mocks easier
-    * No need to instantiate SUT (System Under Test) and mocks
-      * Automatic mocks injection
-  * `GUnit.GSteps` - Behaviour Driven Development
-    * Support for - [Gherkin](https://github.com/cucumber/cucumber/wiki/Gherkin) style - BDD tests
-* Based on top of [Google.Test/Google.Mock](https://github.com/google/googletest)
-    * (+) Widely used (The most popular testing framework according to https://www.jetbrains.com/research/devecosystem-2017/cpp)
-    * (+) Stable
-    * (+) Powerful
-    * (+) Comes with GoogleMock
-    * (+) Well documented
-    * (-) No support for - [Gherkin](https://github.com/cucumber/cucumber/wiki/Gherkin) style - BDD tests
-    * (-) Boilerplate macros
-* Requirements
+### Overview
+
+* `GUnit.GTest` - Google.Test with strings and more friendly macros
+  * Test cases with string as names
+  * No more SetUp/TearDown (SHOULD clauses)
+  * One (GTEST) macro for all types of tests
+  * 100% Compatible with tests using GTest
+* `GUnit.GTest-Lite` - lightweight, limited, no-macro way of defining simple tests
+* `GUnit.GMock` - Google.Mock without hand written mocks
+  * No more hand written mocks!
+  * Support for more than 10 parameters
+  * Quicker compilation times
+  * Support for unique_ptr without any tricks
+  * Support for overloaded operators
+  * Support for mocking classes with constructors
+  * 100% Compatible with Google Mocks
+* `GUnit.GMake` - Makes creation of System Under Test (SUT) and Mocks easier
+  * No need to instantiate SUT (System Under Test) and mocks
+    * Automatic mocks injection
+* `GUnit.GSteps` - Behaviour Driven Development
+  * Support for - [Gherkin](https://github.com/cucumber/cucumber/wiki/Gherkin) style - BDD tests
+
+### Quick Start
+
+* If your project is **NOT** using [Google.Test/Google.Mock](https://github.com/google/googletest)
+    * Follow instructions from https://github.com/google/googletest/tree/master/googletest
+* Clone the repository
+    * `git clone https://github.com/cpp-testing/GUnit.git`
+* Add `GUnit/include` directory to your include path
+    * `-I GUnit/include`
+* Write some tests...
+* Compile and Run!
+
+---
+
+* [**Optional**] For [gherkin](https://github.com/cucumber/cucumber/wiki/Gherkin) support
+    * Compile `gherkin-cpp`
+    ```sh
+    $cd libs/gherkin-cpp && make lib
+    $ls libs/gherkin-cpp
+      libgherkin-cpp.a
+      libgherkin-cpp.so
+    ```
+    * Add include paths
+        * `-I GUnit/gherkin-cpp/include`
+        * `-I GUnit/json/src`
+    * Link with `libgherkin-cpp.{a, so}` 
+        * `-L libgherkin-cpp`
+    * Write some feature tests...
+    * Compile and Run!
+
+---
+
+* To run GUnit tests/benchmarks
+  ```sh
+  $mkdir build && cd build && cmake ..
+  $make && ctest
+  ```
+
+### Requirements
   * [C++14](https://ubershmekel.github.io/cppdrafts/c++14-cd.html)
   * `GTest/GTest-Lite/GMock/GMake`
     * [libs/googletest](https://github.com/google/googletest) - compatible with all versions
   * `GSteps`
     * [libs/json](https://github.com/nlohmann/json)
     * [libs/gherkin-cpp](https://github.com/c-libs/gherkin-cpp)
-        * Building libgherkin-cpp
-          ```
-          $cd libs/gherkin-cpp && make lib
-          $ls libs/gherkin-cpp
-            libgherkin-cpp.a
-            libgherkin-cpp.so
-          ```
-* Tested compilers
+
+### Tested compilers
   * [Linux - GCC-5+](https://travis-ci.org/cpp-testing/GUnit)
   * [Linux - Clang-3.7+](https://travis-ci.org/cpp-testing/GUnit)
   * [Mac OSx - Xcode-7.3+](https://travis-ci.org/cpp-testing/GUnit)
-* Quick start
-  ```sh
-  $mkdir build && cd build && cmake ..
-  $make && ctest
-  ```
-* User Guide
-  * [GUnit.GTest](docs/GTest.md)
-  * [GUnit.GTest-Lite](docs/GTest-Lite.md)
-  * [GUnit.GMock](docs/GMock.md)
-  * [GUnit.GMake](docs/GMake.md)
-  * [GUnit.GSteps](docs/GSteps.md)
-* [FAQ](docs/FAQ.md)
+
+### User Guide
+  * **[GUnit.GTest](docs/GTest.md)**
+  * **[GUnit.GTest-Lite](docs/GTest-Lite.md)**
+  * **[GUnit.GMock](docs/GMock.md)**
+  * **[GUnit.GMake](docs/GMake.md)**
+  * **[GUnit.GSteps](docs/GSteps.md)**
+
+### [FAQ](docs/FAQ.md)
   * [C++ Now 2017: Towards Painless Testing](https://www.youtube.com/watch?v=NVrZjT5lW5o)
 
 ### Acknowledgements
