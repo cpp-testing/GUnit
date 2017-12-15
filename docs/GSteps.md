@@ -14,10 +14,11 @@
 * Synopsis
   ```cpp
   /**
-   * @param feature regex expression matching a feature name
-   *        example: "Calc*"
+   * @param feature.scenario regex expression matching a feature name
+   *        example: "Calc*" - all scenarios from Calc feature
+   *        example: "Calc Addition.Add two numbers" - Only 'Add two numbers' scenario from Calc feature
    */
-  #define GSTEPS(feature) // register steps for a feature
+  #define GSTEPS(name) // register steps for a feature.scenario
 
   namespace testing {
     /**

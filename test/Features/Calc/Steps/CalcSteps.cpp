@@ -12,7 +12,7 @@
 #include "Features/Calc/Impl/Calculator.h"
 
 // clang-format off
-GSTEPS("Calc") {
+GSTEPS("Calc Addition.Add two numbers") {
   using namespace testing;
   Calculator calc{};
   double result{};
@@ -28,11 +28,6 @@ GSTEPS("Calc") {
   When("I press add"_step) =
     [&] {
       result = calc.add();
-    };
-
-  When("I press divide"_step) =
-    [&] {
-      result = calc.divide();
     };
 
   Then("the result should be {expected} on the screen"_step) =

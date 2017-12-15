@@ -136,7 +136,7 @@
   ```cpp
   #include <Gunit.h>
 
-  GSTEPS("Calc*") { // Calc Addition
+  GSTEPS("Calc*") { // "Calc Addition.Add two numbers"
     double result{};
 
     Given("I created a calculator with value {n}") =

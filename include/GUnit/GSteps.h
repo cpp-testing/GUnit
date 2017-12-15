@@ -378,8 +378,9 @@ class Steps {
       const std::string scenario_name = pickle_json["name"];
       const auto tags = detail::make_tags(pickle_json["tags"]);
       const auto disabled = tags.first ? "DISABLED_" : "";
+      const auto full_name = feature_name + "." + scenario_name;
 
-      if (PatternMatchesString(name.c_str(), feature_name.c_str())) {
+      if (PatternMatchesString(name.c_str(), full_name.c_str())) {
         info_.feature = feature_name;
 
         detail::MakeAndRegisterTestInfo(
