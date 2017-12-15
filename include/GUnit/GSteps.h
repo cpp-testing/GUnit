@@ -17,6 +17,7 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
+#include <cstdlib>
 #include "GUnit/Detail/FileUtils.h"
 #include "GUnit/Detail/Preprocessor.h"
 #include "GUnit/Detail/RegexUtils.h"
@@ -168,7 +169,8 @@ class Steps {
         steps.Init(pickles, file);
         static_cast<TCRTP&>(steps).Run();
         if (steps.current_step_ != steps.pickle_steps_.size()) {
-          throw StepIsNotImplemented{"STEP \"" + steps.not_found_ + "\" not implemented!"};
+          throw StepIsNotImplemented{"STEP \"" + steps.not_found_ +
+                                     "\" not implemented!"};
         }
         std::cout << '\n';
       }
@@ -365,30 +367,40 @@ class Steps {
   }
 
   void ParseAndRegister(const std::string& name, const std::string& feature) {
-    const auto content = read_file(feature);
-    gherkin::parser parser{L"en"};
-    gherkin::compiler compiler{feature};
-    const auto gherkin_document = parser.parse(content);
-    const auto pickles = compiler.compile(gherkin_document);
-    const auto ast = nlohmann::json::parse(compiler.ast(gherkin_document));
+    try {
+      const auto content = read_file(feature);
+      gherkin::parser parser{L"en"};
+      gherkin::compiler compiler{feature};
+      const auto gherkin_document = parser.parse(content);
+      const auto pickles = compiler.compile(gherkin_document);
+      const auto ast = nlohmann::json::parse(compiler.ast(gherkin_document));
 
-    for (const auto& pickle : pickles) {
-      const std::string feature_name = ast["document"]["feature"]["name"];
-      const auto pickle_json = nlohmann::json::parse(pickle)["pickle"];
-      const std::string scenario_name = pickle_json["name"];
-      const auto tags = detail::make_tags(pickle_json["tags"]);
-      const auto disabled = tags.first ? "DISABLED_" : "";
-      const auto full_name = feature_name + "." + scenario_name;
+      for (const auto& pickle : pickles) {
+        const std::string feature_name = ast["document"]["feature"]["name"];
+        const auto pickle_json = nlohmann::json::parse(pickle)["pickle"];
+        const std::string scenario_name = pickle_json["name"];
+        const auto tags = detail::make_tags(pickle_json["tags"]);
+        const auto disabled = tags.first ? "DISABLED_" : "";
+        const auto full_name = feature_name + "." + scenario_name;
 
-      if (PatternMatchesString(name.c_str(), full_name.c_str())) {
-        info_.feature = feature_name;
+        if (PatternMatchesString(name.c_str(), full_name.c_str())) {
+          info_.feature = feature_name;
 
-        detail::MakeAndRegisterTestInfo(
-            new TestFactory{*this, pickle, feature},
-            disabled + feature_name + tags.second, scenario_name, __FILE__,
-            __LINE__,
-            detail::type<decltype(internal::MakeAndRegisterTestInfo)>{});
+          detail::MakeAndRegisterTestInfo(
+              new TestFactory{*this, pickle, feature},
+              disabled + feature_name + tags.second, scenario_name, __FILE__,
+              __LINE__,
+              detail::type<decltype(internal::MakeAndRegisterTestInfo)>{});
+        }
       }
+    } catch (const gherkin::v1::parsing_error& err) {
+      const auto err_json = nlohmann::json::parse(err.what());
+      const auto line = err_json["source"]["start"]["line"];
+      const auto column = err_json["source"]["start"]["column"];
+      const std::string error = err_json["data"];
+
+      std::cerr << feature << ":" << line << ":" << column << ": error: " << error << std::endl;
+      std::exit(-1);
     }
   }
 
