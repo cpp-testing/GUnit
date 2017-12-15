@@ -179,18 +179,7 @@
   ```
 
 ## Overview
-* Header only library
-  * BDD/[Gherkin](https://github.com/cucumber/cucumber/wiki/Gherkin) support requires linking with libs/libgherkin-cpp.{so, a}
-* Based on top of [Google.Test/Google.Mock](https://github.com/google/googletest)
-    * (+) Widely used (The most popular testing framework according to https://www.jetbrains.com/research/devecosystem-2017/cpp)
-    * (+) Stable
-    * (+) Powerful
-    * (+) Comes with GoogleMock
-    * (+) Well documented
-    * (-) No support for - [Gherkin](https://github.com/cucumber/cucumber/wiki/Gherkin) style - BDD tests
-    * (-) Macro based
-    * (-) Slow to compile
-* Modular (GTest/GTest-Lite/GMock/GMake/GSteps are independent)
+* Extensions (independent)
   * `GUnit.GTest` - Google.Test with strings and more friendly macros
     * Test cases with string as names
     * No more SetUp/TearDown (SHOULD clauses)
@@ -206,26 +195,40 @@
     * Support for mocking classes with constructors
     * 100% Compatible with Google Mocks
   * `GUnit.GMake` - Makes creation of System Under Test (SUT) and Mocks easier
-    * No need to instantiate System Under Test and Mocks
+    * No need to instantiate SUT (System Under Test) and mocks
       * Automatic mocks injection
-  * `GUnit.GSteps` - [Gherkin/Cucumber](https://github.com/cucumber/cucumber/wiki/Gherkin) implementation for C++ without Ruby dependencies
+  * `GUnit.GSteps` - [Gherkin/Cucumber](https://github.com/cucumber/cucumber/wiki/Gherkin)
+    * Support for - gherkin style - feature tests
+* Based on top of [Google.Test/Google.Mock](https://github.com/google/googletest)
+    * (+) Widely used (The most popular testing framework according to https://www.jetbrains.com/research/devecosystem-2017/cpp)
+    * (+) Stable
+    * (+) Powerful
+    * (+) Comes with GoogleMock
+    * (+) Well documented
+    * (-) No support for - [Gherkin](https://github.com/cucumber/cucumber/wiki/Gherkin) style - BDD tests
+    * (-) Boilerplate macros
 * Requirements
   * [C++14](https://ubershmekel.github.io/cppdrafts/c++14-cd.html)
-  * [Google.Test](https://github.com/google/googletest) (compatible with all versions)
-  * Tested compilers
-    * [Clang-3.7+](https://travis-ci.org/cpp-testing/GUnit)
-    * [GCC-5+](https://travis-ci.org/cpp-testing/GUnit)
+  * `GTest/GTest-Lite/GMock/GMake`
+    * [libs/googletest](https://github.com/google/googletest) - compatible with all versions
+  * `GSteps`
+    * [libs/json](https://github.com/nlohmann/json)
+    * [libs/gherkin-cpp](https://github.com/c-libs/gherkin-cpp)
+        * Building libgherkin-cpp
+          ```
+          $cd libs/gherkin-cpp && make lib
+          $ls libs/gherkin-cpp
+            libgherkin-cpp.a
+            libgherkin-cpp.so
+          ```
+* Tested compilers
+  * [Linux - GCC-5+](https://travis-ci.org/cpp-testing/GUnit)
+  * [Linux - Clang-3.7+](https://travis-ci.org/cpp-testing/GUnit)
+  * [Mac OSx - Xcode-7.3+](https://travis-ci.org/cpp-testing/GUnit)
 * Quick start
   ```sh
   $mkdir build && cd build && cmake ..
   $make && ctest
-  ```
-* Building libgherkin-cpp (required only for GUnit.GSteps)
-  ```
-  $cd libs/gherkin-cpp && make lib
-  $ls libs/gherkin-cpp
-    libgherkin-cpp.a
-    libgherkin-cpp.so
   ```
 * User Guide
   * [GUnit.GTest](docs/GTest.md)
@@ -237,9 +240,9 @@
   * [C++ Now 2017: Towards Painless Testing](https://www.youtube.com/watch?v=NVrZjT5lW5o)
 
 ### Acknowledgements
-* Thanks to [Google Open Source](https://opensource.google.com/) for [Google.Test/Google.Mock](https://github.com/google/googletest)
-* Thanks to Eran Pe'er for [FakeIt](https://github.com/eranpeer/FakeIt)
-* Thanks to Peter Bindels for [HippoMocks](https://github.com/dascandy/hippomocks)
-* Thanks to Niels Lohmann for [json](https://github.com/nlohmann/json)
-* Thanks to Aslak Hellesøy for [gherkin-c](https://github.com/cucumber/gherkin-c)
-* Thanks to [Cucumber Open Source](https://cucumber.io/) for [cucumber-cpp](https://github.com/cucumber/cucumber-cpp)
+* Thanks to [Google Open Source](https://opensource.google.com/) for [Google.Test/Google.Mock](https://github.com/google/googletest) libraries
+* Thanks to Eran Pe'er for [FakeIt](https://github.com/eranpeer/FakeIt) library
+* Thanks to Peter Bindels for [HippoMocks](https://github.com/dascandy/hippomocks) library
+* Thanks to Niels Lohmann for [json](https://github.com/nlohmann/json) library
+* Thanks to Aslak Hellesøy for [gherkin-c](https://github.com/cucumber/gherkin-c) library
+* Thanks to [Cucumber Open Source](https://cucumber.io/) for [cucumber-cpp](https://github.com/cucumber/cucumber-cpp) library

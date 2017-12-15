@@ -1,8 +1,7 @@
-## [1.0.0] - 2017-12-13
-- Support for Clang-3.7+
-- Support for GCC-5+
-- Support for Linux
-- Support for Mac OS
+## [1.0.0] - 2017-12-15
+- Support for Linux - Clang-3.7+
+- Support for Linux - GCC-5+
+- Support for Mac OSx - Xcode-7.3+
 
 ---
 
