@@ -47,6 +47,11 @@ matrix:
     env: CXX=g++-7
     addons: { apt: { packages: ["g++-7", "libstdc++-7-dev", "valgrind"], sources: ["ubuntu-toolchain-r-test"] } }
 
+  - os: linux
+    dist: trusty
+    env: CXX=g++-7 VARIANT=coverage
+    addons: { apt: { packages: ["g++-7", "libstdc++-7-dev", "valgrind"], sources: ["ubuntu-toolchain-r-test"] } }
+
   - os: osx
     osx_image: xcode7.3
     env: CXX=clang++
@@ -64,3 +69,7 @@ script:
   - mkdir build_debug_memcheck && cd build_debug_memcheck && cmake -DCMAKE_BUILD_TYPE=debug -DENABLE_MEMCHECK=ON .. && make -j2 && cd ..
   - mkdir build_release && cd build_release && cmake -DCMAKE_BUILD_TYPE=release .. && make -j2  && cd ..
   - mkdir build_release_memcheck && cd build_release_memcheck && cmake -DCMAKE_BUILD_TYPE=release -DENABLE_MEMCHECK=ON .. && make -j2 && cd ..
+  - if [ "${VARIANT}" == "coverage" ]; then (
+      mkdir build_debug_coverage && cd build_debug_coverage && cmake -DCMAKE_BUILD_TYPE=debug -DENABLE_COVERAGE=ON .. && make -j2 && cd .. &&
+      bash <(curl -s https://codecov.io/bash)
+    ); fi
