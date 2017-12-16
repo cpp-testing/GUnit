@@ -1,6 +1,7 @@
 <a href="http://www.boost.org/LICENSE_1_0.txt" target="_blank">![Boost Licence](http://img.shields.io/badge/license-boost-blue.svg)</a>
 <a href="https://github.com/cpp-testing/GUnit/releases" target="_blank">![Version](https://badge.fury.io/gh/cpp-testing%2FGUnit.svg)</a>
 <a href="https://travis-ci.org/cpp-testing/GUnit" target="_blank">![Build Status](https://img.shields.io/travis/cpp-testing/GUnit/master.svg?label=linux/osx)</a>
+<a href="https://codecov.io/gh/cpp-testing/GUnit" target="_blank">![Coveralls](https://codecov.io/gh/cpp-testing/GUnit/branch/master/graph/badge.svg)</a>
 <a href="http://github.com/cpp-testing/GUnit/issues" target="_blank">![Github Issues](https://img.shields.io/github/issues/cpp-testing/GUnit.svg)</a>
 
 ---
@@ -148,21 +149,21 @@
   GSTEPS("Calc*") { // "Calc Addition.Add two numbers"
     auto result = 0;
 
-    Given("I created a calculator with value {n}") =
-      [&](int n) {
-        Calculator calc{n};
+    Given("I created a calculator with value {n}") = [&](int n) {
+      Calculator calc{n};
 
-        Given("I have entered {n} into the calculator") =
-         [&](int n) { calc.push(n); };
-
-        When("I press add") =
-         [&] { result = calc.add(); };
-
-        Then("The result should be {expected}") =
-         [&](int expected) {
-           EXPECT_EQ(expected, result);
-         };
+      Given("I have entered {n} into the calculator") = [&](int n) {
+        calc.push(n);
       };
+
+      When("I press add") = [&] {
+        result = calc.add();
+      };
+
+      Then("The result should be {expected}") = [&](int expected) {
+         EXPECT_EQ(expected, result);
+      };
+    };
   }
   ```
 
@@ -233,7 +234,7 @@
     * Add include paths
         * `-I GUnit/gherkin-cpp/include`
         * `-I GUnit/json/src`
-    * Link with `libgherkin-cpp.{a, so}` 
+    * Link with `libgherkin-cpp.{a, so}`
         * `-L libgherkin-cpp`
     * Write some feature tests...
     * Compile and Run!
