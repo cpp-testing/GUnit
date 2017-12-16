@@ -102,7 +102,8 @@ inline auto make_table(const nlohmann::json& step) {
   std::vector<std::string> ids{};
   for (const auto& argument : step["arguments"]) {
     if (argument.find("content") != argument.end()) {
-      table.text.assign(argument["content"]);
+      const std::string content = argument["content"];
+      table.text = content;
       return table;
     }
 
