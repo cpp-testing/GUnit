@@ -32,8 +32,8 @@
   #include <gtest/gtest.h>                          | #include <Gunit.h>
                                                     |
   struct CalcTest : testing::Test {                 | GTEST("Calc Test") {
-   void SetUp() override {                          |   Calc calc{...};
-     calc = std::make_unique<Calc>(...);            |
+   void SetUp() override {                          |   Calc calc{};
+     calc = std::make_unique<Calc>();               |
    }                                                |   // SetUp
                                                     |
    void TearDown() override { }                     |   SHOULD("return sum of 2 numbers") {
@@ -122,7 +122,7 @@
 
   > Feature specification
 
-    Test/Features/Calc/addition.feature ([Gherkin](https://github.com/cucumber/cucumber/wiki/Gherkin))
+    Test/Features/Calc/addition.feature
 
   ```gherkin
   Feature: Calc Addition
