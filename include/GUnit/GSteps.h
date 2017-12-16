@@ -45,6 +45,8 @@ struct Vector : std::vector<T> {
     static typename T::mapped_type default_value{};
     return (this->at(0).count(id)) ? this->at(0).at(id) : default_value;
   }
+
+  std::string text{};
 };
 
 template <class T>
@@ -60,6 +62,7 @@ struct Convertible : T {
 
 using Table = detail::Vector<
     std::unordered_map<std::string, detail::Convertible<std::string>>>;
+
 using Data = Table;
 
 #if defined(__clang__)
@@ -98,6 +101,12 @@ inline auto make_table(const nlohmann::json& step) {
   Table table{};
   std::vector<std::string> ids{};
   for (const auto& argument : step["arguments"]) {
+
+    if (argument.find("content") != argument.end()) {
+      table.text = argument["content"];
+      return table;
+    }
+
     auto first = true;
     for (const auto& row : argument["rows"]) {
       if (first) {
