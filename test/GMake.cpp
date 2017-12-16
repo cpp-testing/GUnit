@@ -22,6 +22,18 @@ struct interface2 : interface {
   virtual void f2(int) = 0;
 };
 
+class interface3 {
+ public:
+  virtual ~interface3() = default;
+  virtual bool get() const = 0;
+};
+
+class extended_interface3 : public interface3 {
+ public:
+  virtual void foo(bool) = 0;
+  virtual void bar(bool) = 0;
+};
+
 struct arg {
   int data = {};
   bool operator==(const arg& rhs) const { return data == rhs.data; }
@@ -55,6 +67,24 @@ class example {
  private:
   const interface& i1;
   interface2& i2;
+};
+
+class example2 {
+ public:
+  example2(const interface3& i, extended_interface3& ei) : i(i), ei(ei) {}
+
+  void update() {
+    const auto value = i.get();
+    if (value) {
+      ei.foo(value);
+    } else {
+      ei.bar(value);
+    }
+  }
+
+ private:
+  const interface3& i;
+  extended_interface3& ei;
 };
 
 class complex_example {
@@ -155,7 +185,7 @@ TEST(GMake, ShouldMakeUsingAutoMocksInjection) {
 }
 
 #if defined(__cpp_structured_bindings)
-TEST(GMake, ShouldMakeUsingAutoMocksInjectionStructureBindings) {
+TEST(GMake, ShouldMakeUsingAutoMocksInjectionStructureBindingsUniquePtr) {
   using namespace testing;
   auto[sut, mocks] = make<std::unique_ptr<polymorphic_example>, StrictGMock>();
   EXPECT_TRUE(sut.get());
@@ -163,6 +193,17 @@ TEST(GMake, ShouldMakeUsingAutoMocksInjectionStructureBindings) {
 
   EXPECT_CALL(mocks.mock<polymorphic_type>(), (bar)());
   sut->i3->bar();
+}
+
+TEST(GMake, ShouldMakeUsingAutoMocksInjectionStructureBindings) {
+  using namespace testing;
+
+  auto[sut, mocks] = make<example2, StrictGMock>();
+
+  EXPECT_CALL(mocks.mock<interface3>(), (get)()).WillOnce(Return(false));
+  EXPECT_CALL(mocks.mock<extended_interface3>(), (bar)(false)).Times(1);
+
+  sut.update();
 }
 #endif
 
