@@ -7,4 +7,4 @@
 //
 #include "GUnit/GSteps.h"
 
-GSTEPS("Error*") { }
+GSTEPS("Error*") {}

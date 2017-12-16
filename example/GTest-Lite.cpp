@@ -6,14 +6,10 @@
 // http://www.boost.org/LICENSE_1_0.txt)
 //
 #include "GUnit/GTest-Lite.h"
-#include "GUnit/GTest.h" // EXPECT_TRUE
+#include "GUnit/GTest.h"  // EXPECT_TRUE
 
 int main() {
-  "should be true"_test = [] {
-    EXPECT_TRUE(true);
-  };
+  "should be true"_test = [] { EXPECT_TRUE(true); };
 
-  "should not run"_test_disabled = [] {
-    throw 0;
-  };
+  "should not run"_test_disabled = [] { throw 0; };
 }

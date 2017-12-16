@@ -154,6 +154,18 @@ TEST(GMake, ShouldMakeUsingAutoMocksInjection) {
   EXPECT_EQ(2u, mocks.size());
 }
 
+#if defined(__cpp_structured_bindings)
+TEST(GMake, ShouldMakeUsingAutoMocksInjectionStructureBindings) {
+  using namespace testing;
+  auto[sut, mocks] = make<std::unique_ptr<polymorphic_example>, StrictGMock>();
+  EXPECT_TRUE(sut.get());
+  EXPECT_EQ(3u, mocks.size());
+
+  EXPECT_CALL(mocks.mock<polymorphic_type>(), (bar)());
+  sut->i3->bar();
+}
+#endif
+
 TEST(GMake, ShouldMakePolymorphicTypeUsingAutoMocksInjection) {
   using namespace testing;
   mocks_t mocks;

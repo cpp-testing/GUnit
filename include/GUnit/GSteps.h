@@ -9,6 +9,7 @@
 
 #include <gtest/gtest.h>
 #include <cassert>
+#include <cstdlib>
 #include <functional>
 #include <gherkin.hpp>
 #include <json.hpp>
@@ -17,7 +18,6 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
-#include <cstdlib>
 #include "GUnit/Detail/FileUtils.h"
 #include "GUnit/Detail/Preprocessor.h"
 #include "GUnit/Detail/RegexUtils.h"
@@ -101,7 +101,6 @@ inline auto make_table(const nlohmann::json& step) {
   Table table{};
   std::vector<std::string> ids{};
   for (const auto& argument : step["arguments"]) {
-
     if (argument.find("content") != argument.end()) {
       table.text = argument["content"];
       return table;
@@ -408,7 +407,8 @@ class Steps {
       const auto column = err_json["source"]["start"]["column"];
       const std::string error = err_json["data"];
 
-      std::cerr << feature << ":" << line << ":" << column << ": error: " << error << std::endl;
+      std::cerr << feature << ":" << line << ":" << column
+                << ": error: " << error << std::endl;
       std::exit(-1);
     }
   }
