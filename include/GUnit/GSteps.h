@@ -50,12 +50,20 @@ struct Vector : std::vector<T> {
 };
 
 template <class T>
-struct Convertible : T {
-  using T::T;
+class Convertible : public T {
+ public:
+  Convertible() = default;
+  Convertible(const T& value) : T{value}, available_{true} {}
+
   template <class U>
   operator U() const {
     return lexical_cast<U>(*this);
   }
+
+  auto available() const { return available_; }
+
+ private:
+  bool available_{};
 };
 
 }  // namespace detail
@@ -115,11 +123,12 @@ inline auto make_table(const nlohmann::json& step) {
         }
         first = false;
       } else {
-        typename Table::value_type r;
-        int i = 0;
+        using row_t = typename Table::value_type;
+        row_t r{};
+        auto i = 0;
         for (const auto& cell : row["cells"]) {
-          auto value = cell["value"];
-          r[ids[i++]] = value;
+          const std::string value = cell["value"];
+          r[ids[i++]] = typename row_t::mapped_type{value};
         }
         table.push_back(r);
       }
@@ -418,7 +427,8 @@ class Steps {
     auto i = 0u;
     for (const auto& expected_step : pickle_steps_) {
       if (i++ == current_step_) {
-        std::string text = expected_step["text"];
+        const std::string text = expected_step["text"];
+        std::clog << expected_step << std::endl;
         auto found = false;
         for (const auto& given_step : steps_) {
           if (detail::match(given_step.first, text)) {

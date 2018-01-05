@@ -21,13 +21,16 @@ const auto access_data = [](testing::Data id_value) {
 
   // access not-defined data
   {
+    EXPECT_FALSE(id_value["not-defined"].available());
     const std::string value = id_value["not-defined"];
     EXPECT_EQ("", value);
+    EXPECT_TRUE(id_value["id"].available());
+    EXPECT_FALSE(id_value["id"].empty());
   }
 };
 
 // clang-format off
-GSTEPS("Table") {
+GSTEPS("Table*") {
   using namespace testing;
   Table expected_table{};
   std::string expected_desc{};
@@ -64,7 +67,7 @@ struct Context {
   std::string expected_desc{};
 };
 
-GSTEPS("Table") {
+GSTEPS("Table*") {
   Context ctx{};
 
   $Given("I have the following {table}", "ids") =
