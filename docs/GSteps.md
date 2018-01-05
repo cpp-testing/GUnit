@@ -37,11 +37,38 @@
      */
     constexpr auto operator""_step();
 
+    class convertible {
+     public:
+      /**
+       * Implicit conversion to any type
+       * @return converted type
+       */
+      template <class T> operator T() const;
+
+      /**
+       * Verifies whether a field was set
+       *
+       * @return true if field is available, false otherwise
+       */
+      bool available() const;
+    };
+
+    class table {
+     public:
+       /**
+        * Multiline data text
+        */
+       std::string text{};
+    };
+
     /**
      * Table parameters from the scenario
      */
-    using Table = vector<unordered_map<string_key, string_value>>;
+    using Table = table<unordered_map<string, convertible>>;
+    using Data = Table;
+  } // testing
 
+  class GSTEPS {
     /**
      * @param pattern step description (support simple regex)
      *        might be followed by _step to verify parameters at compile time
@@ -73,7 +100,7 @@
      * Returns information about currently being run scenario
      */
     auto& Info() const;
-  } // testing
+  }
   ```
 
 * Usage
@@ -83,9 +110,9 @@
  * @param args default-constructible types to be injected
  */
 GSTEPS("*") { // * - any feature
-  Given("Step...") = [] { /* action */ }; 
-   When("Step...") = [] { /* action */ }; 
-   Then("Step...") = [] { /* action */ }; 
+  Given("Step...") = [] { /* action */ };
+   When("Step...") = [] { /* action */ };
+   Then("Step...") = [] { /* action */ };
 }
 ```
 
