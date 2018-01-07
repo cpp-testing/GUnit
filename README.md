@@ -30,7 +30,7 @@
   ```cpp
                  Google.Test                        |                     GUnit.GTest
   --------------------------------------------------+------------------------------------------------------
-  #include <gtest/gtest.h>                          | #include <Gunit.h>
+  #include <gtest/gtest.h>                          | #include <GUnit.h>
                                                     |
   struct CalcTest : testing::Test {                 | GTEST("Calc Test") {
    void SetUp() override {                          |   Calc calc{};
@@ -73,7 +73,7 @@
   ```cpp
                  Google.Test                        |                     GUnit.GMock
   --------------------------------------------------+------------------------------------------------------
-  #include <gmock/gmock.h>                          | #include <Gunit.h>
+  #include <gmock/gmock.h>                          | #include <GUnit.h>
                                                     |
   struct mock_interface : interface {               |
     MOCK_CONST_METHOD0(get, int(int));              |
@@ -101,7 +101,7 @@
   ```cpp
                  Google.Test                        |                     GUnit.GMake
   --------------------------------------------------+------------------------------------------------------
-   #include <gtest/gtest.h>                         | #include <Gunit.h>
+   #include <gtest/gtest.h>                         | #include <GUnit.h>
    #include <gmock/gmock.h>                         |
                                                     |
    TEST(CalcTest, ShouldMakeCoffee) {               | GTEST("Calc Test") {
@@ -144,7 +144,7 @@
     Test/Features/Calc/Steps/CalcSteps.cpp
 
   ```cpp
-  #include <Gunit.h>
+  #include <GUnit.h>
 
   GSTEPS("Calc*") { // "Calc Addition.Add two numbers"
     auto result = 0;
