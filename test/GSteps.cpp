@@ -10,7 +10,6 @@
 
 namespace testing {
 inline namespace v1 {
-
 GSTEPS("*") {
   using namespace testing;
   try {
@@ -27,6 +26,32 @@ GSTEPS("*") {
     $Then("{}", "table") = [](int, Table) {};
   } catch (...) {
   }
+}
+
+GTEST("Convertible") {
+  detail::Convertible<std::string> convertible{"42"};
+
+  int i = convertible;
+  EXPECT_EQ(42, i);
+
+  const int ci = convertible;
+  EXPECT_EQ(42, ci);
+
+  const int& cir = convertible;
+  EXPECT_EQ(42, cir);
+
+  long l = convertible;
+  EXPECT_EQ(42l, l);
+
+  float f = convertible;
+  EXPECT_FLOAT_EQ(42., f);
+
+  double d = convertible;
+  EXPECT_DOUBLE_EQ(42., d);
+
+  std::string s = convertible;
+  EXPECT_EQ("42", s);
+  EXPECT_EQ(std::string("42"), s);
 }
 
 GTEST("Table") {

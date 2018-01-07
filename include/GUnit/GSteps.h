@@ -37,7 +37,7 @@ struct StepIsAmbiguous : std::runtime_error {
 namespace detail {
 
 template <class T>
-struct Vector : std::vector<T> {
+struct Items : std::vector<T> {
   using std::vector<T>::operator[];
 
   decltype(auto) operator[](const std::string& id) const {
@@ -55,7 +55,9 @@ class Convertible : public T {
   Convertible() = default;
   Convertible(const T& value) : T{value}, available_{true} {}
 
-  template <class U>
+  template <class U,
+            class = std::enable_if_t<std::is_integral<U>::value ||
+                                     std::is_floating_point<U>::value>>
   operator U() const {
     return lexical_cast<U>(*this);
   }
@@ -68,7 +70,7 @@ class Convertible : public T {
 
 }  // namespace detail
 
-using Table = detail::Vector<
+using Table = detail::Items<
     std::unordered_map<std::string, detail::Convertible<std::string>>>;
 
 using Data = Table;
@@ -428,7 +430,6 @@ class Steps {
     for (const auto& expected_step : pickle_steps_) {
       if (i++ == current_step_) {
         const std::string text = expected_step["text"];
-        std::clog << expected_step << std::endl;
         auto found = false;
         for (const auto& given_step : steps_) {
           if (detail::match(given_step.first, text)) {
