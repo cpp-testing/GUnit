@@ -10,6 +10,7 @@
 #include <sstream>
 #include <string>
 #include <type_traits>
+#include <algorithm>
 #include <vector>
 
 namespace testing {
@@ -76,6 +77,13 @@ inline auto lexical_cast<std::string &>(const std::string &str) {
 template <>
 inline auto lexical_cast<const std::string &>(const std::string &str) {
   return str;
+}
+
+template <>
+inline auto lexical_cast<bool>(const std::string &str) {
+  std::string tmp{str};
+  std::transform(tmp.begin(), tmp.end(), tmp.begin(), [](auto c) { return std::tolower(c); });
+  return tmp == "1" or tmp == "true";
 }
 
 }  // detail

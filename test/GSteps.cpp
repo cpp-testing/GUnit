@@ -52,6 +52,24 @@ GTEST("Convertible") {
   std::string s = convertible;
   EXPECT_EQ("42", s);
   EXPECT_EQ(std::string("42"), s);
+
+  SHOULD("convert to bool") {
+    bool t = detail::Convertible<std::string>{"true"};
+    EXPECT_TRUE(t);
+    EXPECT_FALSE(static_cast<bool>(detail::Convertible<std::string>{"false"}));
+
+    const bool b = detail::Convertible<std::string>{"1"};
+    EXPECT_TRUE(b);
+    EXPECT_FALSE(static_cast<bool>(detail::Convertible<std::string>{"0"}));
+
+    bool v = detail::Convertible<std::string>{"True"};
+    EXPECT_TRUE(v);
+    EXPECT_FALSE(static_cast<bool>(detail::Convertible<std::string>{"FaLsE"}));
+
+    const bool c = detail::Convertible<std::string>{"true"};
+    EXPECT_TRUE(c);
+    EXPECT_FALSE(static_cast<const bool>(detail::Convertible<std::string>{"0"}));
+  }
 }
 
 GTEST("Table") {
