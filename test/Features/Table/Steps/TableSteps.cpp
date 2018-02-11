@@ -5,6 +5,8 @@
 // (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 //
+#include <vector>
+
 #include "GUnit/GSteps.h"
 #include "GUnit/GTest.h"
 
@@ -30,7 +32,7 @@ const auto access_data = [](testing::Data id_value) {
 };
 
 // clang-format off
-GSTEPS("Table*") {
+GSTEPS("Table.Table*") {
   using namespace testing;
   Table expected_table{};
   std::string expected_desc{};
@@ -67,7 +69,7 @@ struct Context {
   std::string expected_desc{};
 };
 
-GSTEPS("Table*") {
+GSTEPS("Table.Table*") {
   Context ctx{};
 
   $Given("I have the following {table}", "ids") =
@@ -101,5 +103,25 @@ GSTEPS("Table*") {
     [&](const std::string& desc) {
       EXPECT_EQ(ctx.expected_desc, desc);
     };
+}
+
+GSTEPS("Table.Conversions*") {
+  using namespace testing;
+
+  Given("I have a table", "data") = [&](Table values) {
+    std::vector<bool> bools{};
+    for (auto& value : values) {
+      bools.push_back(value["value"]);
+    }
+
+    When("I do conversion to boolean") = [&] {
+      Then("I should get", "data") = [&](Table values) {
+        auto i = 0;
+        for (auto& value : values) {
+          EXPECT_EQ(bool(value["value"]), bools[i++]);
+        }
+      };
+    };
+  };
 }
 // clang-format on

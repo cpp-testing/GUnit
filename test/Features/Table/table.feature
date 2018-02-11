@@ -29,3 +29,23 @@ Feature: Table
   Examples:
     | n  |
     | 42 |
+
+
+  Scenario: Conversions
+    Given I have a table
+      |  value |
+      |   true |
+      |  false |
+      |      1 |
+      |      0 |
+      |   TRUE |
+      |  FALSE |
+    When I do conversion to boolean
+    Then I should get
+      | value |
+      |     1 |
+      |     0 |
+      |     1 |
+      |     0 |
+      |     1 |
+      |     0 |
