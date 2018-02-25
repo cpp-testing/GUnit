@@ -49,7 +49,7 @@ struct TestRun {
 
       if (disabled && !GTEST_FLAG(also_run_disabled_tests)) {
         if (colorize) {
-          std::cout << "\033[0;33m";
+          std::cout << "\33[0;33m\033[2m";
         }
         std::cout << "[ DISABLED ] ";
         if (colorize) {
