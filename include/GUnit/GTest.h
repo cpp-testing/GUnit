@@ -38,6 +38,8 @@ struct TestRun {
       return false;
     }
 
+    const auto indented_name = "    " + name;
+
     const auto result =
         line > test_line && FilterMatchesShould(name, should_param);
     if (result) {
@@ -53,7 +55,7 @@ struct TestRun {
         if (colorize) {
           std::cout << "\033[m";  // Resets the terminal to default.
         }
-        std::cout << name << std::endl;
+        std::cout << indented_name << std::endl;
         return false;
       }
 
@@ -64,7 +66,7 @@ struct TestRun {
       if (colorize) {
         std::cout << "\033[m";  // Resets the terminal to default.
       }
-      std::cout << name << std::endl;
+      std::cout << indented_name << std::endl;
       test_line = line;
       next = true;
     }
