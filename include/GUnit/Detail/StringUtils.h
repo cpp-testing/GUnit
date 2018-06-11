@@ -60,12 +60,25 @@ inline std::vector<std::string> split(const std::string &str, char delimiter) {
   return result;
 }
 
-template <class T>
+template <class T, std::enable_if_t<!std::is_integral<T>::value, int> = 0>
 inline auto lexical_cast(const std::string &str) {
   std::remove_cv_t<std::remove_reference_t<T>> var{};
   std::istringstream iss{};
   iss.str(str);
   iss >> var;
+  return var;
+}
+
+template <class T, std::enable_if_t<std::is_integral<T>::value, int> = 0>
+inline auto lexical_cast(const std::string &str) {
+  std::remove_cv_t<std::remove_reference_t<T>> var{};
+  std::istringstream iss{};
+  iss.str(str);
+  if (str.size() > 2 and str[0] == '0' and str[1] == 'x') {
+    iss >> std::hex >> var;
+  } else {
+    iss >> var;
+  }
   return var;
 }
 
