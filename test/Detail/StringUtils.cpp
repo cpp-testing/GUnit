@@ -71,6 +71,17 @@ TEST(StringUtils, ShouldReturnTrimmedString) {
   }
 }
 
+TEST(StringUtils, ShouldConvertToType) {
+  EXPECT_EQ("str", lexical_cast<std::string>("str"));
+
+  EXPECT_EQ(42, lexical_cast<int>("42"));
+  EXPECT_EQ(99u, lexical_cast<std::size_t>("99"));
+  EXPECT_EQ(0x30, lexical_cast<int>("0x30"));
+
+  EXPECT_EQ(true, lexical_cast<bool>("true"));
+  EXPECT_EQ(true, lexical_cast<bool>("1"));
+}
+
 }  // detail
 }  // v1
 }  // testing

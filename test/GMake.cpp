@@ -273,10 +273,10 @@ class di_complex_example {
       : csp(csp), sp(sp), cref(cref), ref(ref) {}
 
  private:
-  std::shared_ptr<interface> csp;
-  std::shared_ptr<interface2> sp;
-  const interface4& cref;
-  interface_dtor& ref;
+  [[maybe_unused]] std::shared_ptr<interface> csp;
+  [[maybe_unused]] std::shared_ptr<interface2> sp;
+  [[maybe_unused]] const interface4& cref;
+  [[maybe_unused]] interface_dtor& ref;
 };
 
 TEST(GMake, ShouldCreateComplexExampleUsingInjector) {
