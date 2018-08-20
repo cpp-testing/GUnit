@@ -1,0 +1,385 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<title>GUnit - TDD/BDD on steroids</title>
+
+		<link rel="stylesheet" href="reveal.js/css/reveal.css">
+    <link rel="stylesheet" href="reveal.js/css/theme/league.css" id="theme">
+    <link rel="stylesheet" href="extensions/plugin/line-numbers/line-numbers.css">
+    <link rel="stylesheet" href="extensions/css/highlight-styles/zenburn.css">
+    <link rel="stylesheet" href="extensions/css/custom.css">
+
+		<script>
+			var link = document.createElement( 'link' );
+			link.rel = 'stylesheet';
+			link.type = 'text/css';
+			link.href = window.location.search.match( /print-pdf/gi ) ? 'css/print/pdf.css' : 'css/print/paper.css';
+			document.getElementsByTagName( 'head' )[0].appendChild( link );
+		</script>
+
+		<meta name="description" content="State Machines Battlefield - Naive vs STL vs Boost">
+		<meta name="author" content="Kris Jusiak">
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+	</head>
+
+	<body>
+		<div class="reveal">
+			<div class="slides">
+          <section data-markdown=""
+                   data-separator="^====+$"
+                   data-separator-vertical="^----+$">
+					<script type="text/template">
+
+#### CppCon, 2018
+
+---
+
+# GUnit
+# BDD/TDD on steroids
+
+---
+
+Kris Jusiak, Quantlab Financial
+
+#### [kris@jusiak.net](mailto:kris@jusiak.net) | [@krisjusiak](https://twitter.com/krisjusiak) | [linkedin.com/in/kris-jusiak](https://www.linkedin.com/in/kris-jusiak)
+
+---
+
+### Testing
+
+> "If you liked it then you should have put a test on it", Beyonce rule
+
+----
+
+## GUnit
+Based on [Google.Test/Google.Mock](https://github.com/google/googletest)/[Cucumber](https://github.com/cucumber/cucumber/wiki/Gherkin)
+
+* (+) Google.Test is [**widely used**](https://www.jetbrains.com/research/devecosystem-2017/cpp)
+* (+) Google.Test is **stable**
+* (+) Google.Test is **powerful**
+* (+) Google.Test comes with **Google.Mock**
+* (+) Google.Test is **well documented**
+* (-) Google.Test doesn't have support for **[BDD](https://github.com/cucumber/cucumber/wiki/Gherkin)** tests
+* (-) Google.Test and Google.Mock have a lot **boilerplate macros**
+
+----
+
+#### No more base classes and labels as identifiers - [GUnit.GTest](docs/GTest.md) / [GUnit.GTest-Lite](docs/GTest-Lite.md)
+
+```cpp
+               Google.Test                      |               GUnit.GTest
+----------------------------------------------+------------------------------------------
+#include <gtest/gtest.h>                        | #include <GUnit.h>
+                                                |
+struct CalcTest : testing::Test {               | GTEST("Calc Test") {
+ void SetUp() override {                        |   Calc calc{};
+   calc = std::make_unique<Calc>();             |
+ }                                              |   // SetUp
+                                                |
+ void TearDown() override { }                   |   SHOULD("return sum of 2 numbers") {
+                                                |     EXPECT_EQ(5, calc->add(4, 1));
+ std::unique_ptr<Calc> calc;                    |   }
+};                                              |
+                                                |   SHOULD("throw if division by 0") {
+TEST_F(ExampleTest, ShouldReturnSumOf2Numbers) {|     EXPECT_ANY_THROW(calc->div(42, 0));
+  EXPECT_EQ(5, calc->add(4, 1));                |   }
+}                                               |
+                                                |   // TearDown
+TEST_F(ExampleTest, ShouldThrowIfDivisionBy0) { | }
+  EXPECT_ANY_THROW(calc->div(42, 0));           |
+}                                               |
+```
+<!-- .element: style="margin-left:-13%; width:125%" -->
+
+----
+
+#### No more base classes and labels as identifiers - [GUnit.GTest](docs/GTest.md) / [GUnit.GTest-Lite](docs/GTest-Lite.md)
+
+```sh
+[----------] 2 tests from CalcTest              | [----------] 1 tests from Calc Test
+[ RUN      ] CalcTest.ShouldReturnSumOf2Numbers | [ RUN      ] Calc Test
+[       OK ] CalcTest.ShouldReturnSumOf2Numbers | [ SHOULD   ] return sum of 2 numbers
+[ RUN      ] CalcTest.ShouldThrowIfDivisionBy0  | [ SHOULD   ] throw if division by 0
+[       OK ] CalcTest.ShouldThrowIfDivisionBy0  | [       OK ] Calc Test (0 ms)
+[----------] 2 tests from CalcTest              | [----------] 1 tests from Example
+```
+<!-- .element: style="margin-left:-13%; width:125%" -->
+
+----
+
+#### No more hand written mocks - [GUnit.GMock](docs/GMock.md)
+
+```cpp
+struct interface {
+  virtual ~interface() = default;
+  virtual int get() const = 0;
+  virtual void foo(int) = 0;
+};
+```
+<!-- .element: style="margin-left:-13%; width:125%" -->
+
+```cpp
+               Google.Test                    |           GUnit.GMock
+----------------------------------------------+------------------------------------------
+#include <gmock/gmock.h>                      | #include <GUnit.h>
+                                              |
+struct mock_interface : interface {           |
+  MOCK_CONST_METHOD0(get, int(int));          |
+  MOCK_METHOD1(foo, void(int));               |
+};                                            |
+                                              |
+int main() {                                  | int main() {
+  StrictMock<mock_interface> mock{};          |   StrictGMock<interface> mock{};
+  EXPECT_CALL(mock, foo(42));                 |   EXPECT_CALL(mock, (foo)(42));
+                                              |
+  interface& i = mock;                        |   interface& i = mock.object();
+  i.foo(42);                                  |   i.foo(42);
+}                                             | }
+```
+<!-- .element: style="margin-left:-13%; width:125%" -->
+
+----
+
+#### Simplified creation and injection of SUT (System Under Test) and mocks - [GUnit.GMake](docs/GMake.md)
+
+```cpp
+class coffee_maker {
+ public:
+   coffee_maker(iheater&, ipump&, igrinder&);
+   ...
+};
+```
+<!-- .element: style="margin-left:-13%; width:125%" -->
+
+```cpp
+             Google.Test                 |         GUnit.GMake
+-----------------------------------------+------------------------------------------
+#include <gtest/gtest.h>                 |#include <GUnit.h>
+#include <gmock/gmock.h>                 |
+                                         |
+TEST(CalcTest, ShouldMakeCoffee) {       |GTEST("Calc Test") {
+ StrictMock<mock_heater> heater{};       | auto [sut, mocks] =
+ StrictMock<mock_pump> pump{};           |   make<coffee_maker, StrictGMock>();
+ StrictMock<mock_grinder> grinder{};     |
+ coffee_maker sut{heater, pump, grinder};| EXPECT_CALL(mocks.mock<iheater>(), (on)());
+                                         | EXPECT_CALL(mocks.mock<ipump>(), (pump)());
+ EXPECT_CALL(heater, on());              | EXPECT_CALL(mocks.mock<igrinder>(), (grind)());
+ EXPECT_CALL(pump, pump());              | sut->brew(); 
+ EXPECT_CALL(grinder, grind());          |}
+ sut->brew();                            |
+}
+```
+<!-- .element: style="margin-left:-13%; width:125%" -->
+
+----
+
+#### Support for [BDD](https://github.com/cucumber/cucumber/wiki/Gherkin)
+
+#### Feature specification (Test/Features/Calc/addition.feature)
+
+```gherkin
+Feature: Calc Addition
+  In order to avoid silly mistakes
+  As a math idiot
+  I want to be told the sum of two numbers
+
+  Scenario: Add two numbers
+    Given I created a calculator with value 0
+      And I have entered 20 into the calculator
+      And I have entered 30 into the calculator
+     When I press add
+     Then The result should be 50
+```
+
+----
+
+#### Support for [BDD](https://github.com/cucumber/cucumber/wiki/Gherkin)
+
+#### Steps Implementation (Test/Features/Calc/Steps/CalcSteps.cpp)
+
+```cpp
+#include <GUnit.h>
+
+GSTEPS("Calc*") { // "Calc Addition.Add two numbers"
+  auto result = 0;
+
+  Given("I created a calculator with value {n}") = [&](int n) {
+    Calculator calc{n};
+
+    Given("I have entered {n} into the calculator") = [&](int n) {
+      calc.push(n);
+    };
+
+    When("I press add") = [&] {
+      result = calc.add();
+    };
+
+    Then("The result should be {expected}") = [&](int expected) {
+       EXPECT_EQ(expected, result);
+    };
+  };
+}
+```
+<!-- .element: style="margin-left:-13%; width:125%" -->
+
+----
+
+#### Support for [BDD](https://github.com/cucumber/cucumber/wiki/Gherkin)
+
+#### Usage
+
+```sh
+SCENARIO="Test/Features/Calc/addition.feature" 
+  ./test --gtest_filter="Calc Addition.Add two numbers"
+```
+<!-- .element: style="margin-left:-13%; width:125%" -->
+
+#### Output
+
+```sh
+[==========] Running 1 test from 1 test case.
+[----------] Global test environment set-up.
+[----------] 1 tests from Calc Addition
+[ RUN      ] Calc Addition.Add two numbers
+[    Given ] I have created a calculator with value 0         # CalcSteps.cpp:10
+[    Given ] I have entered 20 into the calculator            # CalcSteps.cpp:12
+[    Given ] I have entered 30 into the calculator            # CalcSteps.cpp:14
+[     When ] I press add                                      # CalcSteps.cpp:16
+[     Then ] the result should be 50 on the screen            # CalcSteps.cpp:19
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test case ran. (7 ms total)
+[  PASSED  ] 1 tests.
+```
+<!-- .element: style="margin-left:-13%; width:125%" -->
+
+----
+
+### Questions?
+
+| GUnit |  |
+| ------- | ------------- |
+| Documentation | https://github.com/cpp-testing/GUnit/tree/master/docs |
+| Source Code | https://github.com/cpp-testing/GUnit |
+<!-- .element: style="margin-left:-13%; width:125%" -->
+
+-
+
+#### [kris@jusiak.net](mailto:kris@jusiak.net) | [@krisjusiak](https://twitter.com/krisjusiak) | [linkedin.com/in/kris-jusiak](https://www.linkedin.com/in/kris-jusiak)
+					</script>
+				</section>
+
+			</div>
+		</div>
+
+		<script src="reveal.js/lib/js/head.min.js"></script>
+		<script src="reveal.js/js/reveal.js"></script>
+
+		<script>
+
+			// Full list of configuration options available at:
+			// https://github.com/hakimel/reveal.js#configuration
+			Reveal.initialize({
+
+        // Display controls in the bottom right corner
+        controls: true,
+
+        // Display a presentation progress bar
+        progress: true,
+
+        // Display the page number of the current slide
+        slideNumber: true,
+
+        // Push each slide change to the browser history
+        history: true,
+
+        // Enable keyboard shortcuts for navigation
+        keyboard: true,
+
+        // Enable the slide overview mode
+        overview: true,
+
+        // Vertical centering of slides
+        center: true,
+
+        // Enables touch navigation on devices with touch input
+        touch: true,
+
+        // Loop the presentation
+        loop: false,
+
+        // Change the presentation direction to be RTL
+        rtl: false,
+
+        // Turns fragments on and off globally
+        fragments: false,
+
+        // Flags if the presentation is running in an embedded mode,
+        // i.e. contained within a limited portion of the screen
+        embedded: false,
+
+        // Flags if we should show a help overlay when the questionmark
+        // key is pressed
+        help: true,
+
+        // Flags if speaker notes should be visible to all viewers
+        showNotes: false,
+
+        // Number of milliseconds between automatically proceeding to the
+        // next slide, disabled when set to 0, this value can be overwritten
+        // by using a data-autoslide attribute on your slides
+        autoSlide: 0,
+
+        // Stop auto-sliding after user input
+        autoSlideStoppable: true,
+
+        // Enable slide navigation via mouse wheel
+        mouseWheel: true,
+
+        // Hides the address bar on mobile devices
+        hideAddressBar: true,
+
+        // Opens links in an iframe preview overlay
+        previewLinks: false,
+
+        // Transition style
+        transition: 'convex', // none/fade/slide/convex/concave/zoom
+
+        // Transition speed
+        transitionSpeed: 'default', // default/fast/slow
+
+        // Transition style for full page slide backgrounds
+        backgroundTransition: 'default', // none/fade/slide/convex/concave/zoom
+
+        // Number of slides away from the current that are visible
+        viewDistance: 3,
+
+        // Parallax background image
+        parallaxBackgroundImage: '', // e.g. "'https://s3.amazonaws.com/hakim-static/reveal-js/reveal-parallax-1.jpg'"
+
+        // Parallax background size
+        parallaxBackgroundSize: '', // CSS syntax, e.g. "2100px 900px"
+
+        // Number of pixels to move the parallax background per slide
+        // - Calculated automatically unless specified
+        // - Set to 0 to disable movement along an axis
+        parallaxBackgroundHorizontal: null,
+        parallaxBackgroundVertical: null,
+
+				// Optional reveal.js plugins
+				dependencies: [
+					{ src: 'reveal.js/lib/js/classList.js', condition: function() { return !document.body.classList; } },
+					{ src: 'reveal.js/plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: 'reveal.js/plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+					{ src: 'reveal.js/plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+					{ src: 'reveal.js/plugin/zoom-js/zoom.js', async: true },
+					{ src: 'reveal.js/plugin/notes/notes.js', async: true },
+          { src: 'extensions/plugin/line-numbers/line-numbers.js' }
+				]
+			});
+		</script>
+	</body>
+</html>
