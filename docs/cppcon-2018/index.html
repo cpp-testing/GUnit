@@ -36,12 +36,8 @@
 
 #### CppCon, 2018
 
----
-
 # GUnit
 # BDD/TDD on steroids
-
----
 
 Kris Jusiak, Quantlab Financial
 
@@ -147,11 +143,7 @@ int main() {                                  | int main() {
 #### Simplified creation and injection of SUT (System Under Test) and mocks - [GUnit.GMake](docs/GMake.md)
 
 ```cpp
-class coffee_maker {
- public:
-   coffee_maker(iheater&, ipump&, igrinder&);
-   ...
-};
+coffee_maker::coffee_maker(iheater&, ipump&, igrinder&);
 ```
 <!-- .element: style="margin-left:-13%; width:125%" -->
 
@@ -165,9 +157,9 @@ TEST(CalcTest, ShouldMakeCoffee) {       |GTEST("Calc Test") {
  StrictMock<mock_heater> heater{};       | auto [sut, mocks] =
  StrictMock<mock_pump> pump{};           |   make<coffee_maker, StrictGMock>();
  StrictMock<mock_grinder> grinder{};     |
- coffee_maker sut{heater, pump, grinder};| EXPECT_CALL(mocks.mock<iheater>(), (on)());
-                                         | EXPECT_CALL(mocks.mock<ipump>(), (pump)());
- EXPECT_CALL(heater, on());              | EXPECT_CALL(mocks.mock<igrinder>(), (grind)());
+ coffee_maker sut{heater, pump, grinder};| EXPECT_CALL(mocks.get<iheater>(), (on)());
+                                         | EXPECT_CALL(mocks.get<ipump>(), (pump)());
+ EXPECT_CALL(heater, on());              | EXPECT_CALL(mocks.get<igrinder>(), (grind)());
  EXPECT_CALL(pump, pump());              | sut->brew(); 
  EXPECT_CALL(grinder, grind());          |}
  sut->brew();                            |
@@ -219,12 +211,11 @@ GSTEPS("Calc*") { // "Calc Addition.Add two numbers"
     };
 
     Then("The result should be {expected}") = [&](int expected) {
-       EXPECT_EQ(expected, result);
+     EXPECT_EQ(expected, result);
     };
   };
 }
 ```
-<!-- .element: style="margin-left:-13%; width:125%" -->
 
 ----
 
