@@ -124,4 +124,11 @@ GSTEPS("Table.Conversions*") {
     };
   };
 }
+
+GSTEPS("Table.Multi-word capture") {
+  Given("I type the following: '{command}'") = [] (std::string command) {
+    EXPECT_EQ("this is a complex command",command);
+  };
+}
+
 // clang-format on
