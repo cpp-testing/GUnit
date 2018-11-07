@@ -49,3 +49,6 @@ Feature: Table
       |     0 |
       |     1 |
       |     0 |
+
+  Scenario: Multi-word capture
+    Given I type the following: 'this is a complex command'
