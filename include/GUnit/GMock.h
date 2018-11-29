@@ -36,6 +36,8 @@
 
 namespace testing {
 namespace internal {
+
+#if 0
 template <class R, class... TArgs>
 class FunctionMocker<R(TArgs...)>
     : public internal::FunctionMockerBase<R(TArgs...)> {
@@ -50,6 +52,7 @@ class FunctionMocker<R(TArgs...)>
 
   R Invoke(TArgs... args) { return this->InvokeWith(ArgumentTuple(args...)); }
 };
+#endif
 
 template <class... TArgs>
 struct MatcherTuple<std::tuple<TArgs...>> {

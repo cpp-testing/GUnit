@@ -81,9 +81,9 @@ TEST(GMock, ShouldWorkWithMacroDefinedMocks) {
   using namespace testing;
   NiceGMock<interface> imock;
   struct mock_extended_interface : extended_interface {
-    MOCK_CONST_METHOD0(get, bool());
-    MOCK_METHOD1(foo, void(bool));
-    MOCK_METHOD1(bar, void(bool));
+    MOCK_METHOD(bool, get, ());
+    MOCK_METHOD(void, foo, (bool));
+    MOCK_METHOD(void, bar, (bool));
   } emock;
 
   EXPECT_CALL(imock, (get)()).WillOnce(Return(false));
