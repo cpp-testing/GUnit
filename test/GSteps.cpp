@@ -68,7 +68,7 @@ GTEST("Convertible") {
 
     const bool c = detail::Convertible<std::string>{"true"};
     EXPECT_TRUE(c);
-    EXPECT_FALSE(static_cast<const bool>(detail::Convertible<std::string>{"0"}));
+    EXPECT_FALSE(static_cast<bool>(detail::Convertible<std::string>{"0"}));
   }
 }
 
