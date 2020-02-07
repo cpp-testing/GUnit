@@ -20,6 +20,25 @@
 #include "GUnit/GMock.h"
 
 namespace testing {
+namespace internal {
+
+template <class ParamType, class ParamNameGenFunctor>
+ParamNameGenFunctor GetParamNameGen(ParamNameGenFunctor func) {
+  return func;
+}
+
+template <class ParamType>
+struct ParamNameGenFunc {
+  typedef std::string Type(const TestParamInfo<ParamType>&);
+};
+
+template <class ParamType>
+typename ParamNameGenFunc<ParamType>::Type *GetParamNameGen() {
+  return DefaultParamName;
+}
+
+} // internal
+
 inline namespace v1 {
 namespace detail {
 
@@ -128,7 +147,7 @@ class GTestAutoRegister {
   GTestAutoRegister(const TEval& eval, const TGenerateNames& genNames) {
     UnitTest::GetInstance()
         ->parameterized_test_registry()
-        .GetTestCasePatternHolder<T>(
+        .GetTestSuitePatternHolder<T>(
             GetTypeName(detail::type<typename T::TEST_TYPE>{}),
             {T::TEST_FILE, T::TEST_LINE})
         ->AddTestPattern(GetTypeName(detail::type<typename T::TEST_TYPE>{}),
@@ -137,10 +156,10 @@ class GTestAutoRegister {
 
     UnitTest::GetInstance()
         ->parameterized_test_registry()
-        .GetTestCasePatternHolder<T>(
+        .GetTestSuitePatternHolder<T>(
             GetTypeName(detail::type<typename T::TEST_TYPE>{}),
             {T::TEST_FILE, T::TEST_LINE})
-        ->AddTestCaseInstantiation(
+        ->AddTestSuiteInstantiation(
             (std::string{IsDisabled(DISABLED)} + T::TEST_NAME::c_str()).c_str(),
             eval, genNames, T::TEST_FILE, T::TEST_LINE);
   }
