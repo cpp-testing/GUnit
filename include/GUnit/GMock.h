@@ -35,37 +35,6 @@
 #endif
 
 namespace testing {
-namespace internal {
-template <class R, class... TArgs>
-class FunctionMocker<R(TArgs...)>
-    : public internal::FunctionMockerBase<R(TArgs...)> {
- public:
-  using F = R(TArgs...);
-  using ArgumentTuple = typename internal::Function<F>::ArgumentTuple;
-
-  MockSpec<F> &With(const Matcher<TArgs> &... args) {
-    this->current_spec().SetMatchers(std::make_tuple(args...));
-    return this->current_spec();
-  }
-
-  R Invoke(TArgs... args) { return this->InvokeWith(ArgumentTuple(args...)); }
-};
-
-template <class... TArgs>
-struct MatcherTuple<std::tuple<TArgs...>> {
-  using type = std::tuple<Matcher<TArgs>...>;
-};
-
-template <class R, class... TArgs>
-struct Function<R(TArgs...)> {
-  using Result = R;
-  using ArgumentTuple = std::tuple<TArgs...>;
-  using ArgumentMatcherTuple = typename MatcherTuple<ArgumentTuple>::type;
-  using MakeResultVoid = void(TArgs...);
-  using MakeResultIgnoredValue = IgnoredValue(TArgs...);
-};
-}  // internal
-
 inline namespace v1 {
 namespace detail {
 
@@ -495,15 +464,15 @@ inline auto Ref(NiceGMock<T> &x) {
 
 template <class T>
 inline auto ByRef(GMock<T> &x) {
-  return internal::ReferenceWrapper<T>(static_cast<T &>(x));
+  return internal::ReferenceOrValueWrapper<T>(static_cast<T &>(x));
 }
 template <class T>
 inline auto ByRef(StrictGMock<T> &x) {
-  return internal::ReferenceWrapper<T>(static_cast<T &>(x));
+  return internal::ReferenceOrValueWrapper<T>(static_cast<T &>(x));
 }
 template <class T>
 inline auto ByRef(NiceGMock<T> &x) {
-  return internal::ReferenceWrapper<T>(static_cast<T &>(x));
+  return internal::ReferenceOrValueWrapper<T>(static_cast<T &>(x));
 }
 
 inline namespace v1 {
@@ -573,7 +542,7 @@ auto object(TMock *mock) {
 #undef EXPECT_CALL
 #define EXPECT_CALL(obj, call) \
   __GUNIT_CAT(__GMOCK_EXPECT_CALL_, __GUNIT_IBP(call))(obj, call, call)
-#define __GMOCK_EXPECT_CALL_0(obj, _, call) GMOCK_EXPECT_CALL_IMPL_(obj, call)
+#define __GMOCK_EXPECT_CALL_0(obj, _, call) GMOCK_ON_CALL_IMPL_(obj, InternalExpectedAt, call)
 #define __GMOCK_EXPECT_CALL_1(obj, qcall, call)                              \
   ((obj).template gmock_call<__GMOCK_QNAME call>(                            \
        __GUNIT_CAT(__GMOCK_OVERLOAD_CAST_IMPL_, __GMOCK_OVERLOAD_CALL call)( \
@@ -589,7 +558,7 @@ auto object(TMock *mock) {
       ::testing::detail::is_valid(                            \
           [](auto &&x) -> decltype(x.f(__VA_ARGS__)) {}),     \
       [](auto &&x) -> decltype(auto) {                        \
-        return GMOCK_EXPECT_CALL_IMPL_(x, f(__VA_ARGS__));    \
+        return GMOCK_ON_CALL_IMPL_(x, InternalExpectedAt, f(__VA_ARGS__));    \
       },                                                      \
       [](auto &&x) -> decltype(auto) {                        \
         return __GMOCK_EXPECT_CALL_1(                         \
@@ -602,7 +571,7 @@ auto object(TMock *mock) {
 #undef ON_CALL
 #define ON_CALL(obj, call) \
   __GUNIT_CAT(__GMOCK_ON_CALL_, __GUNIT_IBP(call))(obj, call, call)
-#define __GMOCK_ON_CALL_0(obj, _, call) GMOCK_ON_CALL_IMPL_(obj, call)
+#define __GMOCK_ON_CALL_0(obj, _, call) GMOCK_ON_CALL_IMPL_(obj, InternalDefaultActionSetAt, call)
 #define __GMOCK_ON_CALL_1(obj, qcall, call)                                  \
   ((obj).template gmock_call<__GMOCK_QNAME call>(                            \
        __GUNIT_CAT(__GMOCK_OVERLOAD_CAST_IMPL_, __GMOCK_OVERLOAD_CALL call)( \
@@ -618,7 +587,7 @@ auto object(TMock *mock) {
       ::testing::detail::is_valid(                            \
           [](auto &&x) -> decltype(x.f(__VA_ARGS__)) {}),     \
       [](auto &&x) -> decltype(auto) {                        \
-        return GMOCK_ON_CALL_IMPL_(x, f(__VA_ARGS__));        \
+        return GMOCK_ON_CALL_IMPL_(x, InternalExpectedAt, f(__VA_ARGS__));        \
       },                                                      \
       [](auto &&x) -> decltype(auto) {                        \
         return __GMOCK_ON_CALL_1(                             \

@@ -34,7 +34,7 @@ include_directories(include)
 include_directories(SYSTEM
   ${gtest_SOURCE_DIR}/include
   ${gmock_SOURCE_DIR}/include
-  libs/json/src
+  libs/json/single_include/nlohmann
   libs/gherkin-cpp/include
 )
 

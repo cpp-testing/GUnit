@@ -33,6 +33,8 @@ struct test<false, Chars...> {
 
 #if defined(__clang__)
 #pragma clang diagnostic ignored "-Wgnu-string-literal-operator-template"
+#elif defined(__GNUC__)
+#pragma GCC diagnostic ignored "-Wpedantic"
 #endif
 
 template <class T, T... Chars>
