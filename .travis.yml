@@ -20,7 +20,7 @@ matrix:
 
   - os: linux
     dist: bionic
-    env:  CXX=clang++-6
+    env:  CXX=clang++-6.0
     addons: { apt: { packages: ["clang-6.0", "valgrind"] } }
 
   - os: linux
