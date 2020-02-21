@@ -16,17 +16,17 @@ matrix:
   - os: linux
     dist: xenial
     env: CXX=clang++-3.8
-    addons: { apt: { packages: ["llvm-3.8-dev", "valgrind"] } }
+    addons: { apt: { packages: ["clang-3.8", "valgrind"] } }
 
   - os: linux
     dist: bionic
     env:  CXX=clang++-6
-    addons: { apt: { packages: ["llvm-6.0-dev", "valgrind"] } }
+    addons: { apt: { packages: ["clang-6.0", "valgrind"] } }
 
   - os: linux
     dist: bionic
     env: CXX=clang++-9
-    addons: { apt: { packages: ["llvm-9-dev", "valgrind"] } }
+    addons: { apt: { packages: ["clang-9", "valgrind"] } }
 
   - os: linux
     dist: xenial
