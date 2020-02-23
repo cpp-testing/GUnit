@@ -419,6 +419,9 @@ class Steps : public ::testing::EmptyTestEventListener {
       const auto pickles = compiler.compile(gherkin_document);
       const auto ast = nlohmann::json::parse(compiler.ast(gherkin_document));
 
+      std::ofstream output("ast.json");
+      output << std::setw(4) << ast <<std::endl;
+
       for (const auto& pickle : pickles) {
         const std::string feature_name = ast["document"]["feature"]["name"];
         const auto pickle_json = nlohmann::json::parse(pickle)["pickle"];
