@@ -1093,3 +1093,21 @@ TEST(GMock, ShouldMockTemplates) {
 
   sut.bar();
 }
+
+struct interface_rvalue {
+  virtual ~interface_rvalue() = default;
+  virtual void f(int&&) = 0;
+};
+
+
+TEST(GMock, ShouldMockRvalues) {
+  using namespace testing;
+  StrictGMock<interface_rvalue> mock{};
+
+  EXPECT_CALL(mock, (f)(_)).WillOnce([](int&& value){
+    EXPECT_EQ(6, value);
+  });
+
+  mock.object().f(6);
+}
+
