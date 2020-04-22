@@ -452,7 +452,10 @@ class Steps : public ::testing::EmptyTestEventListener {
           // because we want to have multiple scenario outlines containing the replaced values in the feature,
           // we take the line from the example
           int currentScenarioLine = pickle_json["locations"].front()["line"];
-          std::shared_ptr<GherkinCpp::Element> element  = curFeature->getSpecificElement(currentScenarioLine);
+          std::string currentScenarioName = pickle_json["name"];
+          std::string elementKey = currentScenarioName + " " + std::to_string(currentScenarioLine);
+
+          std::shared_ptr<GherkinCpp::Element> element  = curFeature->getSpecificElement(elementKey);
           // if the element does not exist yet, it is added to the feature
           if(element == nullptr) {
               //Loop through children (ast file) to find which type matches the current pickle name.
@@ -633,3 +636,4 @@ class Steps : public ::testing::EmptyTestEventListener {
           __GUNIT_CAT(_gsteps__, __COUNTER__);                            \
   void GSTEPS<decltype(__GUNIT_CAT(feature, _gtest_string)),              \
               decltype(__GUNIT_CAT(__FILE__, _gtest_string)), __LINE__>::Run()
+
