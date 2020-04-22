@@ -24,21 +24,25 @@ public:
 	void addElement(std::shared_ptr<Element> element) {
 		if(element == nullptr) return;
 
-		int elementKey = element->line;
+	   /*
+		* To keep the key unique in case a scenario is present at the same line in other file. The key is created
+		* by concatenating the line number with the scenario name.
+		*/
+		std::string elementKey = element->name + " " + std::to_string(element->line);
+
 		if(elements.find(elementKey) != elements.end()) {
 			std::cout << "Feature " << name << ": Element " << element->name << " at line " << element->line << " already exist." << std::endl;
 			return;
 		}
-
 		elements[elementKey] = std::move(element);
 	}
 
-	std::unordered_map<int, std::shared_ptr<Element>>  getElements() {
+	std::unordered_map<std::string, std::shared_ptr<Element>>  getElements() {
 		return elements;
 	}
 
-	std::shared_ptr<Element> getSpecificElement(int lineNum) {
-		std::unordered_map<int, std::shared_ptr<Element>>::iterator it = elements.find(lineNum);
+	std::shared_ptr<Element> getSpecificElement(std::string nameAndLine) {
+		std::unordered_map<std::string, std::shared_ptr<Element>>::iterator it = elements.find(nameAndLine);
 		std::shared_ptr<Element> retval{};
 
 		if(it != elements.end()) {
@@ -51,7 +55,7 @@ public:
 	const std::string uri;
 
 private:
-	std::unordered_map<int, std::shared_ptr<Element>>  elements;
+	std::unordered_map<std::string, std::shared_ptr<Element>>  elements;
 	std::string description{};
 };
 
