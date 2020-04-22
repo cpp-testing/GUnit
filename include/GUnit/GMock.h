@@ -224,7 +224,7 @@ class GMock {
                                ? msgs.back().c_str()
                                : TName::c_str());
     }
-    return ptr->Invoke(args...);
+    return ptr->Invoke(std::forward<TArgs>(args)...);
   }
 
   template <class TName, class R, class... TArgs>
@@ -253,10 +253,10 @@ class GMock {
       auto *f =
           static_cast<FunctionMocker<R(TArgs...)> *>(fs[TName::c_str()].get());
       f->SetOwnerAndName(this, TName::c_str());
-      return f->Invoke(args...);
+      return f->Invoke(std::forward<TArgs>(args)...);
     }
 
-    return not_expected<TName, R, TArgs...>(args...);
+    return not_expected<TName, R, TArgs...>(std::forward<TArgs>(args)...);
   }
 
   template <class TName, class R, class B, class... TArgs>
