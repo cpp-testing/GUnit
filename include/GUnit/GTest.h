@@ -148,7 +148,7 @@ class GTestAutoRegister {
     UnitTest::GetInstance()
         ->parameterized_test_registry()
         .GetTestSuitePatternHolder<T>(
-            GetTypeName(detail::type<typename T::TEST_TYPE>{}),
+            (std::string{GetTypeName(detail::type<typename T::TEST_TYPE>{})} + T::TEST_NAME::c_str()).c_str(),
             {T::TEST_FILE, T::TEST_LINE})
         ->AddTestPattern(GetTypeName(detail::type<typename T::TEST_TYPE>{}),
                          GetTypeName(detail::type<typename T::TEST_TYPE>{}),
@@ -157,7 +157,7 @@ class GTestAutoRegister {
     UnitTest::GetInstance()
         ->parameterized_test_registry()
         .GetTestSuitePatternHolder<T>(
-            GetTypeName(detail::type<typename T::TEST_TYPE>{}),
+            (std::string{GetTypeName(detail::type<typename T::TEST_TYPE>{})} + T::TEST_NAME::c_str()).c_str(),
             {T::TEST_FILE, T::TEST_LINE})
         ->AddTestSuiteInstantiation(
             (std::string{IsDisabled(DISABLED)} + T::TEST_NAME::c_str()).c_str(),
