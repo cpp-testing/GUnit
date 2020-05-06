@@ -433,18 +433,23 @@ class Steps : public ::testing::EmptyTestEventListener {
           //---------------------------- OBJECT CONVERSION -----------------
           //part that parses the pickle and ast files and creates the Gherkin-Cpp objects
           // Check if current feature already exists. If not, creates it.
-          std::shared_ptr<GherkinCpp::Feature> curFeature = Features::getInstance()->getFeature(feature_name);
+          std::string tagnames;
+          for (const auto& tag : ast["document"]["feature"]["tags"]) {
+              tagnames += tag["name"];
+          }
+          const std::string featureKey = feature_name + tagnames;
+          std::shared_ptr<GherkinCpp::Feature> curFeature = Features::getInstance()->getFeature(featureKey);
           //if the feature does not exist yet, then it is created and added to the features list.
           if(curFeature == nullptr) {
         	  int featureLine = ast["document"]["feature"]["location"]["line"];
         	  curFeature = std::make_shared<GherkinCpp::Feature>(feature_name, feature, featureLine);
-        	  Features::getInstance()->addFeature(curFeature);
 
         	  //add the tags to the feature
 			  for (const auto& tag : ast["document"]["feature"]["tags"]) {
 				  std::shared_ptr<GherkinCpp::Tag> newTag = std::make_shared<GherkinCpp::Tag>(tag["name"], tag["location"]["line"]);
 				  curFeature->addTag(std::move(newTag));
 			  }
+              Features::getInstance()->addFeature(curFeature);
           }
 
           // Scenario outlines will have two locations because they have the Examples. When this happens,
@@ -636,4 +641,3 @@ class Steps : public ::testing::EmptyTestEventListener {
           __GUNIT_CAT(_gsteps__, __COUNTER__);                            \
   void GSTEPS<decltype(__GUNIT_CAT(feature, _gtest_string)),              \
               decltype(__GUNIT_CAT(__FILE__, _gtest_string)), __LINE__>::Run()
-

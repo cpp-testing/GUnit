@@ -27,11 +27,17 @@ public:
 
 	void addFeature(std::shared_ptr<GherkinCpp::Feature> feature) {
 		if(feature == nullptr) return;
-		if(features.find(feature->name) != features.end()) {
+		std::string tags;
+		for (auto const& tag : feature->tags) {
+			tags += tag.second->name;
+		}
+		const std::string key = feature->name + tags;
+
+		if(features.find(key) != features.end()) {
 			std::cout << "Feature " << feature->name << " already exist." << std::endl;
 			return;
 		}
-		features[feature->name] = std::move(feature);
+		features[key] = std::move(feature);
 	}
 
 	std::shared_ptr<GherkinCpp::Feature> getFeature(std::string featureName) {
