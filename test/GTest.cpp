@@ -877,6 +877,10 @@ GTEST("ParamTest", "[Info]", testing::Values(1, 2, 3)) {
   }
 }
 
+GTEST("ParamTest", "[AdditionalInfo]", testing::Values(4, 5, 6)) {
+  SHOULD("be true") { EXPECT_TRUE(GetParam() >= 4 && GetParam() <= 6); }
+}
+
 GTEST(example, "[Values]", testing::Values(1, 2, 3)) {
   using namespace testing;
   ASSERT_TRUE(nullptr == sut.get());
@@ -890,6 +894,17 @@ GTEST(example, "[Values]", testing::Values(1, 2, 3)) {
 
     sut->update();
 
+    EXPECT_EQ(GetParam(), sut->get_data());
+  }
+}
+
+GTEST(example, "[AdditionalValues]", testing::Values(4, 5, 6)) {
+  using namespace testing;
+  ASSERT_TRUE(nullptr == sut.get());
+  EXPECT_EQ(0u, mocks.size());
+
+  SHOULD("override sut with given param") {
+    std::tie(sut, mocks) = make<SUT, StrictGMock>(GetParam());
     EXPECT_EQ(GetParam(), sut->get_data());
   }
 }
