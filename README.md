@@ -42,11 +42,11 @@
    std::unique_ptr<Calc> calc;                      |   }
   };                                                |
                                                     |   SHOULD("throw if division by 0") {
-  TEST_F(ExampleTest, ShouldReturnSumOf2Numbers) {  |     EXPECT_ANY_THROW(calc->div(42, 0));
+  TEST_F(CalcTest, ShouldReturnSumOf2Numbers) {  |     EXPECT_ANY_THROW(calc->div(42, 0));
     EXPECT_EQ(5, calc->add(4, 1));                  |   }
   }                                                 |
                                                     |   // TearDown
-  TEST_F(ExampleTest, ShouldThrowIfDivisionBy0) {   | }
+  TEST_F(CalcTest, ShouldThrowIfDivisionBy0) {   | }
     EXPECT_ANY_THROW(calc->div(42, 0));             |
   }                                                 |
   ```
