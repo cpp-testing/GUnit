@@ -39,10 +39,10 @@ struct test<false, Chars...> {
 
 template <class T, T... Chars>
 constexpr auto operator""_test() {
-  return detail::test<true, Chars...>{};
+  return ::detail::test<true, Chars...>{};
 }
 
 template <class T, T... Chars>
 constexpr auto operator""_test_disabled() {
-  return detail::test<false, Chars...>{};
+  return ::detail::test<false, Chars...>{};
 }
