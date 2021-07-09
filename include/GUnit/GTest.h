@@ -8,9 +8,11 @@
 #pragma once
 
 #include <gtest/gtest.h>
+
 #include <algorithm>
 #include <memory>
 #include <string>
+
 #include "GUnit/Detail/Preprocessor.h"
 #include "GUnit/Detail/RegexUtils.h"
 #include "GUnit/Detail/StringUtils.h"
@@ -33,11 +35,11 @@ struct ParamNameGenFunc {
 };
 
 template <class ParamType>
-typename ParamNameGenFunc<ParamType>::Type *GetParamNameGen() {
+typename ParamNameGenFunc<ParamType>::Type* GetParamNameGen() {
   return DefaultParamName;
 }
 
-} // internal
+}  // namespace internal
 
 inline namespace v1 {
 namespace detail {
@@ -148,7 +150,9 @@ class GTestAutoRegister {
     UnitTest::GetInstance()
         ->parameterized_test_registry()
         .GetTestSuitePatternHolder<T>(
-            (std::string{GetTypeName(detail::type<typename T::TEST_TYPE>{})} + T::TEST_NAME::c_str()).c_str(),
+            (std::string{GetTypeName(detail::type<typename T::TEST_TYPE>{})} +
+             T::TEST_NAME::c_str())
+                .c_str(),
             {T::TEST_FILE, T::TEST_LINE})
         ->AddTestPattern(GetTypeName(detail::type<typename T::TEST_TYPE>{}),
                          GetTypeName(detail::type<typename T::TEST_TYPE>{}),
@@ -157,7 +161,9 @@ class GTestAutoRegister {
     UnitTest::GetInstance()
         ->parameterized_test_registry()
         .GetTestSuitePatternHolder<T>(
-            (std::string{GetTypeName(detail::type<typename T::TEST_TYPE>{})} + T::TEST_NAME::c_str()).c_str(),
+            (std::string{GetTypeName(detail::type<typename T::TEST_TYPE>{})} +
+             T::TEST_NAME::c_str())
+                .c_str(),
             {T::TEST_FILE, T::TEST_LINE})
         ->AddTestSuiteInstantiation(
             (std::string{IsDisabled(DISABLED)} + T::TEST_NAME::c_str()).c_str(),
@@ -202,13 +208,13 @@ class GTest<T, TParamType, std::false_type, TAny> : public Test {
 template <class T, class TParamType>
 class GTest<T, TParamType, std::true_type, std::true_type> : public T {};
 
-}  // detail
+}  // namespace detail
 
 template <class T = detail::none_t, class TParamType = void>
 class GTest : public detail::GTest<T, TParamType> {};
 
-}  // v1
-}  // testing
+}  // namespace v1
+}  // namespace testing
 
 #define __GTEST_IMPL(DISABLED, TYPE, NAME, PARAMS, ...)                       \
   struct __GUNIT_CAT(GTEST_STRING_, __LINE__) {                               \

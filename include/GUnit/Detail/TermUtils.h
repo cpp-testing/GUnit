@@ -44,6 +44,6 @@ inline bool ShouldUseColor(bool stdout_is_tty) {
   // to be conservative.
 }
 
-}  // detail
-}  // v1
-}  // testing
+}  // namespace detail
+}  // namespace v1
+}  // namespace testing

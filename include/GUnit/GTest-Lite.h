@@ -29,7 +29,7 @@ struct test<false, Chars...> {
   }
 };
 
-}  // detail
+}  // namespace detail
 
 #if defined(__clang__)
 #pragma clang diagnostic ignored "-Wgnu-string-literal-operator-template"

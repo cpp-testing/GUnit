@@ -9,6 +9,7 @@
 
 #include <tuple>
 #include <type_traits>
+
 #include "GUnit/Detail/TypeTraits.h"
 
 namespace testing {
@@ -88,6 +89,6 @@ struct contains<T, std::tuple<TArgs...>>
               std::integer_sequence<bool, std::is_same<T, TArgs>::value...,
                                     false>>::value> {};
 
-}  // detail
-}  // v1
-}  // testing
+}  // namespace detail
+}  // namespace v1
+}  // namespace testing

@@ -133,6 +133,6 @@ inline bool FilterMatchesShould(const std::string& name,
          !MatchesFilter(name, negative.c_str());
 }
 
-}  // detail
-}  // v1
-}  // testing
+}  // namespace detail
+}  // namespace v1
+}  // namespace testing

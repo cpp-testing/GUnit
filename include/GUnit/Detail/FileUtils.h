@@ -28,6 +28,6 @@ inline std::wstring read_file(const std::string &feature) {
           std::istreambuf_iterator<char>()};
 }
 
-}  // detail
-}  // v1
-}  // testing
+}  // namespace detail
+}  // namespace v1
+}  // namespace testing

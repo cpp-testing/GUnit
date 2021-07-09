@@ -167,6 +167,6 @@ const char *get_type_name() {
 #endif
 }
 
-}  // detail
-}  // v1
-}  // testing
+}  // namespace detail
+}  // namespace v1
+}  // namespace testing
