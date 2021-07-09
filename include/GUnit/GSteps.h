@@ -388,7 +388,7 @@ class Steps : public ::testing::EmptyTestEventListener {
     return Step<-1, true>{*this, {"Then", File::c_str(), line}, pattern};
   }
 
-// clang-format off
+  // clang-format off
   #if defined(__clang__)
   #pragma clang diagnostic ignored "-Wdollar-in-identifier-extension"
   #endif
