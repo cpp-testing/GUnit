@@ -26,7 +26,7 @@
 
 ### Motivation Examples
 
-> #### No more base classes and labels as identifiers - [GUnit.GTest](docs/GTest.md) / [GUnit.GTest-Lite](docs/GTest-Lite.md)
+> #### No more base classes, labels as identifiers and special assertions - [GUnit.GTest](docs/GTest.md) / [GUnit.GTest-Lite](docs/GTest-Lite.md)
   ```cpp
                  Google.Test                        |                     GUnit.GTest
   --------------------------------------------------+------------------------------------------------------
@@ -38,15 +38,15 @@
    }                                                |   // SetUp
                                                     |
    void TearDown() override { }                     |   SHOULD("return sum of 2 numbers") {
-                                                    |     EXPECT_EQ(5, calc->add(4, 1));
+                                                    |     EXPECT(5 == calc->add(4, 1));
    std::unique_ptr<Calc> calc;                      |   }
   };                                                |
                                                     |   SHOULD("throw if division by 0") {
-  TEST_F(CalcTest, ShouldReturnSumOf2Numbers) {  |     EXPECT_ANY_THROW(calc->div(42, 0));
+  TEST_F(CalcTest, ShouldReturnSumOf2Numbers) {     |     EXPECT_ANY_THROW(calc->div(42, 0));
     EXPECT_EQ(5, calc->add(4, 1));                  |   }
   }                                                 |
                                                     |   // TearDown
-  TEST_F(CalcTest, ShouldThrowIfDivisionBy0) {   | }
+  TEST_F(CalcTest, ShouldThrowIfDivisionBy0) {      | }
     EXPECT_ANY_THROW(calc->div(42, 0));             |
   }                                                 |
   ```

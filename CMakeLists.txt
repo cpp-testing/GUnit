@@ -78,6 +78,7 @@ test(example/GTest-Lite SCENARIO=)
 test(example/GSteps SCENARIO=${CMAKE_CURRENT_SOURCE_DIR}/example/GSteps.feature)
 
 include_directories(test)
+test(test/GAssert SCENARIO=)
 test(test/GMake SCENARIO=)
 test(test/GMock SCENARIO=)
 test(test/GSteps SCENARIO=)
