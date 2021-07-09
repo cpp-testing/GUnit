@@ -7,6 +7,7 @@
 //
 #pragma once
 
+#include "GUnit/GAssert.h"
 #include "GUnit/GMake.h"
 #include "GUnit/GMock.h"
 #include "GUnit/GTest-Lite.h"
