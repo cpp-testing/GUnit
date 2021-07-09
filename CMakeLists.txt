@@ -72,6 +72,7 @@ else()
   endfunction()
 endif()
 
+test(example/GAssert SCENARIO=)
 test(example/GMock SCENARIO=)
 test(example/GTest SCENARIO=)
 test(example/GTest-Lite SCENARIO=)
