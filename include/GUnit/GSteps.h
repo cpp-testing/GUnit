@@ -7,23 +7,24 @@
 //
 #pragma once
 #include <gtest/gtest.h>
+
 #include <cassert>
 #include <cstdlib>
 #include <functional>
 #include <gherkin.hpp>
 #include <json.hpp>
 #include <stdexcept>
+#include <string>
 #include <type_traits>
 #include <unordered_map>
 #include <utility>
 #include <vector>
+
 #include "GUnit/Detail/FileUtils.h"
 #include "GUnit/Detail/Preprocessor.h"
 #include "GUnit/Detail/RegexUtils.h"
 #include "GUnit/Detail/StringUtils.h"
 #include "GUnit/Detail/Utility.h"
-
-#include <string>
 #include "formatters/features.hpp"
 #include "formatters/gherkinCpp/background.hpp"
 #include "formatters/gherkinCpp/element.hpp"
@@ -64,9 +65,8 @@ class Convertible : public T {
   Convertible() = default;
   Convertible(const T& value) : T{value}, available_{true} {}
 
-  template <class U,
-            class = std::enable_if_t<std::is_integral<U>::value ||
-                                     std::is_floating_point<U>::value>>
+  template <class U, class = std::enable_if_t<std::is_integral<U>::value ||
+                                              std::is_floating_point<U>::value>>
   operator U() const {
     return lexical_cast<U>(*this);
   }
@@ -193,14 +193,15 @@ class Steps : public ::testing::EmptyTestEventListener {
     class TestImpl : public Test {
      public:
       TestImpl(Steps& steps, const std::string& pickles,
-               const std::string& file, std::shared_ptr<GherkinCpp::Element> element)
+               const std::string& file,
+               std::shared_ptr<GherkinCpp::Element> element)
           : steps{steps}, pickles{pickles}, file{file}, element{element} {}
 
       void TestBody() {
         steps.Init(pickles, file, element);
         static_cast<TCRTP&>(steps).Run();
         if (steps.current_step_ != steps.pickle_steps_.size()) {
-        	if(steps.currentStep != nullptr) steps.currentStep->setResult(false);
+          if (steps.currentStep != nullptr) steps.currentStep->setResult(false);
           throw StepIsNotImplemented{"STEP \"" + steps.not_found_ +
                                      "\" not implemented!"};
         }
@@ -216,9 +217,12 @@ class Steps : public ::testing::EmptyTestEventListener {
 
    public:
     TestFactory(Steps& steps, const std::string& pickles,
-                const std::string& file, std::shared_ptr<GherkinCpp::Element> element)
+                const std::string& file,
+                std::shared_ptr<GherkinCpp::Element> element)
         : steps{steps}, pickles{pickles}, file{file}, element{element} {}
-    Test* CreateTest() override { return new TestImpl{steps, pickles, file, element}; }
+    Test* CreateTest() override {
+      return new TestImpl{steps, pickles, file, element};
+    }
 
    private:
     Steps& steps;
@@ -298,21 +302,19 @@ class Steps : public ::testing::EmptyTestEventListener {
   Steps() {
     const auto scenario = std::getenv("SCENARIO");
     const auto output = std::getenv("OUTPUT");
-	if (scenario) {
-		::testing::UnitTest::GetInstance()->listeners().Append(this);
+    if (scenario) {
+      ::testing::UnitTest::GetInstance()->listeners().Append(this);
       // If the output is set, then add a report to the features holder
-	  if(output){
-		  Features::getInstance()->addReport("gunit_result");
-	  }
-	  for (const auto& feature : detail::split(scenario, ':')) {
-		info_.file = feature;
-		ParseAndRegister(TFeature::c_str(), feature);
-	  }
-	}
+      if (output) {
+        Features::getInstance()->addReport("gunit_result");
+      }
+      for (const auto& feature : detail::split(scenario, ':')) {
+        info_.file = feature;
+        ParseAndRegister(TFeature::c_str(), feature);
+      }
+    }
   }
-  ~Steps() {
-	  ::testing::UnitTest::GetInstance()->listeners().Release(this);
-  }
+  ~Steps() { ::testing::UnitTest::GetInstance()->listeners().Release(this); }
 
   template <class File = detail::string<>, int line = 0, class TPattern>
   auto Given(const TPattern& pattern) {
@@ -386,7 +388,7 @@ class Steps : public ::testing::EmptyTestEventListener {
     return Step<-1, true>{*this, {"Then", File::c_str(), line}, pattern};
   }
 
-// clang-format off
+  // clang-format off
   #if defined(__clang__)
   #pragma clang diagnostic ignored "-Wdollar-in-identifier-extension"
   #endif
@@ -399,7 +401,8 @@ class Steps : public ::testing::EmptyTestEventListener {
   const auto& Info() const { return info_; }
 
  private:
-  void Init(const std::string& pickles, const std::string& file, std::shared_ptr<GherkinCpp::Element> element) {
+  void Init(const std::string& pickles, const std::string& file,
+            std::shared_ptr<GherkinCpp::Element> element) {
     info_.scenario =
         ::testing::UnitTest::GetInstance()->current_test_info()->name();
     steps_ = {};
@@ -431,85 +434,109 @@ class Steps : public ::testing::EmptyTestEventListener {
           info_.feature = feature_name;
 
           //---------------------------- OBJECT CONVERSION -----------------
-          //part that parses the pickle and ast files and creates the Gherkin-Cpp objects
+          // part that parses the pickle and ast files and creates the
+          // Gherkin-Cpp objects
           // Check if current feature already exists. If not, creates it.
           std::string tagnames;
           for (const auto& tag : ast["document"]["feature"]["tags"]) {
-              tagnames += tag["name"];
+            tagnames += tag["name"];
           }
           const std::string featureKey = feature_name + tagnames;
-          std::shared_ptr<GherkinCpp::Feature> curFeature = Features::getInstance()->getFeature(featureKey);
-          //if the feature does not exist yet, then it is created and added to the features list.
-          if(curFeature == nullptr) {
-        	  int featureLine = ast["document"]["feature"]["location"]["line"];
-        	  curFeature = std::make_shared<GherkinCpp::Feature>(feature_name, feature, featureLine);
+          std::shared_ptr<GherkinCpp::Feature> curFeature =
+              Features::getInstance()->getFeature(featureKey);
+          // if the feature does not exist yet, then it is created and added to
+          // the features list.
+          if (curFeature == nullptr) {
+            int featureLine = ast["document"]["feature"]["location"]["line"];
+            curFeature = std::make_shared<GherkinCpp::Feature>(
+                feature_name, feature, featureLine);
 
-        	  //add the tags to the feature
-			  for (const auto& tag : ast["document"]["feature"]["tags"]) {
-				  std::shared_ptr<GherkinCpp::Tag> newTag = std::make_shared<GherkinCpp::Tag>(tag["name"], tag["location"]["line"]);
-				  curFeature->addTag(std::move(newTag));
-			  }
-              Features::getInstance()->addFeature(curFeature);
+            // add the tags to the feature
+            for (const auto& tag : ast["document"]["feature"]["tags"]) {
+              std::shared_ptr<GherkinCpp::Tag> newTag =
+                  std::make_shared<GherkinCpp::Tag>(tag["name"],
+                                                    tag["location"]["line"]);
+              curFeature->addTag(std::move(newTag));
+            }
+            Features::getInstance()->addFeature(curFeature);
           }
 
-          // Scenario outlines will have two locations because they have the Examples. When this happens,
-          // the first is the line of the example, and the second, the one from its declaration.
-          // because we want to have multiple scenario outlines containing the replaced values in the feature,
-          // we take the line from the example
+          // Scenario outlines will have two locations because they have the
+          // Examples. When this happens, the first is the line of the example,
+          // and the second, the one from its declaration. because we want to
+          // have multiple scenario outlines containing the replaced values in
+          // the feature, we take the line from the example
           int currentScenarioLine = pickle_json["locations"].front()["line"];
           std::string currentScenarioName = pickle_json["name"];
-          std::string elementKey = currentScenarioName + " " + std::to_string(currentScenarioLine);
+          std::string elementKey =
+              currentScenarioName + " " + std::to_string(currentScenarioLine);
 
-          std::shared_ptr<GherkinCpp::Element> element  = curFeature->getSpecificElement(elementKey);
+          std::shared_ptr<GherkinCpp::Element> element =
+              curFeature->getSpecificElement(elementKey);
           // if the element does not exist yet, it is added to the feature
-          if(element == nullptr) {
-              //Loop through children (ast file) to find which type matches the current pickle name.
-              for (const auto& children : ast["document"]["feature"]["children"]) {
-                  //store keyword and name
-                  std::string keyword = children["keyword"];
-                  std::string name = children["name"];
-                  //check if the name of the pickle and children matches
-                  if(name.compare(pickle_json["name"]) == 0) {
-                     // Check what is its keyword
-                     if(keyword.compare("Scenario") == 0) {
-                          std::shared_ptr<GherkinCpp::Scenario> newScenario = std::make_shared<GherkinCpp::Scenario>(name, currentScenarioLine);
-                          element = newScenario;
-                     } else if(keyword.compare("Scenario Outline") == 0) {
-                          std::shared_ptr<GherkinCpp::ScenarioOutline> newScenarioOutline = std::make_shared<GherkinCpp::ScenarioOutline>(name, currentScenarioLine);
-                          element = newScenarioOutline;
-                     }
-                      curFeature->addElement(element);
+          if (element == nullptr) {
+            // Loop through children (ast file) to find which type matches the
+            // current pickle name.
+            for (const auto& children :
+                 ast["document"]["feature"]["children"]) {
+              // store keyword and name
+              std::string keyword = children["keyword"];
+              std::string name = children["name"];
+              // check if the name of the pickle and children matches
+              if (name.compare(pickle_json["name"]) == 0) {
+                // Check what is its keyword
+                if (keyword.compare("Scenario") == 0) {
+                  std::shared_ptr<GherkinCpp::Scenario> newScenario =
+                      std::make_shared<GherkinCpp::Scenario>(
+                          name, currentScenarioLine);
+                  element = newScenario;
+                } else if (keyword.compare("Scenario Outline") == 0) {
+                  std::shared_ptr<GherkinCpp::ScenarioOutline>
+                      newScenarioOutline =
+                          std::make_shared<GherkinCpp::ScenarioOutline>(
+                              name, currentScenarioLine);
+                  element = newScenarioOutline;
+                }
+                curFeature->addElement(element);
 
-                     if(children.find("tags") != children.end()){
-                          for (const auto& tag : children["tags"]) {
-                              std::shared_ptr<GherkinCpp::Tag> newTag = std::make_shared<GherkinCpp::Tag>(tag["name"], tag["location"]["line"]);
-                              element->addTag(std::move(newTag));
-                          }
-                      }
-                      // as soon as the element is created, break the loop
-                      break;
-                  } /* if(name.compare(pickle_json["name"]) */
-              }
-              //Loop through children again and add the steps.
-              for (const auto& children : ast["document"]["feature"]["children"]) {
-                  //Even if the name does not match, store the step in an
-                  if(children.find("steps") != children.end()){
-                      // loop through the steps of the children (ast file)
-                      for (const auto& step : children["steps"]) {
-                          // loop through the steps of the pickle
-                          for (const auto& steps : pickle_json["steps"]) {
-                              // if the location of the steps matches, it means that they are the same
-                              if(steps["locations"].back()["line"] == step["location"]["line"]){
-                                  std::shared_ptr<GherkinCpp::Step> newStep = std::make_shared<GherkinCpp::Step>(step["keyword"], steps["text"], step["location"]["line"]);
-                                  element->addStep(std::move(newStep));
-                              }
-                          }
-                      }
+                if (children.find("tags") != children.end()) {
+                  for (const auto& tag : children["tags"]) {
+                    std::shared_ptr<GherkinCpp::Tag> newTag =
+                        std::make_shared<GherkinCpp::Tag>(
+                            tag["name"], tag["location"]["line"]);
+                    element->addTag(std::move(newTag));
                   }
+                }
+                // as soon as the element is created, break the loop
+                break;
+              } /* if(name.compare(pickle_json["name"]) */
+            }
+            // Loop through children again and add the steps.
+            for (const auto& children :
+                 ast["document"]["feature"]["children"]) {
+              // Even if the name does not match, store the step in an
+              if (children.find("steps") != children.end()) {
+                // loop through the steps of the children (ast file)
+                for (const auto& step : children["steps"]) {
+                  // loop through the steps of the pickle
+                  for (const auto& steps : pickle_json["steps"]) {
+                    // if the location of the steps matches, it means that they
+                    // are the same
+                    if (steps["locations"].back()["line"] ==
+                        step["location"]["line"]) {
+                      std::shared_ptr<GherkinCpp::Step> newStep =
+                          std::make_shared<GherkinCpp::Step>(
+                              step["keyword"], steps["text"],
+                              step["location"]["line"]);
+                      element->addStep(std::move(newStep));
+                    }
+                  }
+                }
               }
+            }
           }
 
-          //Registers the test in Google Test
+          // Registers the test in Google Test
           detail::MakeAndRegisterTestInfo(
               new TestFactory{*this, pickle, feature, element},
               disabled + feature_name + tags.second, scenario_name, __FILE__,
@@ -533,26 +560,28 @@ class Steps : public ::testing::EmptyTestEventListener {
     auto i = 0u;
     if (currentElement == nullptr) return;
     for (const auto& expectedStep : currentElement->getSteps()) {
-    	// Set the current step as the expected step.
-    	currentStep = expectedStep.second;
+      // Set the current step as the expected step.
+      currentStep = expectedStep.second;
 
-        // ------------------------
-        // Iterate through pickle_steps, because detail::make_table expects a json with the step to be executed.
-        // need to investigate if we can remove this part
-        nlohmann::json expected_step{};
-        for(const auto& exp_step : pickle_steps_){
-           if(exp_step["text"] == expectedStep.second->name){
-                if(exp_step["text"] == expectedStep.second->name){
-                    expected_step = exp_step;
-                    break;
-                }
-           }
+      // ------------------------
+      // Iterate through pickle_steps, because detail::make_table expects a json
+      // with the step to be executed. need to investigate if we can remove this
+      // part
+      nlohmann::json expected_step{};
+      for (const auto& exp_step : pickle_steps_) {
+        if (exp_step["text"] == expectedStep.second->name) {
+          if (exp_step["text"] == expectedStep.second->name) {
+            expected_step = exp_step;
+            break;
+          }
         }
-        //---------------------------
-      // From original code. This is done so it is known at which point of the loop it has stopped.
-      // Maybe a refactor to use a forward list here would be better, but then we must restartd the
-      // for (const auto& given_step : steps_) loop and also find a strategy to see if the test was
-      // not implemented.
+      }
+      //---------------------------
+      // From original code. This is done so it is known at which point of the
+      // loop it has stopped. Maybe a refactor to use a forward list here would
+      // be better, but then we must restartd the for (const auto& given_step :
+      // steps_) loop and also find a strategy to see if the test was not
+      // implemented.
       /// todo: remove the current_step_
       if (i++ == current_step_) {
         auto found = false;
@@ -560,7 +589,8 @@ class Steps : public ::testing::EmptyTestEventListener {
           if (detail::match(given_step.first, expectedStep.second->name)) {
             if (found) {
               expectedStep.second->setResult(false);
-              throw StepIsAmbiguous{"STEP \"" + expectedStep.second->name + "\" is ambiguous!"};
+              throw StepIsAmbiguous{"STEP \"" + expectedStep.second->name +
+                                    "\" is ambiguous!"};
             }
             // update the curret step
             current_step_ = i;
@@ -574,10 +604,11 @@ class Steps : public ::testing::EmptyTestEventListener {
 
             std::cout << "\033[0;96m"
                       << "[ " << std::right << std::setw(8) << name << " ] "
-                      << std::left << std::setw(60) << expectedStep.second->name << "# " << file
-                      << ":" << line << "\033[m" << '\n';
+                      << std::left << std::setw(60) << expectedStep.second->name
+                      << "# " << file << ":" << line << "\033[m" << '\n';
             info_.step = expectedStep.second->name;
-            given_step.second.second(expectedStep.second->name, detail::make_table(expected_step));
+            given_step.second.second(expectedStep.second->name,
+                                     detail::make_table(expected_step));
             found = true;
           }
         }
@@ -586,22 +617,26 @@ class Steps : public ::testing::EmptyTestEventListener {
           not_found_ = expectedStep.second->name;
         }
       } /* (i++ == current_step_) */
-    } /* for(const auto& expectedStep : currentElement->getSteps()) */
-  } /*  NextStep() */
+    }   /* for(const auto& expectedStep : currentElement->getSteps()) */
+  }     /*  NextStep() */
 
   // Called after a failed assertion.
-  virtual void OnTestPartResult(const ::testing::TestPartResult& test_part_result) {;
-      if(currentStep == nullptr) return;
-	  currentStep->setResult(!(test_part_result.failed()));
+  virtual void OnTestPartResult(
+      const ::testing::TestPartResult& test_part_result) {
+    ;
+    if (currentStep == nullptr) return;
+    currentStep->setResult(!(test_part_result.failed()));
   }
 
-  std::shared_ptr<GherkinCpp::Step> currentStep;    ///< Holds the pointer to the current step
+  std::shared_ptr<GherkinCpp::Step>
+      currentStep;  ///< Holds the pointer to the current step
   StepInfoCalls_t steps_{};
   std::size_t current_step_{};
   nlohmann::json pickle_steps_{};
   std::string not_found_{};
   std::string file_{};
-  std::shared_ptr<GherkinCpp::Element> currentElement;  ///< Holds the pointer of the element in this test suite
+  std::shared_ptr<GherkinCpp::Element>
+      currentElement;  ///< Holds the pointer of the element in this test suite
 
   struct Info {
     std::string file{};
@@ -618,9 +653,9 @@ class Steps : public ::testing::EmptyTestEventListener {
     }
   } info_;
 };
-}  // detail
-}  // v1
-}  // testing
+}  // namespace detail
+}  // namespace v1
+}  // namespace testing
 
 #define GSTEPS(feature)                                                   \
   template <class, class, int>                                            \

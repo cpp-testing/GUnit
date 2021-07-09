@@ -9,8 +9,10 @@
 
 #include <cxxabi.h>
 #include <execinfo.h>
+
 #include <memory>
 #include <string>
+
 #include "gtest/gtest.h"
 
 #if defined(__APPLE__)
@@ -104,6 +106,6 @@ inline std::pair<std::string, int> addr2line(void *addr) {
   return {res2.substr(0, colon), std::atoi(res2.substr(colon + 1).c_str())};
 }
 
-}  // detail
-}  // v1
-}  // testing
+}  // namespace detail
+}  // namespace v1
+}  // namespace testing

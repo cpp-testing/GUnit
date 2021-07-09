@@ -12,6 +12,7 @@
 #include <typeinfo>
 #include <unordered_map>
 #include <utility>
+
 #include "GUnit/Detail/StringUtils.h"
 #include "GUnit/Detail/TypeTraits.h"
 #include "GUnit/Detail/Utility.h"
@@ -181,7 +182,7 @@ template <class T, class... TArgs>
 auto make_impl(detail::identity<T>, TArgs &&... args) {
   return T(detail::convert(std::forward<TArgs>(args))...);
 }
-}  // detail
+}  // namespace detail
 
 template <class>
 class mock_exception final : public std::exception {
@@ -427,7 +428,7 @@ template <class T>
 using is_creatable =
     is_creatable_impl<T, std::make_index_sequence<ctor_size<T>::value>>;
 
-}  // detail
+}  // namespace detail
 
 template <class T, class... TArgs>
 auto make(TArgs &&... args) {
@@ -455,8 +456,8 @@ auto make(TArgs &&... args) {
               detail::ctor_size<detail::deref_t<T>>::value>{}),
       mocks);
 }
-}  // v1
-}  // testing
+}  // namespace v1
+}  // namespace testing
 
 // clang-format off
 #if __has_include(<boost/di.hpp>)
@@ -480,7 +481,7 @@ class Mock {
  private:
   testing::mocks_t &mocks;
 };
-}  // detail
+}  // namespace detail
 
 using GMock = detail::Mock<testing::GMock>;
 using NaggyGMock = detail::Mock<testing::NaggyGMock>;
@@ -497,6 +498,6 @@ template <class T, class TInjector,
 decltype(auto) make(const TInjector &injector) {
   return injector.template create<T>();
 }
-}  // v1
-}  // testing
+}  // namespace v1
+}  // namespace testing
 #endif
