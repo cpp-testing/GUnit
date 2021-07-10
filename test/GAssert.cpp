@@ -10,6 +10,11 @@
 
 TEST(GAssert, ShouldSupportExpect) {
   auto i = 42;
+  const auto b = true;
+
+  EXPECT(true);
+  EXPECT(!false) << "message";
+  EXPECT(b);
 
   EXPECT(i == 42);
   EXPECT(42 == i);
@@ -27,7 +32,9 @@ TEST(GAssert, ShouldSupportExpect) {
 }
 
 TEST(GAssert, ShouldSupportASSERT) {
-  auto i = 42;
+  const auto i = 42;
+
+  ASSERT(true);
 
   ASSERT(i == 42);
   ASSERT(42 == i);

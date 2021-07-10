@@ -53,15 +53,26 @@ class msg : public decltype(Message()) {
 
 class op {
   template <class TLhs>
-  class comp {
+  class comp : public decltype(Message()) {
    public:
     explicit comp(const info& info, const TLhs& lhs) : info_{info}, lhs_{lhs} {}
+    ~comp() {
+      if (!followed_ && std::is_same<bool, TLhs>::value) {
+        const AssertionResult gtest_ar =
+            (internal::CmpHelperEQ(info_.expr.c_str(), "true", lhs_, true));
+        if (!gtest_ar) {
+          internal::AssertHelper(info_.failure, info_.file, info_.line,
+                                 gtest_ar.failure_message()) = *this;
+        }
+      }
+    }
 
     template <class TRhs,
               std::enable_if_t<std::is_floating_point<TLhs>::value ||
                                    std::is_floating_point<TRhs>::value,
                                int> = 0>
     auto operator==(const TRhs& rhs) const {
+      followed_ = true;
       return msg<TLhs, TRhs, internal::CmpHelperFloatingPointEQ<TLhs>>{
           info_, "==", lhs_, rhs};
     }
@@ -71,36 +82,42 @@ class op {
                                    !std::is_floating_point<TRhs>::value,
                                int> = 0>
     auto operator==(const TRhs& rhs) const {
+      followed_ = true;
       return msg<const TLhs&, const TRhs&, internal::CmpHelperEQ>{
           info_, "==", lhs_, rhs};
     }
 
     template <class TRhs>
     auto operator!=(const TRhs& rhs) const {
+      followed_ = true;
       return msg<const TLhs&, const TRhs&, internal::CmpHelperNE>{
           info_, "!=", lhs_, rhs};
     }
 
     template <class TRhs>
     auto operator>(const TRhs& rhs) const {
+      followed_ = true;
       return msg<const TLhs&, const TRhs&, internal::CmpHelperGT>{info_, ">",
                                                                   lhs_, rhs};
     }
 
     template <class TRhs>
     auto operator>=(const TRhs& rhs) const {
+      followed_ = true;
       return msg<const TLhs&, const TRhs&, internal::CmpHelperGE>{
           info_, ">=", lhs_, rhs};
     }
 
     template <class TRhs>
     auto operator<=(const TRhs& rhs) const {
+      followed_ = true;
       return msg<const TLhs&, const TRhs&, internal::CmpHelperLE>{
           info_, "<=", lhs_, rhs};
     }
 
     template <class TRhs>
     auto operator<(const TRhs& rhs) const {
+      followed_ = true;
       return msg<const TLhs&, const TRhs&, internal::CmpHelperLT>{info_, "<",
                                                                   lhs_, rhs};
     }
@@ -108,6 +125,7 @@ class op {
    private:
     info info_{};
     TLhs lhs_{};
+    mutable bool followed_{false};
   };
 
  public:
