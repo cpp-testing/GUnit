@@ -8,8 +8,13 @@
 #include "GUnit/GAssert.h"
 
 int main() {
+  const auto b = true;
   const auto i = 42;
+
+  EXPECT(true);
+  EXPECT(b);
   EXPECT(42 == i);
   EXPECT(42 >= 0) << "message";
+
   ASSERT(42.0 == 42.);
 }
