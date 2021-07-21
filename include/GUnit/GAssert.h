@@ -10,7 +10,6 @@
 #include <gtest/gtest.h>
 
 #include <string>
-
 #include "GUnit/Detail/StringUtils.h"
 
 namespace testing {
@@ -34,7 +33,7 @@ class msg : public decltype(Message()) {
     const auto begin = info_.expr.find(comp_);
     auto lhs_expr = info_.expr.substr(0, begin);
     trim(lhs_expr);
-    auto rhs_expr = info_.expr.substr(begin + std::size(comp_));
+    auto rhs_expr = info_.expr.substr(begin + comp_.size());
     trim(rhs_expr);
     const AssertionResult gtest_ar =
         (Comp(lhs_expr.c_str(), rhs_expr.c_str(), lhs_, rhs_));
