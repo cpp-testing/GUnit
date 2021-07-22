@@ -31,26 +31,24 @@ enable_testing()
 
 add_subdirectory(libs/googletest)
 
-include_directories(include)
-include_directories(SYSTEM
-  ${gtest_SOURCE_DIR}/include
+add_library(gunit INTERFACE)
+target_include_directories(gunit INTERFACE include)
+target_include_directories(gunit
+  INTERFACE ${gtest_SOURCE_DIR}/include
   ${gmock_SOURCE_DIR}/include
   libs/json/single_include/nlohmann
-  libs/gherkin-cpp/include
 )
 
-link_directories(${CMAKE_CURRENT_LIST_DIR}/libs/gherkin-cpp)
+target_link_libraries(gunit
+  INTERFACE gtest_main
+  INTERFACE gmock_main
+  INTERFACE gherkin-cpp
+)
 
 set(BUILD_GMOCK)
 set(BUILD_GTEST)
 
-add_custom_command(
-  OUTPUT libgherkin-cpp-static
-  COMMAND cd ${CMAKE_CURRENT_SOURCE_DIR}/libs/gherkin-cpp && make lib-static
-)
-add_custom_target(
-  gherkin_cpp-static ALL DEPENDS libgherkin-cpp-static
-)
+add_subdirectory(libs/gherkin-cpp)
 
 find_program(MEMORYCHECK_COMMAND valgrind)
 if (ENABLE_MEMCHECK AND MEMORYCHECK_COMMAND)
@@ -58,18 +56,16 @@ if (ENABLE_MEMCHECK AND MEMORYCHECK_COMMAND)
     string(REPLACE "/" "_" out ${name})
     add_executable(${out} ${CMAKE_CURRENT_LIST_DIR}/${name}.cpp)
     add_test(${out} ${MEMORYCHECK_COMMAND} --leak-check=full --error-exitcode=1 ./${out})
-    add_dependencies(${out} gherkin_cpp-static)
-    target_link_libraries(${out} gtest_main gmock_main gherkin-cpp)
-    add_custom_command(TARGET ${out} COMMAND ${scenario} ./${out})
+    target_link_libraries(${out} gunit)
+    add_custom_command(TARGET ${out} COMMAND ${scenario} ./${out} --gtest_color=yes USES_TERMINAL)
   endfunction()
 else()
   function(test name scenario)
     string(REPLACE "/" "_" out ${name})
     add_executable(${out} ${CMAKE_CURRENT_LIST_DIR}/${name}.cpp)
     add_test(${out} ./${out})
-    add_dependencies(${out} gherkin_cpp-static)
-    target_link_libraries(${out} gtest_main gmock_main gherkin-cpp)
-    add_custom_command(TARGET ${out} COMMAND ${scenario} ./${out})
+    target_link_libraries(${out} gunit)
+    add_custom_command(TARGET ${out} COMMAND ${scenario} ./${out} --gtest_color=yes USES_TERMINAL)
   endfunction()
 endif()
 

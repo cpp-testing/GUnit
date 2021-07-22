@@ -223,22 +223,30 @@
 
 ---
 
-* [**Optional**] For [gherkin](https://github.com/cucumber/cucumber/wiki/Gherkin) support
-    * Compile `gherkin-cpp`
-    ```sh
-    $cd libs/gherkin-cpp && make lib
-    $ls libs/gherkin-cpp
-      libgherkin-cpp.a
-      libgherkin-cpp.so
-    ```
-    * Add include paths
-        * `-I GUnit/gherkin-cpp/include`
-        * `-I GUnit/json/src`
-    * Link with `libgherkin-cpp.{a, so}`
-        * `-L libgherkin-cpp`
-    * Write some feature tests...
-    * Compile and Run!
-
+* [gherkin](https://github.com/cucumber/cucumber/wiki/Gherkin) support using CMake
+    * `gherkin-cpp` using add_subdirectory
+        ```sh
+          # using add_subdirectory from the top-level CMakeLists.txt file:
+          add_subdirectory(gunit)
+        ```
+        ```sh
+          # src/CMakeLists.txt contains either this:
+          add_executable(myprogram)
+          target_link_libraries(myprogram gunit)
+          ...
+          # or you could have also been more explicit, then you would write this:
+          target_link_libraries(myprogram gtest gtest_main)
+        ```
+    * `gherkin-cpp` using a ExternalProject_Add(gunit ...)
+        Note: This sections needs updates, when writing the gherkin-cpp CMake integration I used add_subdirectory:
+        * Add include paths
+            * `-I GUnit_install_dir/include`
+        * Link with `libgherkin-cpp.{a, so}` Note: I wasn't able to nest the fmem/gherkin into libghekin-cpp, so two more libs to add: fmem/gherkin!   
+            * `-L gherkin-cpp`
+            * `-L fmem`
+            * `-L gherkin`
+        * Write some feature tests...
+        * Compile and Run!
 ---
 
 * To run GUnit tests/benchmarks
@@ -254,7 +262,8 @@
   * `GSteps`
     * [libs/json](https://github.com/nlohmann/json)
     * [libs/gherkin-cpp](https://github.com/c-libs/gherkin-cpp)
-
+      * [libs/gherkin-cpp/libs/fmem](https://github.com/c-libs/fmem.git)
+      * [libs/gherkin-cpp/libs/gherkin-c](https://github.com/c-libs/gherkin-c.git)
 ### Tested compilers
   * [Linux - GCC-5+](https://travis-ci.org/cpp-testing/GUnit)
   * [Linux - Clang-3.7+](https://travis-ci.org/cpp-testing/GUnit)
