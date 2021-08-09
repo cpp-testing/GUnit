@@ -10,6 +10,7 @@
 #include <gtest/gtest.h>
 
 #include <string>
+
 #include "GUnit/Detail/StringUtils.h"
 
 namespace testing {
@@ -23,40 +24,56 @@ struct info {
   TestPartResult::Type failure{};
 };
 
-template <class TLhs, class TRhs,
+template <class TShouldError, class TLhs, class TRhs,
           AssertionResult (*Comp)(const char*, const char*, TLhs, TRhs)>
 class msg : public decltype(Message()) {
  public:
   msg(const info& info, const std::string& comp, TLhs lhs, TRhs rhs)
-      : info_{info}, comp_{comp}, lhs_{lhs}, rhs_{rhs} {}
+      : info_{info},
+        comp_{comp},
+        lhs_{lhs},
+        rhs_{rhs},
+        result_{Comp("", "", lhs_, rhs_)} {}
   ~msg() {
-    const auto begin = info_.expr.find(comp_);
-    auto lhs_expr = info_.expr.substr(0, begin);
-    trim(lhs_expr);
-    auto rhs_expr = info_.expr.substr(begin + comp_.size());
-    trim(rhs_expr);
-    const AssertionResult gtest_ar =
-        (Comp(lhs_expr.c_str(), rhs_expr.c_str(), lhs_, rhs_));
-    if (!gtest_ar) {
-      internal::AssertHelper(info_.failure, info_.file, info_.line,
-                             gtest_ar.failure_message()) = *this;
+    if (TShouldError::value) {
+      const auto begin = info_.expr.find(comp_);
+      auto lhs_expr = info_.expr.substr(0, begin);
+      trim(lhs_expr);
+      auto rhs_expr = info_.expr.substr(begin + comp_.size());
+      trim(rhs_expr);
+      const AssertionResult gtest_ar =
+          (Comp(lhs_expr.c_str(), rhs_expr.c_str(), lhs_, rhs_));
+      if (!gtest_ar) {
+        internal::AssertHelper(info_.failure, info_.file, info_.line,
+                               gtest_ar.failure_message()) = *this;
+      }
     }
   }
+
+  operator bool() const { return result_; }
 
  private:
   info info_{};
   std::string comp_{};
   TLhs lhs_;
   TRhs rhs_;
+  bool result_{};
 };
 
+template <class TShouldError>
 class op {
   template <class TLhs>
   class comp : public decltype(Message()) {
    public:
-    explicit comp(const info& info, const TLhs& lhs) : info_{info}, lhs_{lhs} {}
+    explicit comp(const info& info, const TLhs& lhs) : info_{info}, lhs_{lhs} {
+      if (std::is_same<bool, TLhs>::value) {
+        result_ = internal::CmpHelperEQ("", "", lhs_, true);
+      }
+    }
+
     ~comp() {
-      if (!followed_ && std::is_same<bool, TLhs>::value) {
+      if (TShouldError::value && !followed_ &&
+          std::is_same<bool, TLhs>::value) {
         const AssertionResult gtest_ar =
             (internal::CmpHelperEQ(info_.expr.c_str(), "true", lhs_, true));
         if (!gtest_ar) {
@@ -72,8 +89,9 @@ class op {
                                int> = 0>
     auto operator==(const TRhs& rhs) const {
       followed_ = true;
-      return msg<TLhs, TRhs, internal::CmpHelperFloatingPointEQ<TLhs>>{
-          info_, "==", lhs_, rhs};
+      return msg<TShouldError, TLhs, TRhs,
+                 internal::CmpHelperFloatingPointEQ<TLhs>>{info_, "==", lhs_,
+                                                           rhs};
     }
 
     template <class TRhs,
@@ -82,49 +100,52 @@ class op {
                                int> = 0>
     auto operator==(const TRhs& rhs) const {
       followed_ = true;
-      return msg<const TLhs&, const TRhs&, internal::CmpHelperEQ>{
+      return msg<TShouldError, const TLhs&, const TRhs&, internal::CmpHelperEQ>{
           info_, "==", lhs_, rhs};
     }
 
     template <class TRhs>
     auto operator!=(const TRhs& rhs) const {
       followed_ = true;
-      return msg<const TLhs&, const TRhs&, internal::CmpHelperNE>{
+      return msg<TShouldError, const TLhs&, const TRhs&, internal::CmpHelperNE>{
           info_, "!=", lhs_, rhs};
     }
 
     template <class TRhs>
     auto operator>(const TRhs& rhs) const {
       followed_ = true;
-      return msg<const TLhs&, const TRhs&, internal::CmpHelperGT>{info_, ">",
-                                                                  lhs_, rhs};
+      return msg<TShouldError, const TLhs&, const TRhs&, internal::CmpHelperGT>{
+          info_, ">", lhs_, rhs};
     }
 
     template <class TRhs>
     auto operator>=(const TRhs& rhs) const {
       followed_ = true;
-      return msg<const TLhs&, const TRhs&, internal::CmpHelperGE>{
+      return msg<TShouldError, const TLhs&, const TRhs&, internal::CmpHelperGE>{
           info_, ">=", lhs_, rhs};
     }
 
     template <class TRhs>
     auto operator<=(const TRhs& rhs) const {
       followed_ = true;
-      return msg<const TLhs&, const TRhs&, internal::CmpHelperLE>{
+      return msg<TShouldError, const TLhs&, const TRhs&, internal::CmpHelperLE>{
           info_, "<=", lhs_, rhs};
     }
 
     template <class TRhs>
     auto operator<(const TRhs& rhs) const {
       followed_ = true;
-      return msg<const TLhs&, const TRhs&, internal::CmpHelperLT>{info_, "<",
-                                                                  lhs_, rhs};
+      return msg<TShouldError, const TLhs&, const TRhs&, internal::CmpHelperLT>{
+          info_, "<", lhs_, rhs};
     }
+
+    operator bool() const { return result_; }
 
    private:
     info info_{};
     TLhs lhs_{};
     mutable bool followed_{false};
+    bool result_{};
   };
 
  public:
@@ -138,17 +159,38 @@ class op {
  private:
   info info_{};
 };
+
+struct drop {
+  template <class T>
+  drop& operator<<(const T&) {
+    return *this;
+  }
+};
+
+struct ret_void {
+  template <class T>
+  void operator==(const T&) {}
+};
+
 }  // namespace detail
 }  // namespace v1
 }  // namespace testing
 
 #define EXPECT(...)                                                            \
-  (::testing::detail::op{                                                      \
+  (::testing::detail::op<std::true_type>{                                      \
        ::testing::detail::info{__FILE__, __LINE__, #__VA_ARGS__,               \
                                ::testing::TestPartResult::kNonFatalFailure}} % \
    __VA_ARGS__)
-#define ASSERT(...)                                                         \
-  (::testing::detail::op{                                                   \
-       ::testing::detail::info{__FILE__, __LINE__, #__VA_ARGS__,            \
-                               ::testing::TestPartResult::kFatalFailure}} % \
-   __VA_ARGS__)
+
+#define ASSERT(...)                                                            \
+  if (::testing::detail::op<std::false_type>{                                  \
+          ::testing::detail::info{__FILE__, __LINE__, #__VA_ARGS__,            \
+                                  ::testing::TestPartResult::kFatalFailure}} % \
+      __VA_ARGS__)                                                             \
+    ::testing::detail::drop{};                                                 \
+  else                                                                         \
+    return ::testing::detail::ret_void{} ==                                    \
+           (::testing::detail::op<std::true_type>{::testing::detail::info{     \
+                __FILE__, __LINE__, #__VA_ARGS__,                              \
+                ::testing::TestPartResult::kFatalFailure}} %                   \
+            __VA_ARGS__)

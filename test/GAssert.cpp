@@ -38,7 +38,6 @@ TEST(GAssert, ShouldSupportASSERT) {
 
   ASSERT(i == 42);
   ASSERT(42 == i);
-  ASSERT(42 == i);
 
   ASSERT(i != 0);
   ASSERT(0 != i);
