@@ -57,7 +57,7 @@ class msg : public decltype(Message()) {
   std::string comp_{};
   TLhs lhs_;
   TRhs rhs_;
-  bool result_{};
+  bool result_{false};
 };
 
 template <class TShouldError>
@@ -66,22 +66,10 @@ class op {
   class comp : public decltype(Message()) {
    public:
     explicit comp(const info& info, const TLhs& lhs) : info_{info}, lhs_{lhs} {
-      if (std::is_same<bool, TLhs>::value) {
-        result_ = internal::CmpHelperEQ("", "", lhs_, true);
-      }
+      set_result(lhs_);
     }
 
-    ~comp() {
-      if (TShouldError::value && !followed_ &&
-          std::is_same<bool, TLhs>::value) {
-        const AssertionResult gtest_ar =
-            (internal::CmpHelperEQ(info_.expr.c_str(), "true", lhs_, true));
-        if (!gtest_ar) {
-          internal::AssertHelper(info_.failure, info_.file, info_.line,
-                                 gtest_ar.failure_message()) = *this;
-        }
-      }
-    }
+    ~comp() { assert_error(lhs_); }
 
     template <class TRhs,
               std::enable_if_t<std::is_floating_point<TLhs>::value ||
@@ -142,10 +130,31 @@ class op {
     operator bool() const { return result_; }
 
    private:
+    void set_result(const bool&) {
+      result_ = internal::CmpHelperEQ("", "", lhs_, true);
+    }
+
+    template <class T>
+    void set_result(const T&) {}
+
+    void assert_error(const bool&) {
+      if (TShouldError::value && !followed_) {
+        const AssertionResult gtest_ar =
+            (internal::CmpHelperEQ(info_.expr.c_str(), "true", lhs_, true));
+        if (!gtest_ar) {
+          internal::AssertHelper(info_.failure, info_.file, info_.line,
+                                 gtest_ar.failure_message()) = *this;
+        }
+      }
+    }
+
+    template <class T>
+    void assert_error(const T&) {}
+
     info info_{};
     TLhs lhs_{};
     mutable bool followed_{false};
-    bool result_{};
+    bool result_{false};
   };
 
  public:
