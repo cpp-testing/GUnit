@@ -152,7 +152,7 @@ class op {
   explicit op(const info& info) : info_{info} {}
 
   template <class TLhs>
-  comp<TLhs> operator%(const TLhs& lhs) const {
+  comp<TLhs> operator<<(const TLhs& lhs) const {
     return comp<TLhs>{info_, lhs};
   }
 
@@ -176,21 +176,21 @@ struct ret_void {
 }  // namespace v1
 }  // namespace testing
 
-#define EXPECT(...)                                                            \
-  (::testing::detail::op<std::true_type>{                                      \
-       ::testing::detail::info{__FILE__, __LINE__, #__VA_ARGS__,               \
-                               ::testing::TestPartResult::kNonFatalFailure}} % \
-   __VA_ARGS__)
+#define EXPECT(...)                                                          \
+  (::testing::detail::op<std::true_type>{                                    \
+       ::testing::detail::info{__FILE__, __LINE__, #__VA_ARGS__,             \
+                               ::testing::TestPartResult::kNonFatalFailure}} \
+   << __VA_ARGS__)
 
-#define ASSERT(...)                                                            \
-  if (::testing::detail::op<std::false_type>{                                  \
-          ::testing::detail::info{__FILE__, __LINE__, #__VA_ARGS__,            \
-                                  ::testing::TestPartResult::kFatalFailure}} % \
-      __VA_ARGS__)                                                             \
-    ::testing::detail::drop{};                                                 \
-  else                                                                         \
-    return ::testing::detail::ret_void{} ==                                    \
-           (::testing::detail::op<std::true_type>{::testing::detail::info{     \
-                __FILE__, __LINE__, #__VA_ARGS__,                              \
-                ::testing::TestPartResult::kFatalFailure}} %                   \
-            __VA_ARGS__)
+#define ASSERT(...)                                                          \
+  if (::testing::detail::op<std::false_type>{                                \
+          ::testing::detail::info{__FILE__, __LINE__, #__VA_ARGS__,          \
+                                  ::testing::TestPartResult::kFatalFailure}} \
+      << __VA_ARGS__)                                                        \
+    void(::testing::detail::drop{});                                         \
+  else                                                                       \
+    return ::testing::detail::ret_void{} ==                                  \
+           (::testing::detail::op<std::true_type>{::testing::detail::info{   \
+                __FILE__, __LINE__, #__VA_ARGS__,                            \
+                ::testing::TestPartResult::kFatalFailure}}                   \
+            << __VA_ARGS__)

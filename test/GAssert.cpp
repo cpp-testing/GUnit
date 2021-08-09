@@ -29,6 +29,7 @@ TEST(GAssert, ShouldSupportExpect) {
   EXPECT(i < 100) << "message";
 
   EXPECT(42.0 == 42.);
+  EXPECT(2*21 == i);
 }
 
 TEST(GAssert, ShouldSupportASSERT) {
@@ -48,4 +49,5 @@ TEST(GAssert, ShouldSupportASSERT) {
   ASSERT(i < 100) << "message";
 
   ASSERT(42.0 == 42.);
+  ASSERT(2*21 == i);
 }
