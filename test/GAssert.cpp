@@ -50,4 +50,9 @@ TEST(GAssert, ShouldSupportASSERT) {
 
   ASSERT(42.0 == 42.);
   ASSERT(2*21 == i);
+
+  ASSERT("42" == std::string{"42"});
+  ASSERT(std::string{"42"} == "42");
+  ASSERT("42" != std::string{});
+  ASSERT(std::string{} != "42");
 }
