@@ -165,6 +165,10 @@ class op {
     return comp<TLhs>{info_, lhs};
   }
 
+  comp<std::string> operator<<(const char* lhs) const {
+    return comp<std::string>{info_, std::string{lhs}};
+  }
+
  private:
   info info_{};
 };
