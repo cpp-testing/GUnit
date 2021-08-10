@@ -176,11 +176,39 @@ class vtable {
 
 using CallReactionType = internal::CallReaction (*)(const void *);
 template <CallReactionType Ptr>
-struct GetAccess {
+struct GetAccessCallReactionType {
   friend CallReactionType GetCallReaction() { return Ptr; }
 };
 CallReactionType GetCallReaction();
-template struct GetAccess<&Mock::GetReactionOnUninterestingCalls>;
+template struct GetAccessCallReactionType<
+    &Mock::GetReactionOnUninterestingCalls>;
+
+using UnregisterCallReactionType = internal::CallReaction (*)(const void *);
+template <UnregisterCallReactionType Ptr>
+struct GetAccessUnregisterCallReactionType {
+  friend UnregisterCallReactionType UnregisterCallReaction() { return Ptr; }
+};
+UnregisterCallReactionType UnregisterCallReaction();
+template struct GetAccessUnregisterCallReactionType<
+    &Mock::GetReactionOnUninterestingCalls>;
+
+using AllowUninterestingCallsType = void (*)(const void *);
+template <AllowUninterestingCallsType Ptr>
+struct GetAccessAllowUninterestingCallsType {
+  friend AllowUninterestingCallsType AllowUninterestingCalls() { return Ptr; }
+};
+AllowUninterestingCallsType AllowUninterestingCalls();
+template struct GetAccessAllowUninterestingCallsType<
+    &Mock::AllowUninterestingCalls>;
+
+using FailUninterestingCallsType = void (*)(const void *);
+template <FailUninterestingCallsType Ptr>
+struct GetAccessFailUninterestingCallsType {
+  friend FailUninterestingCallsType FailUninterestingCalls() { return Ptr; }
+};
+FailUninterestingCallsType FailUninterestingCalls();
+template struct GetAccessFailUninterestingCallsType<
+    &Mock::FailUninterestingCalls>;
 
 }  // namespace detail
 
@@ -331,16 +359,18 @@ class NiceMock<GMock<T>> final : public GMock<T> {
  public:
   template <class... Ts>
   NiceMock(Ts &&... ts) : GMock<T>{std::forward<Ts>(ts)...} {
-    Mock::AllowUninterestingCalls(internal::ImplicitCast_<GMock<T> *>(this));
+    detail::AllowUninterestingCalls()(
+        internal::ImplicitCast_<GMock<T> *>(this));
   }
 
   NiceMock(NiceMock &&) = default;
   NiceMock(const NiceMock &) = delete;
   NiceMock() {
-    Mock::AllowUninterestingCalls(internal::ImplicitCast_<GMock<T> *>(this));
+    detail::AllowUninterestingCalls()(
+        internal::ImplicitCast_<GMock<T> *>(this));
   }
   ~NiceMock() {
-    Mock::UnregisterCallReaction(internal::ImplicitCast_<GMock<T> *>(this));
+    detail::UnregisterCallReaction()(internal::ImplicitCast_<GMock<T> *>(this));
   }
 };
 
@@ -349,15 +379,15 @@ class StrictMock<GMock<T>> final : public GMock<T> {
  public:
   template <class... Ts>
   StrictMock(Ts &&... ts) : GMock<T>{std::forward<Ts>(ts)...} {
-    Mock::FailUninterestingCalls(internal::ImplicitCast_<GMock<T> *>(this));
+    detail::FailUninterestingCalls()(internal::ImplicitCast_<GMock<T> *>(this));
   }
   StrictMock(StrictMock &&) = default;
   StrictMock(const StrictMock &) = delete;
   StrictMock() {
-    Mock::FailUninterestingCalls(internal::ImplicitCast_<GMock<T> *>(this));
+    detail::FailUninterestingCalls()(internal::ImplicitCast_<GMock<T> *>(this));
   }
   ~StrictMock() {
-    Mock::UnregisterCallReaction(internal::ImplicitCast_<GMock<T> *>(this));
+    detail::UnregisterCallReaction()(internal::ImplicitCast_<GMock<T> *>(this));
   }
 };
 

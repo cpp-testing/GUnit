@@ -154,9 +154,11 @@ class GTestAutoRegister {
              T::TEST_NAME::c_str())
                 .c_str(),
             {T::TEST_FILE, T::TEST_LINE})
-        ->AddTestPattern(GetTypeName(detail::type<typename T::TEST_TYPE>{}),
-                         GetTypeName(detail::type<typename T::TEST_TYPE>{}),
-                         new internal::TestMetaFactory<T>());
+        ->AddTestPattern(
+            GetTypeName(detail::type<typename T::TEST_TYPE>{}),
+            GetTypeName(detail::type<typename T::TEST_TYPE>{}),
+            new internal::TestMetaFactory<T>(),
+            internal::CodeLocation{T::TEST_NAME::c_str(), T::TEST_LINE});
 
     UnitTest::GetInstance()
         ->parameterized_test_registry()
