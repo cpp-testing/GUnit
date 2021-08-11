@@ -28,37 +28,37 @@
 
 > #### No more base classes, labels as identifiers and special assertions - [GUnit.GTest](docs/GTest.md) / [GUnit.GTest-Lite](docs/GTest-Lite.md)
   ```cpp
-                 Google.Test                        |                     GUnit.GTest
-  --------------------------------------------------+------------------------------------------------------
-  #include <gtest/gtest.h>                          | #include <GUnit.h>
-                                                    |
-  struct CalcTest : testing::Test {                 | GTEST("Calc Test") {
-   void SetUp() override {                          |   Calc calc{};
-     calc = std::make_unique<Calc>();               |
-   }                                                |   // SetUp
-                                                    |
-   void TearDown() override { }                     |   SHOULD("return sum of 2 numbers") {
-                                                    |     EXPECT(5 == calc->add(4, 1));
-   std::unique_ptr<Calc> calc;                      |   }
-  };                                                |
-                                                    |   SHOULD("throw if division by 0") {
-  TEST_F(CalcTest, ShouldReturnSumOf2Numbers) {     |     EXPECT_ANY_THROW(calc->div(42, 0));
-    EXPECT_EQ(5, calc->add(4, 1));                  |   }
-  }                                                 |
-                                                    |   // TearDown
-  TEST_F(CalcTest, ShouldThrowIfDivisionBy0) {      | }
-    EXPECT_ANY_THROW(calc->div(42, 0));             |
-  }                                                 |
+                 Google.Test                      |                     GUnit.GTest
+  ------------------------------------------------+------------------------------------------------------
+  #include <gtest/gtest.h>                        | #include <GUnit.h>
+                                                  |
+  struct CalcTest : testing::Test {               | GTEST("Calc Test") {
+   void SetUp() override {                        |   Calc calc{};
+     calc = std::make_unique<Calc>();             |
+   }                                              |   // SetUp
+                                                  |
+   void TearDown() override { }                   |   SHOULD("return sum of 2 numbers") {
+                                                  |     EXPECT(5 == calc->add(4, 1));
+   std::unique_ptr<Calc> calc;                    |   }
+  };                                              |
+                                                  |   SHOULD("throw if division by 0") {
+  TEST_F(CalcTest, ShouldReturnSumOf2Numbers) {   |     EXPECT_ANY_THROW(calc->div(42, 0));
+    EXPECT_EQ(5, calc->add(4, 1));                |   }
+  }                                               |
+                                                  |   // TearDown
+  TEST_F(CalcTest, ShouldThrowIfDivisionBy0) {    | }
+    EXPECT_ANY_THROW(calc->div(42, 0));           |
+  }                                               |
   ```
 
   > Output
   ```sh
-  [----------] 2 tests from CalcTest                | [----------] 1 tests from Calc Test
-  [ RUN      ] CalcTest.ShouldReturnSumOf2Numbers   | [ RUN      ] Calc Test
-  [       OK ] CalcTest.ShouldReturnSumOf2Numbers   | [ SHOULD   ] return sum of 2 numbers
-  [ RUN      ] CalcTest.ShouldThrowIfDivisionBy0    | [ SHOULD   ] throw if division by 0
-  [       OK ] CalcTest.ShouldThrowIfDivisionBy0    | [       OK ] Calc Test (0 ms)
-  [----------] 2 tests from CalcTest (1 ms total)   | [----------] 1 tests from Example (0 ms total)
+  [----------] 2 tests from CalcTest              | [----------] 1 tests from Calc Test
+  [ RUN      ] CalcTest.ShouldReturnSumOf2Numbers | [ RUN      ] Calc Test
+  [       OK ] CalcTest.ShouldReturnSumOf2Numbers | [ SHOULD   ] return sum of 2 numbers
+  [ RUN      ] CalcTest.ShouldThrowIfDivisionBy0  | [ SHOULD   ] throw if division by 0
+  [       OK ] CalcTest.ShouldThrowIfDivisionBy0  | [       OK ] Calc Test (0 ms)
+  [----------] 2 tests from CalcTest (1 ms total) | [----------] 1 tests from Example (0 ms total)
   ```
 
 > #### No more hand written mocks - [GUnit.GMock](docs/GMock.md)
@@ -71,23 +71,23 @@
   };
   ```
   ```cpp
-                 Google.Test                        |                     GUnit.GMock
-  --------------------------------------------------+------------------------------------------------------
-  #include <gmock/gmock.h>                          | #include <GUnit.h>
-                                                    |
-  struct mock_interface : interface {               |
-    MOCK_CONST_METHOD0(get, int(int));              |
-    MOCK_METHOD1(foo, void(int));                   |
-    MOCK_METHOD2(bar, void(int, const string&));    |
-  };                                                |
-                                                    |
-  int main() {                                      | int main() {
-    StrictMock<mock_interface> mock{};              |   StrictGMock<interface> mock{};
-    EXPECT_CALL(mock, foo(42));                     |   EXPECT_CALL(mock, (foo)(42));
-                                                    |
-    interface& i = mock;                            |   interface& i = mock.object();
-    i.foo(42);                                      |   i.foo(42);
-  }                                                 | }
+                 Google.Test                      |                     GUnit.GMock
+  ------------------------------------------------+------------------------------------------------------
+  #include <gmock/gmock.h>                        | #include <GUnit.h>
+                                                  |
+  struct mock_interface : interface {             |
+    MOCK_CONST_METHOD0(get, int(int));            |
+    MOCK_METHOD1(foo, void(int));                 |
+    MOCK_METHOD2(bar, void(int, const string&));  |
+  };                                              |
+                                                  |
+  int main() {                                    | int main() {
+    StrictMock<mock_interface> mock{};            |   StrictGMock<interface> mock{};
+    EXPECT_CALL(mock, foo(42));                   |   EXPECT_CALL(mock, (foo)(42));
+                                                  |
+    interface& i = mock;                          |   interface& i = mock.object();
+    i.foo(42);                                    |   i.foo(42);
+  }                                               | }
   ```
 
 > #### Simplified creation and injection of SUT (System Under Test) and mocks - [GUnit.GMake](docs/GMake.md)
@@ -99,23 +99,23 @@
   };
   ```
   ```cpp
-                 Google.Test                        |                     GUnit.GMake
-  --------------------------------------------------+------------------------------------------------------
-   #include <gtest/gtest.h>                         | #include <GUnit.h>
-   #include <gmock/gmock.h>                         |
-                                                    |
-   TEST(CalcTest, ShouldMakeCoffee) {               | GTEST("Calc Test") {
-     StrictMock<mock_heater> heater{};              |   std::tie(sut, mocks) = // auto [sut, mocks] in C++17
-     StrictMock<mock_pump> pump{};                  |     make<coffee_maker, StrictGMock>();
-     StrictMock<mock_grinder> grinder{};            |
-     coffee_maker sut{heater, pump, grinder};       |   EXPECT_CALL(mocks.mock<iheater>(), (on)());
-                                                    |   EXPECT_CALL(mocks.mock<ipump>(), (pump)());
-     EXPECT_CALL(heater, on());                     |   EXPECT_CALL(mocks.mock<igrinder>(), (grind)());
-     EXPECT_CALL(pump, pump());                     |   EXPECT_CALL(mocks.mock<iheater>(), (off)());
-     EXPECT_CALL(grinder, grind());                 |
-     EXPECT_CALL(heater, off());                    |   sut->brew();
-                                                    | }
-     sut->brew();                                   |
+                 Google.Test                      |                     GUnit.GMake
+  ------------------------------------------------+------------------------------------------------------
+   #include <gtest/gtest.h>                       | #include <GUnit.h>
+   #include <gmock/gmock.h>                       |
+                                                  |
+   TEST(CalcTest, ShouldMakeCoffee) {             | GTEST("Calc Test") {
+     StrictMock<mock_heater> heater{};            |   std::tie(sut, mocks) = // auto [sut, mocks] in C++17
+     StrictMock<mock_pump> pump{};                |     make<coffee_maker, StrictGMock>();
+     StrictMock<mock_grinder> grinder{};          |
+     coffee_maker sut{heater, pump, grinder};     |   EXPECT_CALL(mocks.mock<iheater>(), (on)());
+                                                  |   EXPECT_CALL(mocks.mock<ipump>(), (pump)());
+     EXPECT_CALL(heater, on());                   |   EXPECT_CALL(mocks.mock<igrinder>(), (grind)());
+     EXPECT_CALL(pump, pump());                   |   EXPECT_CALL(mocks.mock<iheater>(), (off)());
+     EXPECT_CALL(grinder, grind());               |
+     EXPECT_CALL(heater, off());                  |   sut->brew();
+                                                  | }
+     sut->brew();                                 |
    }
   ```
 
@@ -209,6 +209,12 @@
     * Automatic mocks injection
 * `GUnit.GSteps` - Behaviour Driven Development
   * Support for - [Gherkin](https://github.com/cucumber/cucumber/wiki/Gherkin) style - BDD tests
+* `GUnit.GAssert` - Google.Test assertions without postfixes
+  * Simple/consised interface - `EXPECT(true); EXPECT(.0 > 2.0); ASSERT(11 != 42), ...` 
+  * No more EXPECT_EQ/EXPECT_GT/...
+  * No more confusing error messages depending on expected, given parameters
+  * No more bugs due to using the wrong EXPECT for floating point numbers (EXPECT_DOUBLE_EQ) and/or strings
+  * No more implicit conversions between types!
 
 ### Quick Start
 
@@ -275,6 +281,7 @@
   * **[GUnit.GMock](docs/GMock.md)**
   * **[GUnit.GMake](docs/GMake.md)**
   * **[GUnit.GSteps](docs/GSteps.md)**
+  * **[GUnit.GAssert](docs/GAssert.md)**
 
 ### [FAQ](docs/FAQ.md)
   * [C++ Now 2017: Towards Painless Testing](https://www.youtube.com/watch?v=NVrZjT5lW5o)
