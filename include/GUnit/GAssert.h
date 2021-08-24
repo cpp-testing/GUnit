@@ -135,7 +135,14 @@ class op {
     }
 
     template <class T>
-    void set_result(const T&) {}
+    std::enable_if_t<std::is_convertible<T, bool>::value> set_result(
+        const T& t) {
+      set_result(bool(t));
+    }
+
+    template <class T>
+    std::enable_if_t<!std::is_convertible<T, bool>::value> set_result(
+        const T&) {}
 
     void assert_error(const bool&) {
       if (TShouldError::value && !followed_) {
@@ -149,7 +156,14 @@ class op {
     }
 
     template <class T>
-    void assert_error(const T&) {}
+    std::enable_if_t<std::is_convertible<T, bool>::value> assert_error(
+        const T& t) {
+      assert_error(bool(t));
+    }
+
+    template <class T>
+    std::enable_if_t<!std::is_convertible<T, bool>::value> assert_error(
+        const T&) {}
 
     info info_{};
     TLhs lhs_{};
