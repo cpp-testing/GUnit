@@ -30,6 +30,13 @@ TEST(GAssert, ShouldSupportExpect) {
 
   EXPECT(42.0 == 42.);
   EXPECT(2*21 == i);
+
+  struct convertible {
+    operator bool() const { return false; }
+  };
+
+  EXPECT(not convertible{});
+  EXPECT(false == convertible{});
 }
 
 TEST(GAssert, ShouldSupportASSERT) {
@@ -55,4 +62,11 @@ TEST(GAssert, ShouldSupportASSERT) {
   ASSERT(std::string{"42"} == "42");
   ASSERT("42" != std::string{});
   ASSERT(std::string{} != "42");
+
+  struct convertible {
+    operator bool() const { return true; }
+  };
+
+  ASSERT(convertible{});
+  ASSERT(false == not convertible{});
 }
