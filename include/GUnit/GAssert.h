@@ -130,24 +130,24 @@ class op {
     operator bool() const { return result_; }
 
    private:
-    void set_result(const bool&) {
-      result_ = internal::CmpHelperEQ("", "", lhs_, true);
+    void set_result(const bool& result) {
+      result_ = internal::CmpHelperEQ("", "", result, true);
     }
 
     template <class T>
-    std::enable_if_t<std::is_convertible<T, bool>::value> set_result(
+    std::enable_if_t<std::is_constructible<bool, T>::value> set_result(
         const T& t) {
       set_result(bool(t));
     }
 
     template <class T>
-    std::enable_if_t<!std::is_convertible<T, bool>::value> set_result(
+    std::enable_if_t<!std::is_constructible<bool, T>::value> set_result(
         const T&) {}
 
-    void assert_error(const bool&) {
+    void assert_error(const bool& result) {
       if (TShouldError::value && !followed_) {
         const AssertionResult gtest_ar =
-            (internal::CmpHelperEQ(info_.expr.c_str(), "true", lhs_, true));
+            (internal::CmpHelperEQ(info_.expr.c_str(), "true", result, true));
         if (!gtest_ar) {
           internal::AssertHelper(info_.failure, info_.file, info_.line,
                                  gtest_ar.failure_message()) = *this;
@@ -156,13 +156,13 @@ class op {
     }
 
     template <class T>
-    std::enable_if_t<std::is_convertible<T, bool>::value> assert_error(
+    std::enable_if_t<std::is_constructible<bool, T>::value> assert_error(
         const T& t) {
       assert_error(bool(t));
     }
 
     template <class T>
-    std::enable_if_t<!std::is_convertible<T, bool>::value> assert_error(
+    std::enable_if_t<!std::is_constructible<bool, T>::value> assert_error(
         const T&) {}
 
     info info_{};
