@@ -258,7 +258,7 @@ class GMock {
 
   template <class TName, class R, class... TArgs>
   decltype(auto) gmock_call_impl(
-      int offset, const detail::identity_t<Matcher<TArgs>> &... args) {
+      std::size_t offset, const detail::identity_t<Matcher<TArgs>> &... args) {
     vtable.set(offset, detail::union_cast<void *>(
                            &GMock::template original_call<TName, R, TArgs...>));
 
