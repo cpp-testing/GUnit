@@ -154,8 +154,8 @@ class vtable {
 
  private:
   auto dtor(int) {
-    auto *self = (T *)this;
-    auto vt = (vtable *)self;
+    auto *self = reinterpret_cast<T *>(this);
+    auto vt = reinterpret_cast<vtable *>(self);
     auto offset = dtor_offset<T>();
     auto ptr = vt->get(offset);
     void (*f)(T *) = union_cast<void (*)(T *)>(ptr);
@@ -227,7 +227,7 @@ class GMock {
 
   template <class TName = detail::string<>, class R = void *, class... TArgs>
   R not_expected(TArgs... args) {
-    const auto addr = (volatile int *)__builtin_return_address(0) - 1;
+    const auto addr = static_cast<void*>((static_cast<int *>(__builtin_return_address(0)) - 1));
     auto *ptr = [this] {
       fs[__PRETTY_FUNCTION__] = std::make_unique<FunctionMocker<R(TArgs...)>>();
       return static_cast<FunctionMocker<R(TArgs...)> *>(
@@ -246,7 +246,7 @@ class GMock {
         return buf + "\n\t       At: [" + detail::basename(file) + ":" +
                std::to_string(line) + "]";
       };
-      const auto al = detail::addr2line((void *)addr);
+      const auto al = detail::addr2line(addr);
       msgs.emplace_back(info(al.first, al.second) +
                         "\n\t     From: " + detail::call_stack("\n\t\t   ", 2));
       ptr->SetOwnerAndName(this, std::is_same<TName, void>::value
