@@ -199,17 +199,27 @@ struct ret_void {
   void operator==(const T&) {}
 };
 
+template <typename T>
+void prevent_commas(T&&) {}
+
 }  // namespace detail
 }  // namespace v1
 }  // namespace testing
 
-#define EXPECT(...)                                                          \
+#define GUNIT_PREVENT_COMMAS(...) \
+  decltype(testing::detail::prevent_commas(__VA_ARGS__))()
+
+#define EXPECT_IMPL(...)                                                     \
   (::testing::detail::op<std::true_type>{                                    \
        ::testing::detail::info{__FILE__, __LINE__, #__VA_ARGS__,             \
                                ::testing::TestPartResult::kNonFatalFailure}} \
    << __VA_ARGS__)
 
-#define ASSERT(...)                                                          \
+#define EXPECT(...)                  \
+  GUNIT_PREVENT_COMMAS(__VA_ARGS__); \
+  EXPECT_IMPL(__VA_ARGS__)
+
+#define ASSERT_IMPL(...)                                                     \
   if (::testing::detail::op<std::false_type>{                                \
           ::testing::detail::info{__FILE__, __LINE__, #__VA_ARGS__,          \
                                   ::testing::TestPartResult::kFatalFailure}} \
@@ -221,3 +231,7 @@ struct ret_void {
                 __FILE__, __LINE__, #__VA_ARGS__,                            \
                 ::testing::TestPartResult::kFatalFailure}}                   \
             << __VA_ARGS__)
+
+#define ASSERT(...)                  \
+  GUNIT_PREVENT_COMMAS(__VA_ARGS__); \
+  ASSERT_IMPL(__VA_ARGS__)
