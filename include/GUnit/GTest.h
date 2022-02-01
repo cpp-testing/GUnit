@@ -286,9 +286,9 @@ class GTest : public detail::GTest<T, TParamType> {};
                &__GUNIT_CAT(GTEST_GENERATE_NAMES, __LINE__))
 
 #define GTEST(...) \
-  __GUNIT_CAT(__GTEST_IMPL_, __GUNIT_SIZE(__VA_ARGS__))(false, __VA_ARGS__)
+  __GUNIT_CAT(__GTEST_IMPL_, __GUNIT_SIZE(__VA_ARGS__))(false, __VA_ARGS__) // NOLINT
 #define DISABLED_GTEST(...) \
-  __GUNIT_CAT(__GTEST_IMPL_, __GUNIT_SIZE(__VA_ARGS__))(true, __VA_ARGS__)
+  __GUNIT_CAT(__GTEST_IMPL_, __GUNIT_SIZE(__VA_ARGS__))(true, __VA_ARGS__) // NOLINT
 
 #define SHOULD(NAME) if (tr_gtest.run("SHOULD", NAME, __LINE__))
 #define DISABLED_SHOULD(NAME) if (tr_gtest.run("SHOULD", NAME, __LINE__, true))
