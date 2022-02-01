@@ -96,16 +96,17 @@ struct virtual_offset {
 template <class R, class B, class... TArgs>
 inline auto offset(R (B::*f)(TArgs...) const) {
   auto ptr = reinterpret_cast<std::size_t (virtual_offset::*)(int)>(f);
-  return (virtual_offset{}.*ptr)(0);
+  return (virtual_offset{}.*ptr)(0); // NOLINT
 }
 
 template <class R, class B, class... TArgs>
 inline auto offset(R (B::*f)(TArgs...)) {
   auto ptr = reinterpret_cast<std::size_t (virtual_offset::*)(int)>(f);
-  return (virtual_offset{}.*ptr)(0);
+  return (virtual_offset{}.*ptr)(0); // NOLINT
 }
 
 template <class T>
+__attribute__((no_sanitize("undefined")))
 inline auto dtor_offset() {
   virtual_offset offset;
   union_cast<T *>(&offset)->~T();
