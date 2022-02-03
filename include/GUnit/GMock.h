@@ -563,8 +563,8 @@ auto object(TMock *mock) {
 #define __GMOCK_OVERLOAD_CALL(...) __GUNIT_SIZE(__VA_ARGS__) __GUNIT_IGNORE
 #define __GMOCK_OVERLOAD_CAST_IMPL_1(obj, call)
 #define __GMOCK_OVERLOAD_CAST_IMPL_2(obj, call)                          \
-  (::testing::detail::function_type_t<std::decay_t<decltype(obj)>::type, \
-                                      __GMOCK_FUNCTION call>)
+  static_cast<::testing::detail::function_type_t<std::decay_t<decltype(obj)>::type, \
+                                      __GMOCK_FUNCTION call>>
 #define __GMOCK_INTERNAL(...)               \
   __GUNIT_IF(__GUNIT_IS_EMPTY(__VA_ARGS__)) \
   (__GUNIT_IGNORE, __GUNIT_COMMA)() __VA_ARGS__
@@ -578,8 +578,8 @@ auto object(TMock *mock) {
 #define __GMOCK_EXPECT_CALL_1(obj, qcall, call)                              \
   ((obj).template gmock_call<__GMOCK_QNAME call>(                            \
        __GUNIT_CAT(__GMOCK_OVERLOAD_CAST_IMPL_, __GMOCK_OVERLOAD_CALL call)( \
-           obj, call) &                                                      \
-       std::decay_t<decltype(obj)>::type::__GMOCK_NAME call __GMOCK_CALL     \
+           obj, call)( &                                                     \
+       std::decay_t<decltype(obj)>::type::__GMOCK_NAME call) __GMOCK_CALL    \
            call))                                                            \
       .InternalExpectedAt(__FILE__, __LINE__, #obj, #qcall)
 
@@ -608,8 +608,8 @@ auto object(TMock *mock) {
 #define __GMOCK_ON_CALL_1(obj, qcall, call)                                  \
   ((obj).template gmock_call<__GMOCK_QNAME call>(                            \
        __GUNIT_CAT(__GMOCK_OVERLOAD_CAST_IMPL_, __GMOCK_OVERLOAD_CALL call)( \
-           obj, call) &                                                      \
-       std::decay_t<decltype(obj)>::type::__GMOCK_NAME call __GMOCK_CALL     \
+           obj, call)( &                                                     \
+       std::decay_t<decltype(obj)>::type::__GMOCK_NAME call) __GMOCK_CALL    \
            call))                                                            \
       .InternalDefaultActionSetAt(__FILE__, __LINE__, #obj, #qcall)
 
