@@ -8,17 +8,22 @@
 #pragma once
 
 #include <cxxabi.h>
-#include <execinfo.h>
 
 #include <memory>
 #include <string>
 
 #include "gtest/gtest.h"
 
+#if defined(__APPLE__) || defined(__linux__)
+#include <execinfo.h>
+#endif
+
 #if defined(__APPLE__)
 #include <libproc.h>
 #elif defined(__linux__)
 extern const char *__progname_full;
+#elif defined(_WIN32)
+static const char *__progname_full = "progname_not_availabe_on_WIN32";
 #endif
 
 #if !defined(GUNIT_SHOW_STACK_SIZE)
@@ -44,12 +49,17 @@ inline auto &progname() {
 #elif defined(__APPLE__)
   static char self[PROC_PIDPATHINFO_MAXSIZE] = {};
   proc_pidpath(getpid(), self, sizeof(self));
+#elif defined(_WIN32)
+  static auto self = __progname_full;
 #endif
   return self;
 }
 
 inline std::string call_stack(const std::string &newline, int stack_begin = 1,
                               int stack_size = GUNIT_SHOW_STACK_SIZE) {
+#if defined(_WIN32)
+  return "callstack not availabe on WIN32";
+#else
   static constexpr auto MAX_CALL_STACK_SIZE = 64;
   void *bt[MAX_CALL_STACK_SIZE];
   const auto frames = backtrace(bt, sizeof(bt) / sizeof(bt[0]));
@@ -81,9 +91,13 @@ inline std::string call_stack(const std::string &newline, int stack_begin = 1,
     }
   }
   return result.str();
+#endif
 }
 
 inline std::pair<std::string, int> addr2line(void *addr) {
+#if defined(_WIN32)
+  return {"addr2line not availabe on WIN32", 0};
+#else
   std::stringstream cmd;
   cmd << "addr2line -Cpe " << progname() << " " << addr;
 
@@ -104,6 +118,7 @@ inline std::pair<std::string, int> addr2line(void *addr) {
   std::string res2 = data.substr(0, space);
   const auto colon = res2.find(":");
   return {res2.substr(0, colon), std::atoi(res2.substr(colon + 1).c_str())};
+#endif
 }
 
 }  // namespace detail
