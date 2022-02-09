@@ -1,0 +1,26 @@
+---
+name: Linux
+
+on:
+  push:
+    branches:
+      - master
+      - develop
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: configure
+        run: cmake -S . -B build
+
+      - name: build and test
+        run: cmake --build build
