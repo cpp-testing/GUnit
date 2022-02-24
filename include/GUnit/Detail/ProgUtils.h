@@ -58,6 +58,9 @@ inline auto &progname() {
 inline std::string call_stack(const std::string &newline, int stack_begin = 1,
                               int stack_size = GUNIT_SHOW_STACK_SIZE) {
 #if defined(_WIN32)
+  (void)newline;
+  (void)stack_begin;
+  (void)stack_size;
   return "callstack not availabe on WIN32";
 #else
   static constexpr auto MAX_CALL_STACK_SIZE = 64;
@@ -96,6 +99,7 @@ inline std::string call_stack(const std::string &newline, int stack_begin = 1,
 
 inline std::pair<std::string, int> addr2line(void *addr) {
 #if defined(_WIN32)
+  (void)addr;
   return {"addr2line not availabe on WIN32", 0};
 #else
   std::stringstream cmd;
