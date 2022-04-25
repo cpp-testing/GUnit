@@ -175,7 +175,7 @@ inline std::pair<bool, std::string> make_tags(const nlohmann::json& tags) {
   for (const auto& tag : tags) {
     std::string tag_name = tag["name"];
     if (i++) {
-      result += ",";
+      result += ";";
     }
     if (tag_name == "@disabled") {
       disabled = true;

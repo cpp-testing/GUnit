@@ -7,7 +7,9 @@
 //
 #pragma once
 
+#if !defined(_WIN32) && !defined(_WIN64)
 #include <cxxabi.h>
+#endif
 
 #include <memory>
 #include <string>
@@ -35,11 +37,15 @@ inline namespace v1 {
 namespace detail {
 
 inline std::string demangle(const std::string &mangled) {
+#if !defined(_WIN32) && !defined(_WIN64)
   const auto demangled = abi::__cxa_demangle(mangled.c_str(), 0, 0, 0);
   if (demangled) {
     std::shared_ptr<char> free{demangled, std::free};
     return demangled;
   }
+#else
+  return mangled;
+#endif
   return {};
 }
 
