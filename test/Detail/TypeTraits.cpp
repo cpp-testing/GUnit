@@ -8,6 +8,8 @@
 #include "GUnit/Detail/TypeTraits.h"
 #include <gtest/gtest.h>
 
+#include <algorithm>
+
 struct a {};
 
 namespace testing {
@@ -136,7 +138,13 @@ TEST(TypeTraits, ShouldGetTypeName) {
   EXPECT_STREQ("int", get_type_name<int>());
   EXPECT_STREQ("const double", get_type_name<const double>());
   EXPECT_STREQ("a", get_type_name<a>());
+#if defined(__clang__)
+  std::vector<std::string> expected = {"testing::v1::detail::n","testing::detail::n"}; // get_type_name result may not contain v1::
+  EXPECT_TRUE( std::find(expected.begin(), expected.end(), get_type_name<n>()) != expected.end() );
+#elif defined(__GNUC__)
   EXPECT_STREQ("testing::v1::detail::n", get_type_name<n>());
+#endif
+//  EXPECT_STREQ("a", "b");
 }
 }  // detail
 }  // v1
