@@ -154,20 +154,22 @@ auto get_type_name_impl(const char *ptr, std::index_sequence<Ns...>) {
   return str;
 }
 
+
+#if defined(__clang__)
 constexpr bool const_strncmp(const char* a, const char*b, uint8_t n)
 {
-    bool retval = 1;
-
+    bool retval = false;
     for(uint8_t i = 0; i<n; i++)
     {
         if(a[i] != b[i])
         {
-            retval = 0;
+            retval = true;
             break;
         }
     }
     return retval;
 }
+#endif
 
 template <class T>
 const char *get_type_name() {
@@ -175,7 +177,7 @@ const char *get_type_name() {
 #if defined(__clang__)
     constexpr char opt1[] = "const char *testing::v1::detail::get_type_name() [T = ";
     constexpr char opt2[] = "const char *testing::detail::get_type_name() [T = ";
-    constexpr uint16_t offset = const_strncmp(__PRETTY_FUNCTION__, opt1, sizeof(opt1)-1)? sizeof(opt1)-1 : sizeof(opt2)-1;
+    constexpr uint16_t offset = const_strncmp(__PRETTY_FUNCTION__, opt1, sizeof(opt1)-1)? sizeof(opt2)-1 : sizeof(opt1)-1;
 #elif defined(__GNUC__)
     constexpr uint16_t offset = sizeof("const char* testing::v1::detail::get_type_name() [with T = ") - 1;
 #endif
