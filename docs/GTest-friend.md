@@ -4,27 +4,24 @@ If you want to make make your classes friend with their test, here are some ways
 
 * <font size="1">Add `#define private public` & `#define protected public` before including production headers to your test sources. But I never said this.</font>
 
-* You can declare your test with an existing class instead of a string :
+* Note that you can declare your test with an existing class instead of a string :
 `GTEST(SomeClass) { ... }`
-With this syntax, the test will inherit from `SomeClass`, so you can access to protected members.
-
-    This is the least intrusive way, as there is nothing added to the tested class - apart from maybe replace private by protected.
 
 * You can declare your class `friend` with the test class `GTEST(SomeClass)` :
-    ```// Forward declare some GUnit classes
+    ```#include <GUnit/Detail/StringUtils.h>
+    // Forward declare some GUnit classes
     template <typename ...> struct GTEST;
-    namespace testing::detail { template <char ...> struct string; }
     
     class SomeClass {
-        friend struct GTEST<SomeClass, testing::detail::string<> >;
+        friend struct GTEST<SomeTest, testing::detail::string<> >;
     };
 
-    GTEST(Game) { ... }
+    GTEST(SomeTest) { ... }
     ```
 * You can also declare friend with the test class `GTEST("SomeTest")`, it is more cumbersome :
-    ```// Forward declare some GUnit classes
+    ```#include <GUnit/Detail/StringUtils.h>
+    // Forward declare some GUnit classes
     template <typename ...> struct GTEST;
-    namespace testing::detail { template <char ...> struct string; }
 
     class SomeClass {
         friend struct GTEST<testing::detail::string<'\"', 'S', 'o', 'm', 'e', 'T', ,'e', 's', 't', '\"', '\000'>, testing::detail::string<> >;
@@ -33,17 +30,9 @@ With this syntax, the test will inherit from `SomeClass`, so you can access to p
     GTEST("SomeTest") { ... }
     ```
 
-* You can even declare friendness with `GTEST("SomeTest")` by importing some GUnit magic - but we're polluting our production code:
-```
-    #ifndef __GUNIT_CAT
-    #define __GUNIT_PRIMITIVE_CAT(arg, ...) arg##__VA_ARGS__
-    #define __GUNIT_CAT(arg, ...) __GUNIT_PRIMITIVE_CAT(arg, __VA_ARGS__)
-    #endif
-    namespace {
-        template <char ...> struct string {};
-        template <class TStr, std::size_t N, char... Chrs> struct make_string : make_string<TStr, N - 1, TStr().chrs[N - 1], Chrs...> {};
-        template <class TStr, char... Chrs> struct make_string<TStr, 0, Chrs...> { using type = string<Chrs...>; };
-    }
+* You can even declare friendness with `GTEST("SomeTest")` by importing some GUnit magic
+```#include <GUnit/Detail/Preprocessor.h>
+    #include <GUnit/Detail/StringUtils.h>
 
     #define FRIEND_GTEST(name) \
     struct __GUNIT_CAT(GTEST_STRING_, __LINE__) { static constexpr const char* chrs = #name; }; \
