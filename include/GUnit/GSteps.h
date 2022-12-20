@@ -592,20 +592,27 @@ class Steps : public ::testing::EmptyTestEventListener {
               throw StepIsAmbiguous{"STEP \"" + expectedStep.second->name +
                                     "\" is ambiguous!"};
             }
-            // update the curret step
+            // update the current step
             current_step_ = i;
             const auto name = given_step.second.first.name;
-            const auto full_file = given_step.second.first.file.empty()
-                                       ? file_
-                                       : given_step.second.first.file;
-            const auto file =
-                full_file.substr(full_file.find_last_of("/\\") + 1);
-            const auto line = expectedStep.second->line;
+            const auto file = given_step.second.first.file;
 
             std::cout << "\033[0;96m"
-                      << "[ " << std::right << std::setw(8) << name << " ] "
-                      << std::left << std::setw(60) << expectedStep.second->name
-                      << "# " << file << ":" << line << "\033[m" << '\n';
+                      << "[ " << std::right << std::setw(8) << name << " ] " << std::left << std::setw(60) << expectedStep.second->name << "# ";
+
+            {
+              const auto file = file_.substr(file_.find_last_of("/\\") + 1);
+              const auto line = expected_step["locations"].back()["line"].template get<int>();
+              std::cout << file << ":" << line;
+            }
+
+            if (not file.empty()) {
+              const auto line = given_step.second.first.line;
+              std::cout << " " << file << ":" << line;
+            }
+
+            std::cout << "\033[m" << '\n';
+
             info_.step = expectedStep.second->name;
             given_step.second.second(expectedStep.second->name,
                                      detail::make_table(expected_step));
