@@ -196,6 +196,19 @@ class GTest : public std::conditional_t<std::is_same<TParamType, void>::value,
   SUT sut;  // has to be after mocks
 };
 
+template <char... Chars, class TParamType>
+class GTest<string<Chars...>, TParamType>
+    : public std::conditional_t<std::is_same<TParamType, void>::value, Test,
+                                TestWithParam<TParamType>> {
+ public:
+  template <class TMock>
+  decltype(auto) mock() {
+    return mocks.mock<TMock>();
+  }
+
+  mocks_t mocks;
+};
+
 template <class T, class TParamType, class TAny>
 class GTest<T, TParamType, std::false_type, TAny> : public Test {
  public:
