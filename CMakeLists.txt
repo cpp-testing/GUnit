@@ -77,6 +77,10 @@ if (ENABLE_MEMCHECK AND MEMORYCHECK_COMMAND)
     string(REPLACE "/" "_" out ${name})
     add_executable(${out} ${CMAKE_CURRENT_LIST_DIR}/${name}.cpp)
     add_test(${out} ${MEMORYCHECK_COMMAND} --leak-check=full --error-exitcode=1 ./${out})
+    set_tests_properties(${out}
+    PROPERTIES
+    ENVIRONMENT ${scenario}
+    )
     target_link_libraries(${out} gunit)
     add_custom_command(TARGET ${out} COMMAND ${scenario} ./${out} --gtest_color=yes USES_TERMINAL)
   endfunction()
@@ -85,6 +89,10 @@ else()
     string(REPLACE "/" "_" out ${name})
     add_executable(${out} ${CMAKE_CURRENT_LIST_DIR}/${name}.cpp)
     add_test(${out} ./${out})
+    set_tests_properties(${out}
+    PROPERTIES
+    ENVIRONMENT ${scenario}
+    )
     target_link_libraries(${out} gunit)
     add_custom_command(TARGET ${out} COMMAND ${scenario} ./${out} --gtest_color=yes USES_TERMINAL)
   endfunction()
