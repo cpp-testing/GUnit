@@ -227,8 +227,21 @@
 * Write some tests...
 * Compile and Run!
 
+### Quick Start (CMake)
+* Add to your CMakeLists.txt the following lines:
+   ```
+   include(FetchContent)
+   FetchContent_Declare(
+   gunit
+   GIT_REPOSITORY https://github.com/cpp-testing/GUnit.git
+   GIT_TAG        master
+   )
+   FETCHCONTENT_MAKEAVAILABLE(gunit)
+   ```
+* Write some tests...
+* Compile and Run
 ---
-
+> When using the installation method as described [here](#quick-start-cmake) you may fully skip this step.
 * [gherkin](https://github.com/cucumber/cucumber/wiki/Gherkin) support using CMake
     * `gherkin-cpp` using add_subdirectory
         ```sh
