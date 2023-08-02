@@ -82,7 +82,6 @@ if (ENABLE_MEMCHECK AND MEMORYCHECK_COMMAND)
     ENVIRONMENT ${scenario}
     )
     target_link_libraries(${out} gunit)
-    add_custom_command(TARGET ${out} COMMAND ${scenario} ./${out} --gtest_color=yes USES_TERMINAL)
   endfunction()
 else()
   function(test name scenario)
@@ -94,7 +93,6 @@ else()
     ENVIRONMENT ${scenario}
     )
     target_link_libraries(${out} gunit)
-    add_custom_command(TARGET ${out} COMMAND ${scenario} ./${out} --gtest_color=yes USES_TERMINAL)
   endfunction()
 endif()
 
