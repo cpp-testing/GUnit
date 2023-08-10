@@ -407,6 +407,7 @@ class Steps : public ::testing::EmptyTestEventListener {
         ::testing::UnitTest::GetInstance()->current_test_info()->name();
     steps_ = {};
     current_step_ = {};
+    line_ = {};
     pickle_steps_ = nlohmann::json::parse(pickles)["pickle"]["steps"];
     not_found_ = {};
     file_ = file;
@@ -567,15 +568,21 @@ class Steps : public ::testing::EmptyTestEventListener {
       // Iterate through pickle_steps, because detail::make_table expects a json
       // with the step to be executed. need to investigate if we can remove this
       // part
+      std::size_t tmp_line{};
       nlohmann::json expected_step{};
       for (const auto& exp_step : pickle_steps_) {
         if (exp_step["text"] == expectedStep.second->name) {
           if (exp_step["text"] == expectedStep.second->name) {
-            expected_step = exp_step;
-            break;
+            const auto line = exp_step["locations"].back()["line"].get<std::size_t>();
+            if (line > line_) {
+              expected_step = exp_step;
+              tmp_line = exp_step["locations"].back()["line"].get<std::size_t>();
+              break;
+            }
           }
         }
       }
+
       //---------------------------
       // From original code. This is done so it is known at which point of the
       // loop it has stopped. Maybe a refactor to use a forward list here would
@@ -617,6 +624,7 @@ class Steps : public ::testing::EmptyTestEventListener {
             given_step.second.second(expectedStep.second->name,
                                      detail::make_table(expected_step));
             found = true;
+            line_ = tmp_line;
           }
         }
 
@@ -639,6 +647,7 @@ class Steps : public ::testing::EmptyTestEventListener {
       currentStep;  ///< Holds the pointer to the current step
   StepInfoCalls_t steps_{};
   std::size_t current_step_{};
+  std::size_t line_{};
   nlohmann::json pickle_steps_{};
   std::string not_found_{};
   std::string file_{};
