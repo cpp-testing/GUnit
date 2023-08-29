@@ -207,7 +207,7 @@ void prevent_commas(T&&) {}
 }  // namespace testing
 
 #define GUNIT_PREVENT_COMMAS(...) \
-  decltype(testing::detail::prevent_commas(__VA_ARGS__))()
+  decltype(::testing::detail::prevent_commas(__VA_ARGS__))()
 
 #define EXPECT_IMPL(...)                                                     \
   (::testing::detail::op<std::true_type>{                                    \
