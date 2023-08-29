@@ -79,7 +79,7 @@ if (ENABLE_MEMCHECK AND MEMORYCHECK_COMMAND)
     add_test(${out} ${MEMORYCHECK_COMMAND} --leak-check=full --error-exitcode=1 ./${out})
     set_tests_properties(${out}
     PROPERTIES
-    ENVIRONMENT ${scenario}
+    ENVIRONMENT "${scenario};TEST_NAME=${out}"
     )
     target_link_libraries(${out} gunit)
   endfunction()
@@ -90,7 +90,7 @@ else()
     add_test(${out} ./${out})
     set_tests_properties(${out}
     PROPERTIES
-    ENVIRONMENT ${scenario}
+    ENVIRONMENT "${scenario};TEST_NAME=${out}"
     )
     target_link_libraries(${out} gunit)
   endfunction()
