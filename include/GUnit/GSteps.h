@@ -301,12 +301,15 @@ class Steps : public ::testing::EmptyTestEventListener {
  public:
   Steps() {
     const auto scenario = std::getenv("SCENARIO");
-    const auto output = std::getenv("OUTPUT");
+    
     if (scenario) {
       ::testing::UnitTest::GetInstance()->listeners().Append(this);
       // If the output is set, then add a report to the features holder
+      const auto output = std::getenv("OUTPUT");
+      std::string path = std::string(output) + std::string(std::getenv("TEST_NAME"));
+      std::cout << path << std::endl;
       if (output) {
-        Features::getInstance()->addReport("gunit_result");
+        Features::getInstance()->addReport(path);
       }
       for (const auto& feature : detail::split(scenario, ':')) {
         info_.file = feature;
