@@ -24,10 +24,16 @@ public:
 		result = result_;
 	}
 
+	void setFailMessage(const char* message_) {
+		message = std::string(message_);
+	}
+
 	bool getResult() { return result;}
+	std::string getFailMessage() {return message;}
 
 private:
 	bool result=true;
+	std::string message;
 };
 
 } // GherkinCpp

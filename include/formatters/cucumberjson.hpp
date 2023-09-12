@@ -65,6 +65,7 @@ public:
 					std::string resultStr = step.second->getResult()?"passed":"failed";
 					curStep["result"] = {
 							{"status", resultStr},
+							{"error_message", step.second->getFailMessage()},
 							{"duration", 1}
 					};
 					curElement["steps"].push_back(curStep);
