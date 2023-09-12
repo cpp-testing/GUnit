@@ -306,9 +306,10 @@ class Steps : public ::testing::EmptyTestEventListener {
       ::testing::UnitTest::GetInstance()->listeners().Append(this);
       // If the output is set, then add a report to the features holder
       const auto output = std::getenv("OUTPUT");
-      std::string path = std::string(output) + std::string(std::getenv("TEST_NAME"));
-      std::cout << path << std::endl;
+      
       if (output) {
+        std::string path = std::string(output) + std::string(std::getenv("TEST_NAME"));
+        std::cout << path << std::endl;
         Features::getInstance()->addReport(path);
       }
       for (const auto& feature : detail::split(scenario, ':')) {
@@ -644,6 +645,7 @@ class Steps : public ::testing::EmptyTestEventListener {
     ;
     if (currentStep == nullptr) return;
     currentStep->setResult(!(test_part_result.failed()));
+    currentStep->setFailMessage(test_part_result.summary());
   }
 
   std::shared_ptr<GherkinCpp::Step>
