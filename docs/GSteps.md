@@ -176,6 +176,55 @@ GSTEPS("Calc*") {
 SCENARIO="test/Features/Calc/addition.feature" ./test --gtest_filter="Calc Addition.Add two numbers"
 ```
 
+##### Cucumber.json output
+
+GSteps also supports the output of Cucumber.json files
+enable this by setting the following environment variables:
+
+```sh
+OUTPUT_CUCUMBER_JSON=<your output location>
+TEST_NAME=<your test name>
+```
+the OUTPUT_CUCUMBER_JSON variable can be set in the CMakePreset.json file.
+and the test name will be automatically set by the test runner if you define the tests using the `test()` function in the CMakeLists.txt file and use the ctest command to run your tests.
+
+##### Example
+
+###### Define tests
+The CMake preset file test preset:
+```json
+"testPresets": [
+        {
+            "name": "gcc",
+            "configurePreset": "gcc",
+            "output": {
+                "outputOnFailure": true
+            },
+            "execution": {
+                "noTestsAction": "error",
+                "stopOnFailure": false
+            },
+            "environment": 
+            {
+                "OUTPUT_CUCUMBER_JSON": "${sourceDir}/TestResults/"
+            }
+        }
+]
+```
+
+The CMakeLists.txt file defines a test executable with multiple scenarios:
+```
+test( test/Features/Calc/Steps/CalcSteps SCENARIO=${CMAKE_CURRENT_SOURCE_DIR}/test/Features/Calc/addition.feature:${CMAKE_CURRENT_SOURCE_DIR}/test/Features/Calc/additionfile2.feature)
+```
+
+The test runner will automatically set the TEST_NAME environment variable to the name of the test executable.
+
+###### Build and run tests
+```sh
+cmake --build -j --preset=gcc
+ctest --preset=gcc
+```
+
 ### GWT and Mocking?
 
 ```cpp
