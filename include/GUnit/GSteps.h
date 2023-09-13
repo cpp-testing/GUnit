@@ -305,7 +305,7 @@ class Steps : public ::testing::EmptyTestEventListener {
     if (scenario) {
       ::testing::UnitTest::GetInstance()->listeners().Append(this);
       // If the output is set, then add a report to the features holder
-      const auto output = std::getenv("OUTPUT");
+      const auto output = std::getenv("OUTPUT_CUCUMBER_JSON");
       
       if (output) {
         std::string path = std::string(output) + std::string(std::getenv("TEST_NAME"));
