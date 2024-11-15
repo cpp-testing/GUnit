@@ -213,7 +213,7 @@ void prevent_commas(T&&) {}
   (::testing::detail::op<std::true_type>{                                    \
        ::testing::detail::info{__FILE__, __LINE__, #__VA_ARGS__,             \
                                ::testing::TestPartResult::kNonFatalFailure}} \
-   << __VA_ARGS__)
+   << (__VA_ARGS__))
 
 #define EXPECT(...)                  \
   GUNIT_PREVENT_COMMAS(__VA_ARGS__); \
@@ -223,14 +223,14 @@ void prevent_commas(T&&) {}
   if (::testing::detail::op<std::false_type>{                                \
           ::testing::detail::info{__FILE__, __LINE__, #__VA_ARGS__,          \
                                   ::testing::TestPartResult::kFatalFailure}} \
-      << __VA_ARGS__)                                                        \
+      << (__VA_ARGS__))                                                      \
     void(::testing::detail::drop{});                                         \
   else                                                                       \
     return ::testing::detail::ret_void{} ==                                  \
            (::testing::detail::op<std::true_type>{::testing::detail::info{   \
                 __FILE__, __LINE__, #__VA_ARGS__,                            \
                 ::testing::TestPartResult::kFatalFailure}}                   \
-            << __VA_ARGS__)
+            << (__VA_ARGS__))
 
 #define ASSERT(...)                  \
   GUNIT_PREVENT_COMMAS(__VA_ARGS__); \

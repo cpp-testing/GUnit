@@ -37,6 +37,8 @@ TEST(GAssert, ShouldSupportExpect) {
 
   EXPECT(not convertible{});
   EXPECT(false == convertible{});
+
+  EXPECT(false or true);
 }
 
 TEST(GAssert, ShouldSupportASSERT) {
@@ -69,4 +71,6 @@ TEST(GAssert, ShouldSupportASSERT) {
 
   ASSERT(convertible{});
   ASSERT(false == not convertible{});
+
+  ASSERT(false or true);
 }
