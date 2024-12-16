@@ -10,8 +10,12 @@
 #include <gtest/gtest.h>
 
 #include <algorithm>
+#include <iomanip>
+#include <iostream>
 #include <memory>
 #include <string>
+#include <tuple>
+#include <type_traits>
 
 #include "GUnit/Detail/Preprocessor.h"
 #include "GUnit/Detail/RegexUtils.h"
