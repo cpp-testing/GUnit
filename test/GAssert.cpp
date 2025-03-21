@@ -8,6 +8,20 @@
 #include <gtest/gtest.h>
 #include "GUnit/GAssert.h"
 
+struct call_only_once {
+  int a{42};
+  bool called{false};
+
+  auto value() -> int {
+    if (called) {
+      throw std::runtime_error("Called twice, should only evaluate once.");
+    }
+
+    called = true;
+    return a;
+  }
+};
+
 TEST(GAssert, ShouldSupportExpect) {
   auto i = 42;
   const auto b = true;
@@ -15,6 +29,10 @@ TEST(GAssert, ShouldSupportExpect) {
   EXPECT(true);
   EXPECT(!false) << "message";
   EXPECT(b);
+
+  call_only_once once{};
+  EXPECT(once.value() == 42);
+  EXPECT_THROW(once.value(), std::runtime_error);
 
   EXPECT(i == 42);
   EXPECT(42 == i);
