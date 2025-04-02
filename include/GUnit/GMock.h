@@ -305,7 +305,7 @@ class GMock {
 
   template <class TName, class R, class... TArgs>
   void original_defer_call(TArgs... args) {
-    calls.push_back([=, this] { original_call<TName, R>(args...); });
+    calls.push_back([this, args...] { original_call<TName, R>(args...); });
   }
 
  public:
