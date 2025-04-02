@@ -29,6 +29,7 @@ TEST(ProgUtils, ShouldReturnProgFullPath) {
 }
 #endif
 
+#if GUNIT_SHOW_STACK_SIZE > 1
 TEST(ProgUtils, ShouldReturnCallStack) {
   EXPECT_EQ(std::string{}, call_stack("\n", 0, 0));
   EXPECT_EQ(std::string{}, call_stack("\n", 1, 0));
@@ -39,6 +40,7 @@ TEST(ProgUtils, ShouldReturnCallStack) {
       call_stack("\n", 1, 2),
       testing::MatchesRegex(".*ProgUtils_ShouldReturnCallStack_Test.*"));
 }
+#endif
 
 }  // detail
 }  // v1
