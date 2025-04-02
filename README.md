@@ -2,7 +2,6 @@
 <a href="https://github.com/cpp-testing/GUnit/releases" target="_blank">![Version](https://badge.fury.io/gh/cpp-testing%2FGUnit.svg)</a>
 <a href="https://github.com/cpp-testing/GUnit/actions/workflows/linux.yml" target="_blank">![Build](https://github.com/cpp-testing/GUnit/actions/workflows/linux.yml/badge.svg)</a>
 <a href="https://github.com/cpp-testing/GUnit/actions/workflows/macos.yml" target="_blank">![Build](https://github.com/cpp-testing/GUnit/actions/workflows/macos.yml/badge.svg)</a>
-<a href="https://github.com/cpp-testing/GUnit/actions/workflows/windows.yml" target="_blank">![Build](https://github.com/cpp-testing/GUnit/actions/workflows/windows.yml/badge.svg)</a>
 <a href="https://codecov.io/gh/cpp-testing/GUnit" target="_blank">![Coveralls](https://codecov.io/gh/cpp-testing/GUnit/branch/master/graph/badge.svg)</a>
 <a href="http://github.com/cpp-testing/GUnit/issues" target="_blank">![Github Issues](https://img.shields.io/github/issues/cpp-testing/GUnit.svg)</a>
 
