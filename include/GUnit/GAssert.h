@@ -17,6 +17,36 @@ namespace testing {
 inline namespace v1 {
 namespace detail {
 
+template <typename T1, typename T2>
+AssertionResult CmpHelperAnd(const char* lhs_expression,
+                             const char* rhs_expression,
+                             const T1& lhs, const T2& rhs) {
+  if (lhs and rhs) {
+    return AssertionSuccess();
+  }
+  return internal::CmpHelperOpFailure(lhs_expression, rhs_expression, lhs, rhs, "and");
+};
+
+template <typename T1, typename T2>
+AssertionResult CmpHelperOr(const char* lhs_expression,
+                            const char* rhs_expression,
+                            const T1& lhs, const T2& rhs) {
+  if (lhs or rhs) {
+    return AssertionSuccess();
+  }
+  return internal::CmpHelperOpFailure(lhs_expression, rhs_expression, lhs, rhs, "or");
+};
+
+template <typename T1, typename T2>
+AssertionResult CmpHelperXor(const char* lhs_expression,
+                             const char* rhs_expression,
+                             const T1& lhs, const T2& rhs) {
+  if (lhs xor rhs) {
+    return AssertionSuccess();
+  }
+  return internal::CmpHelperOpFailure(lhs_expression, rhs_expression, lhs, rhs, "xor");
+};
+
 struct info {
   const char* file{};
   unsigned long line{};
@@ -127,6 +157,27 @@ class op {
           info_, "<", lhs_, rhs};
     }
 
+    template <class TRhs>
+    auto operator&&(const TRhs& rhs) const {
+      followed_ = true;
+      return msg<TShouldError, const TLhs&, const TRhs&, CmpHelperAnd>{
+        info_, "and", lhs_, rhs};
+    }
+
+    template <class TRhs>
+    auto operator||(const TRhs& rhs) const {
+      followed_ = true;
+      return msg<TShouldError, const TLhs&, const TRhs&, CmpHelperOr>{
+        info_, "or", lhs_, rhs};
+    }
+
+    template <class TRhs>
+    auto operator^(const TRhs& rhs) const {
+      followed_ = true;
+      return msg<TShouldError, const TLhs&, const TRhs&, CmpHelperXor>{
+        info_, "xor", lhs_, rhs};
+    }
+
     operator bool() const { return result_; }
 
    private:
@@ -213,7 +264,7 @@ void prevent_commas(T&&) {}
   (::testing::detail::op<std::true_type>{                                    \
        ::testing::detail::info{__FILE__, __LINE__, #__VA_ARGS__,             \
                                ::testing::TestPartResult::kNonFatalFailure}} \
-   << (__VA_ARGS__))
+   << __VA_ARGS__)
 
 #define EXPECT(...)                  \
   GUNIT_PREVENT_COMMAS(__VA_ARGS__); \
@@ -223,14 +274,14 @@ void prevent_commas(T&&) {}
   if (::testing::detail::op<std::false_type>{                                \
           ::testing::detail::info{__FILE__, __LINE__, #__VA_ARGS__,          \
                                   ::testing::TestPartResult::kFatalFailure}} \
-      << (__VA_ARGS__))                                                      \
+      << __VA_ARGS__)                                                        \
     void(::testing::detail::drop{});                                         \
   else                                                                       \
     return ::testing::detail::ret_void{} ==                                  \
            (::testing::detail::op<std::true_type>{::testing::detail::info{   \
                 __FILE__, __LINE__, #__VA_ARGS__,                            \
                 ::testing::TestPartResult::kFatalFailure}}                   \
-            << (__VA_ARGS__))
+            << __VA_ARGS__)
 
 #define ASSERT(...)                  \
   GUNIT_PREVENT_COMMAS(__VA_ARGS__); \
