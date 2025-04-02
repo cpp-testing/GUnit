@@ -101,23 +101,23 @@
   };
   ```
   ```cpp
-                 Google.Test                     |                     GUnit.GMake
-  -----------------------------------------------+--------------------------------------------------
-   #include <gtest/gtest.h>                      | #include <GUnit.h>
-   #include <gmock/gmock.h>                      |
-                                                 |
-   TEST(CalcTest, ShouldMakeCoffee) {            | GTEST("Calc Test") {
-     StrictMock<mock_heater> heater{};           |   auto [sut, mocks] =
-     StrictMock<mock_pump> pump{};               |     make<coffee_maker, StrictGMock>();
-     StrictMock<mock_grinder> grinder{};         |
-     coffee_maker sut{heater, pump, grinder};    |   EXPECT_CALL(mocks.mock<iheater>(), (on)());
-                                                 |   EXPECT_CALL(mocks.mock<ipump>(), (pump)());
-     EXPECT_CALL(heater, on());                  |   EXPECT_CALL(mocks.mock<igrinder>(), (grind)());
-     EXPECT_CALL(pump, pump());                  |   EXPECT_CALL(mocks.mock<iheater>(), (off)());
-     EXPECT_CALL(grinder, grind());              |
-     EXPECT_CALL(heater, off());                 |   sut->brew();
-                                                 | }
-     sut->brew();                                |
+                 Google.Test                  |                     GUnit.GMake
+  --------------------------------------------+--------------------------------------------------
+   #include <gtest/gtest.h>                   | #include <GUnit.h>
+   #include <gmock/gmock.h>                   |
+                                              |
+   TEST(CalcTest, ShouldMakeCoffee) {         | GTEST("Calc Test") {
+     StrictMock<mock_heater> heater{};        |   auto [sut, mocks] =
+     StrictMock<mock_pump> pump{};            |     make<coffee_maker, StrictGMock>();
+     StrictMock<mock_grinder> grinder{};      |
+     coffee_maker sut{heater, pump, grinder}; |   EXPECT_CALL(mocks.mock<iheater>(), (on)());
+                                              |   EXPECT_CALL(mocks.mock<ipump>(), (pump)());
+     EXPECT_CALL(heater, on());               |   EXPECT_CALL(mocks.mock<igrinder>(), (grind)());
+     EXPECT_CALL(pump, pump());               |   EXPECT_CALL(mocks.mock<iheater>(), (off)());
+     EXPECT_CALL(grinder, grind());           |
+     EXPECT_CALL(heater, off());              |   sut->brew();
+                                              | }
+     sut->brew();                             |
    }
   ```
 
@@ -171,7 +171,8 @@
 
   > Usage
   ```sh
-  SCENARIO="Test/Features/Calc/addition.feature" ./test --gtest_filter="Calc Addition.Add two numbers"
+  SCENARIO="Test/Features/Calc/addition.feature" \
+    ./test --gtest_filter="Calc Addition.Add two numbers"
   ```
 
   > Output
