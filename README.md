@@ -1,8 +1,8 @@
 <a href="http://www.boost.org/LICENSE_1_0.txt" target="_blank">![Boost Licence](http://img.shields.io/badge/license-boost-blue.svg)</a>
 <a href="https://github.com/cpp-testing/GUnit/releases" target="_blank">![Version](https://badge.fury.io/gh/cpp-testing%2FGUnit.svg)</a>
-<a href="https://github.com/cpp-testing/GUnit/actions/workflows/linux.yml" target="_blank">![Build](https://github.com/cpp-testing/GUnit/actions/workflows/linux.yml/badge.svg
-<a href="https://github.com/cpp-testing/GUnit/actions/workflows/macos.yml" target="_blank">![Build](https://github.com/cpp-testing/GUnit/actions/workflows/macos.yml/badge.svg
-<a href="https://github.com/cpp-testing/GUnit/actions/workflows/windows.yml" target="_blank">![Build](https://github.com/cpp-testing/GUnit/actions/workflows/windows.yml/badge.svg
+<a href="https://github.com/cpp-testing/GUnit/actions/workflows/linux.yml" target="_blank">![Build](https://github.com/cpp-testing/GUnit/actions/workflows/linux.yml/badge.svg)</a>
+<a href="https://github.com/cpp-testing/GUnit/actions/workflows/macos.yml" target="_blank">![Build](https://github.com/cpp-testing/GUnit/actions/workflows/macos.yml/badge.svg)</a>
+<a href="https://github.com/cpp-testing/GUnit/actions/workflows/windows.yml" target="_blank">![Build](https://github.com/cpp-testing/GUnit/actions/workflows/windows.yml/badge.svg)</a>
 <a href="https://codecov.io/gh/cpp-testing/GUnit" target="_blank">![Coveralls](https://codecov.io/gh/cpp-testing/GUnit/branch/master/graph/badge.svg)</a>
 <a href="http://github.com/cpp-testing/GUnit/issues" target="_blank">![Github Issues](https://img.shields.io/github/issues/cpp-testing/GUnit.svg)</a>
 
@@ -30,8 +30,8 @@
 
 > #### No more base classes, labels as identifiers and special assertions - [GUnit.GTest](docs/GTest.md) / [GUnit.GTest-Lite](docs/GTest-Lite.md)
   ```cpp
-                 Google.Test                     |                     GUnit.GTest
-  -----------------------------------------------+----------------------------------------------------
+                 Google.Test                     |               GUnit.GTest
+  -----------------------------------------------+-----------------------------------------
   #include <gtest/gtest.h>                       | #include <GUnit.h>
                                                  |
   struct CalcTest : testing::Test {              | GTEST("Calc Test") {
@@ -60,7 +60,7 @@
   [       OK ] CalcTest.ShouldReturnSumOf2Numbers| [ SHOULD   ] return sum of 2 numbers
   [ RUN      ] CalcTest.ShouldThrowIfDivisionBy0 | [ SHOULD   ] throw if division by 0
   [       OK ] CalcTest.ShouldThrowIfDivisionBy0 | [       OK ] Calc Test (0 ms)
-  [----------] 2 tests from CalcTest (1 ms total)| [----------] 1 tests from Example (0 ms total)
+  [----------] 2 tests from CalcTest (1 ms total)| [----------] 1 tests from Example
   ```
 
 > #### No more hand written mocks - [GUnit.GMock](docs/GMock.md)
@@ -73,8 +73,8 @@
   };
   ```
   ```cpp
-                 Google.Test                     |                     GUnit.GMock
-  -----------------------------------------------+----------------------------------------------------
+                 Google.Test                     |           GUnit.GMock
+  -----------------------------------------------+--------------------------------------
   #include <gmock/gmock.h>                       | #include <GUnit.h>
                                                  |
   struct mock_interface : interface {            |
