@@ -301,12 +301,12 @@ class Steps : public ::testing::EmptyTestEventListener {
  public:
   Steps() {
     const auto scenario = std::getenv("SCENARIO");
-    
+
     if (scenario) {
       ::testing::UnitTest::GetInstance()->listeners().Append(this);
       // If the output is set, then add a report to the features holder
       const auto output = std::getenv("OUTPUT_CUCUMBER_JSON");
-      
+
       if (output) {
         std::string path = std::string(output) + std::string(std::getenv("TEST_NAME"));
         std::cout << path << std::endl;
@@ -577,10 +577,10 @@ class Steps : public ::testing::EmptyTestEventListener {
       for (const auto& exp_step : pickle_steps_) {
         if (exp_step["text"] == expectedStep.second->name) {
           if (exp_step["text"] == expectedStep.second->name) {
-            const auto line = exp_step["locations"].back()["line"].get<std::size_t>();
+            const auto line = exp_step["locations"].back()["line"].template get<std::size_t>();
             if (line > line_) {
               expected_step = exp_step;
-              tmp_line = exp_step["locations"].back()["line"].get<std::size_t>();
+              tmp_line = exp_step["locations"].back()["line"].template get<std::size_t>();
               break;
             }
           }

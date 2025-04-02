@@ -1,6 +1,8 @@
 <a href="http://www.boost.org/LICENSE_1_0.txt" target="_blank">![Boost Licence](http://img.shields.io/badge/license-boost-blue.svg)</a>
 <a href="https://github.com/cpp-testing/GUnit/releases" target="_blank">![Version](https://badge.fury.io/gh/cpp-testing%2FGUnit.svg)</a>
-<a href="https://travis-ci.org/cpp-testing/GUnit" target="_blank">![Build Status](https://img.shields.io/travis/cpp-testing/GUnit/master.svg?label=linux/osx)</a>
+<a href="https://github.com/cpp-testing/GUnit/actions/workflows/linux.yml" target="_blank">![Build](https://github.com/cpp-testing/GUnit/actions/workflows/linux.yml/badge.svg
+<a href="https://github.com/cpp-testing/GUnit/actions/workflows/macos.yml" target="_blank">![Build](https://github.com/cpp-testing/GUnit/actions/workflows/macos.yml/badge.svg
+<a href="https://github.com/cpp-testing/GUnit/actions/workflows/windows.yml" target="_blank">![Build](https://github.com/cpp-testing/GUnit/actions/workflows/windows.yml/badge.svg
 <a href="https://codecov.io/gh/cpp-testing/GUnit" target="_blank">![Coveralls](https://codecov.io/gh/cpp-testing/GUnit/branch/master/graph/badge.svg)</a>
 <a href="http://github.com/cpp-testing/GUnit/issues" target="_blank">![Github Issues](https://img.shields.io/github/issues/cpp-testing/GUnit.svg)</a>
 
@@ -210,7 +212,7 @@
 * `GUnit.GSteps` - Behaviour Driven Development
   * Support for - [Gherkin](https://github.com/cucumber/cucumber/wiki/Gherkin) style - BDD tests
 * `GUnit.GAssert` - Google.Test assertions without postfixes
-  * Simple/consised interface - `EXPECT(true); EXPECT(.0 > 2.0); ASSERT(11 != 42), ...` 
+  * Simple/consised interface - `EXPECT(true); EXPECT(.0 > 2.0); ASSERT(11 != 42), ...`
   * No more EXPECT_EQ/EXPECT_GT/...
   * No more confusing error messages depending on expected, given parameters
   * No more bugs due to using the wrong EXPECT for floating point numbers (EXPECT_DOUBLE_EQ) and/or strings
@@ -260,7 +262,7 @@
         Note: This sections needs updates, when writing the gherkin-cpp CMake integration I used add_subdirectory:
         * Add include paths
             * `-I GUnit_install_dir/include`
-        * Link with `libgherkin-cpp.{a, so}` Note: I wasn't able to nest the fmem/gherkin into libghekin-cpp, so two more libs to add: fmem/gherkin!   
+        * Link with `libgherkin-cpp.{a, so}` Note: I wasn't able to nest the fmem/gherkin into libghekin-cpp, so two more libs to add: fmem/gherkin!
             * `-L gherkin-cpp`
             * `-L fmem`
             * `-L gherkin`
