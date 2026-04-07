@@ -7,7 +7,43 @@
 //
 #pragma once
 
-#if !defined(_WIN32) && !defined(_WIN64)
+// Feature detection: backtrace support
+#if !defined(GUNIT_HAS_BACKTRACE)
+  #if (defined(__APPLE__) || defined(__linux__)) && !defined(__ZEPHYR__)
+    #define GUNIT_HAS_BACKTRACE 1
+  #else
+    #define GUNIT_HAS_BACKTRACE 0
+  #endif
+#endif
+
+// Feature detection: addr2line support (requires popen/pclose)
+#if !defined(GUNIT_HAS_ADDR2LINE)
+  #if (defined(__APPLE__) || defined(__linux__)) && !defined(__ZEPHYR__)
+    #define GUNIT_HAS_ADDR2LINE 1
+  #else
+    #define GUNIT_HAS_ADDR2LINE 0
+  #endif
+#endif
+
+// Feature detection: C++ name demangling
+#if !defined(GUNIT_HAS_DEMANGLE)
+  #if !defined(_WIN32) && !defined(_WIN64) && !defined(__ZEPHYR__)
+    #define GUNIT_HAS_DEMANGLE 1
+  #else
+    #define GUNIT_HAS_DEMANGLE 0
+  #endif
+#endif
+
+// Feature detection: program name
+#if !defined(GUNIT_HAS_PROGNAME)
+  #if (defined(__APPLE__) || defined(__linux__)) && !defined(__ZEPHYR__)
+    #define GUNIT_HAS_PROGNAME 1
+  #else
+    #define GUNIT_HAS_PROGNAME 0
+  #endif
+#endif
+
+#if GUNIT_HAS_DEMANGLE
 #include <cxxabi.h>
 #endif
 
@@ -16,13 +52,13 @@
 
 #include "gtest/gtest.h"
 
-#if defined(__APPLE__) || defined(__linux__)
+#if GUNIT_HAS_BACKTRACE
 #include <execinfo.h>
 #endif
 
 #if defined(__APPLE__)
 #include <libproc.h>
-#elif defined(__linux__)
+#elif GUNIT_HAS_PROGNAME && defined(__linux__)
 extern const char *__progname_full;
 #elif defined(_WIN32)
 static const char *__progname_full = "progname_not_availabe_on_WIN32";
@@ -37,43 +73,42 @@ inline namespace v1 {
 namespace detail {
 
 inline std::string demangle(const std::string &mangled) {
-#if !defined(_WIN32) && !defined(_WIN64)
+#if GUNIT_HAS_DEMANGLE
   const auto demangled = abi::__cxa_demangle(mangled.c_str(), 0, 0, 0);
   if (demangled) {
     std::shared_ptr<char> free{demangled, std::free};
     return demangled;
   }
+  return {};
 #else
   return mangled;
 #endif
-  return {};
 }
 
 inline auto &progname() {
-#if defined(__linux__)
-  static auto self = __progname_full;
-#elif defined(__APPLE__)
-  static char self[PROC_PIDPATHINFO_MAXSIZE] = {};
-  proc_pidpath(getpid(), self, sizeof(self));
+#if GUNIT_HAS_PROGNAME
+  #if defined(__APPLE__)
+    static char self[PROC_PIDPATHINFO_MAXSIZE] = {};
+    proc_pidpath(getpid(), self, sizeof(self));
+  #elif defined(__linux__)
+    static auto self = __progname_full;
+  #endif
 #elif defined(_WIN32)
   static auto self = __progname_full;
+#else
+  static const char *self = "embedded_target";
 #endif
   return self;
 }
 
 inline std::string call_stack(const std::string &newline, int stack_begin = 1,
                               int stack_size = GUNIT_SHOW_STACK_SIZE) {
-#if defined(_WIN32)
-  (void)newline;
-  (void)stack_begin;
-  (void)stack_size;
-  return "callstack not availabe on WIN32";
-#else
+#if GUNIT_HAS_BACKTRACE
   static constexpr auto MAX_CALL_STACK_SIZE = 64;
   void *bt[MAX_CALL_STACK_SIZE];
   const auto frames = backtrace(bt, sizeof(bt) / sizeof(bt[0]));
   const auto symbols = backtrace_symbols(bt, frames);
-  std::shared_ptr<char *> free{symbols, std::free};
+  std::shared_ptr<char*> free{symbols, [](char** p) { std::free(p); }};
   std::stringstream result;
   stack_size += stack_begin;
 
@@ -100,14 +135,16 @@ inline std::string call_stack(const std::string &newline, int stack_begin = 1,
     }
   }
   return result.str();
+#else
+  (void)newline;
+  (void)stack_begin;
+  (void)stack_size;
+  return "callstack disabled or not available";
 #endif
 }
 
 inline std::pair<std::string, int> addr2line(void *addr) {
-#if defined(_WIN32)
-  (void)addr;
-  return {"addr2line not availabe on WIN32", 0};
-#else
+#if GUNIT_HAS_ADDR2LINE
   std::stringstream cmd;
   cmd << "addr2line -Cpe " << progname() << " " << addr;
 
@@ -128,6 +165,9 @@ inline std::pair<std::string, int> addr2line(void *addr) {
   std::string res2 = data.substr(0, space);
   const auto colon = res2.find(":");
   return {res2.substr(0, colon), std::atoi(res2.substr(colon + 1).c_str())};
+#else
+  std::ignore = addr;
+  return {"addr2line disabled or not available", 0};
 #endif
 }
 
